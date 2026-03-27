@@ -1,0 +1,145 @@
+name: 📱 Mobile — OTA Update + Store Build
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: OTA Update — Har push par instant update
+  # ─────────────────────────────────────────────
+  ota-update:
+    name: ⚡ OTA Instant Update (Android + iOS)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: 🛠️ Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install Dependencies
+        run: npm install
+        working-directory: mobile
+
+      - name: ⚡ Push OTA Update (Android + iOS dono)
+        run: |
+          eas update \
+            --branch production \
+            --message "Auto: ${{ github.event.head_commit.message }}" \
+            --non-interactive
+        working-directory: mobile
+
+      - name: ✅ OTA Complete
+        run: |
+          echo "=========================================="
+          echo "⚡ OTA UPDATE DONE!"
+          echo "Users ko next app open par update milega"
+          echo "By: ${{ github.actor }}"
+          echo "=========================================="
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Play Store — Release publish par
+  # ─────────────────────────────────────────────
+  build-android:
+    name: 🤖 Android — Play Store Submit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: 🛠️ Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install Dependencies
+        run: npm install
+        working-directory: mobile
+
+      - name: 🔑 Google Service Account Setup
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > mobile/google-service-account.json
+          echo "Service account: rapit-174@gen-lang-client-0749108261.iam.gserviceaccount.com"
+
+      - name: 🔨 Build Android AAB
+        run: eas build --platform android --profile production --non-interactive
+        working-directory: mobile
+
+      - name: 🚀 Submit to Play Store
+        run: eas submit --platform android --latest --non-interactive
+        working-directory: mobile
+
+      - name: 🧹 Cleanup Keys
+        run: rm -f mobile/google-service-account.json
+        if: always()
+
+      - name: ✅ Play Store Done
+        run: echo "✅ Android — Play Store pe submit ho gaya!"
+
+  # ─────────────────────────────────────────────
+  # JOB 3: App Store — Release publish par
+  # ─────────────────────────────────────────────
+  build-ios:
+    name: 🍎 iOS — App Store Submit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🛠️ Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install Dependencies
+        run: npm install
+        working-directory: mobile
+
+      - name: 🔨 Build iOS
+        run: eas build --platform ios --profile production --non-interactive
+        working-directory: mobile
+
+      - name: 🚀 Submit to App Store
+        run: eas submit --platform ios --latest --non-interactive
+        working-directory: mobile
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+
+      - name: ✅ App Store Done
+        run: echo "✅ iOS — App Store pe submit ho gaya!"
