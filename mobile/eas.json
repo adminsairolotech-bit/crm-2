@@ -20,6 +20,10 @@
       },
       "ios": {
         "enterpriseProvisioning": "universal"
+      },
+      "channel": "production",
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1"
       }
     }
   },
