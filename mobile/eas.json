@@ -16,7 +16,7 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       },
       "node": "20.11.0",
       "cache": {
