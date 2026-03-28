@@ -145,6 +145,70 @@ Return ONLY valid JSON, no other text. Match products to client requirements int
           }
         });
 
+        server.middlewares.use('/api/analyze-quotation', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { quotationText, catalogData } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+
+            const catalog = catalogData || {};
+            const saiPricing = (catalog.products || []).map(p =>
+              `${p.name}: ₹${p.basePrice.toLocaleString('en-IN')}/${p.unit} (${p.category})`
+            ).join('\n');
+
+            const systemPrompt = `You are an expert industrial automation procurement analyst working for SAI RoloTech, Pune. You analyze quotations from any company and give a detailed, professional assessment.
+
+SAI RoloTech Reference Pricing (for comparison):
+${saiPricing || 'PLC Panels: ₹28,000-₹85,000, HMI: ₹18,000-₹32,000, VFD: ₹8,500-₹22,000, SCADA: ₹85,000, Servo: ₹35,000/set, Panels: ₹15,000+'}
+
+Analyze the given quotation and return ONLY a valid JSON object with this EXACT structure:
+{
+  "companyName": "detected company name or 'Unknown Company'",
+  "quotationRef": "quotation number if found or 'N/A'",
+  "totalAmount": "total amount as string with ₹ or currency symbol, or 'N/A'",
+  "overallScore": number between 1 and 10,
+  "overallVerdict": "one of: Excellent | Good | Average | Below Average | Poor",
+  "summary": "2-3 sentence executive summary in Hinglish",
+  "pros": [
+    { "point": "what is good", "detail": "brief explanation in Hinglish" }
+  ],
+  "cons": [
+    { "point": "what is bad or missing", "detail": "brief explanation in Hinglish", "severity": "High | Medium | Low" }
+  ],
+  "priceAnalysis": {
+    "verdict": "one of: Overpriced | Fair | Competitive | Cheap (quality risk)",
+    "detail": "price comparison and analysis in Hinglish",
+    "savingOpportunity": "estimated savings if switched to SAI RoloTech or better alternatives"
+  },
+  "missingItems": ["list of items that should be in a good quotation but are missing"],
+  "redFlags": ["any suspicious or concerning items found"],
+  "recommendations": ["3-5 actionable recommendations in Hinglish"],
+  "sairolotech_advantage": "why SAI RoloTech would be better (1-2 lines)"
+}
+
+Be honest, specific, and helpful. If the text is not a quotation, still analyze what you can see.`;
+
+            const response = await ai.models.generateContent({
+              model: 'gemini-2.0-flash',
+              contents: [{ role: 'user', parts: [{ text: `Analyze this quotation:\n\n${quotationText}` }] }],
+              config: { systemInstruction: systemPrompt, maxOutputTokens: 2048, temperature: 0.4 }
+            });
+
+            let text = response.text || '{}';
+            text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const analysis = JSON.parse(text);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, analysis }));
+          } catch (err) {
+            console.error('Analyze Quotation error:', err.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
         server.middlewares.use('/api/generate-questions', async (req, res) => {
           if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
           try {

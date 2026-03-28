@@ -12,7 +12,7 @@ Full-featured CRM web application for SAI RoloTech - an industrial automation co
 - **UI Components**: Radix UI primitives + custom shared components
 - **Icons**: Lucide React
 - **Database**: Supabase (PostgreSQL) — all data stored in user's Supabase project
-- **AI**: Gemini (Buddy Chat), OpenAI (Question Generation)
+- **AI**: Gemini (Buddy Chat, AI Quotation Maker, AI Quotation Analyzer), OpenAI (Question Generation)
 - **Email**: Gmail API integration via Google Mail connector
 
 ## Database — Supabase
