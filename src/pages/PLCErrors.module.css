@@ -1,0 +1,30 @@
+.page { max-width: 1100px; margin: 0 auto; }
+.pageHeader { margin-bottom: 20px; }
+.pageTitle { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+.pageSub { font-size: 13px; color: #6b7280; margin-top: 3px; }
+.filterBar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.searchBox { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px; }
+.searchInput { border: none; outline: none; font-size: 14px; flex: 1; }
+.filterSelect { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 13px; outline: none; background: #fff; }
+.resultCount { font-size: 13px; color: #6b7280; margin-bottom: 14px; font-weight: 500; }
+.detailCard { background: #fff; border-radius: 14px; padding: 20px; margin-bottom: 20px; border: 1px solid #667eea44; box-shadow: 0 4px 16px rgba(102,126,234,0.1); }
+.detailHeader { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.detailCode { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-right: 10px; }
+.detailBrand { font-size: 14px; color: #6b7280; font-weight: 500; }
+.severityBadge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+.closeBtn { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
+.detailBody { display: flex; flex-direction: column; gap: 14px; }
+.detailSection { }
+.detailLabel { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.detailValue { font-size: 14px; color: #374151; line-height: 1.5; }
+.errorGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.errorCard { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; cursor: pointer; transition: all 0.15s; }
+.errorCard:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102,126,234,0.12); }
+.errorCard.active { border-color: #667eea; background: #f5f3ff; }
+.errorTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.errorCode { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+.severityDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.errorBrand { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
+.errorDesc { font-size: 12px; color: #374151; line-height: 1.4; margin-bottom: 8px; }
+.errorCat { font-size: 10px; font-weight: 600; background: #f0f2f5; color: #6b7280; padding: 2px 8px; border-radius: 6px; display: inline-block; }
+.empty { grid-column: 1/-1; text-align: center; padding: 40px; color: #9ca3af; }

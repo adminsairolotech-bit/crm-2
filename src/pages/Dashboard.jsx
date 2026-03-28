@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import Layout from '../components/Layout'
 import styles from './Dashboard.module.css'
 
 const stats = [
@@ -17,21 +18,23 @@ const recentActivities = [
   { name: 'Sunita Patel', action: 'Customer call completed', time: '2 hr ago', avatar: 'S' },
 ]
 
-const statusColors = {
-  New: { bg: '#dbeafe', text: '#1d4ed8' },
-  Contacted: { bg: '#fef3c7', text: '#92400e' },
-  Qualified: { bg: '#d1fae5', text: '#065f46' },
-  'Follow Up': { bg: '#ffedd5', text: '#c2410c' },
-}
+const quickLinks = [
+  { to: '/customers', icon: '👥', label: 'Customers', color: '#667eea' },
+  { to: '/leads', icon: '🎯', label: 'Leads', color: '#f59e0b' },
+  { to: '/machine-report', icon: '⚙️', label: 'Machine Testing', color: '#10b981' },
+  { to: '/plc-errors', icon: '🔴', label: 'PLC Errors', color: '#ef4444' },
+  { to: '/pnmg-loan', icon: '💳', label: 'PNMG Loan', color: '#8b5cf6' },
+  { to: '/ai-questions', icon: '🤖', label: 'AI Questions', color: '#ec4899' },
+  { to: '/buddy-bot', icon: '💬', label: 'Buddy Bot', color: '#06b6d4' },
+  { to: '/inquiry', icon: '📋', label: 'Inquiry Form', color: '#f97316', external: true },
+]
 
 export default function Dashboard() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user } = useAuth()
   const [gmailLeads, setGmailLeads] = useState([])
   const [leadsLoading, setLeadsLoading] = useState(true)
   const [leadsError, setLeadsError] = useState(null)
   const [lastRefresh, setLastRefresh] = useState(null)
-
   const [gmailInfo, setGmailInfo] = useState(null)
 
   const fetchLeads = async () => {
@@ -59,36 +62,12 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
   return (
-    <div className={styles.wrapper}>
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div className={styles.logoIcon}>CRM</div>
-          <span className={styles.betaBadge}>BETA</span>
-        </div>
-        <div className={styles.headerRight}>
-          <Link to="/inquiry" target="_blank" className={styles.inquiryLink}>📋 Inquiry Form</Link>
-          <div className={styles.firebaseChip}>🔥 Firebase Active</div>
-          <div className={styles.userInfo}>
-            <span className={styles.avatar}>{user?.name?.charAt(0)}</span>
-            <div>
-              <p className={styles.userName}>{user?.name}</p>
-              <p className={styles.userEmail}>{user?.email}</p>
-            </div>
-          </div>
-          <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
-        </div>
-      </header>
-
-      <main className={styles.main}>
+    <Layout>
+      <div className={styles.main}>
         <div className={styles.welcomeBar}>
           <h1>Namaste, {user?.name} 👋</h1>
-          <p>Aaj ka overview dekhein</p>
+          <p>SAI RoloTech CRM — Aaj ka overview</p>
         </div>
 
         <div className={styles.statsGrid}>
@@ -105,7 +84,25 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Gmail Leads Section */}
+        <div className={styles.quickLinksSection}>
+          <h2 className={styles.sectionTitle}>Quick Access</h2>
+          <div className={styles.quickGrid}>
+            {quickLinks.map((ql) =>
+              ql.external ? (
+                <a key={ql.to} href={ql.to} target="_blank" rel="noreferrer" className={styles.quickCard}>
+                  <div className={styles.quickIcon} style={{ background: ql.color + '20', color: ql.color }}>{ql.icon}</div>
+                  <span className={styles.quickLabel}>{ql.label}</span>
+                </a>
+              ) : (
+                <Link key={ql.to} to={ql.to} className={styles.quickCard}>
+                  <div className={styles.quickIcon} style={{ background: ql.color + '20', color: ql.color }}>{ql.icon}</div>
+                  <span className={styles.quickLabel}>{ql.label}</span>
+                </Link>
+              )
+            )}
+          </div>
+        </div>
+
         <div className={styles.googleLeadsSection}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionTitleRow}>
@@ -116,14 +113,8 @@ export default function Dashboard() {
               )}
             </div>
             <div className={styles.headerActions}>
-              {lastRefresh && (
-                <span className={styles.lastRefresh}>Updated: {lastRefresh}</span>
-              )}
-              <button
-                className={styles.refreshBtn}
-                onClick={fetchLeads}
-                disabled={leadsLoading}
-              >
+              {lastRefresh && <span className={styles.lastRefresh}>Updated: {lastRefresh}</span>}
+              <button className={styles.refreshBtn} onClick={fetchLeads} disabled={leadsLoading}>
                 {leadsLoading ? '⏳' : '🔄'} Refresh
               </button>
             </div>
@@ -153,9 +144,7 @@ export default function Dashboard() {
                 <div className={styles.gmailConnectedIcon}>📬</div>
                 <div className={styles.gmailConnectedInfo}>
                   <p className={styles.gmailConnectedTitle}>Gmail Successfully Connected!</p>
-                  <p className={styles.gmailConnectedSub}>
-                    inquirysairolotech@gmail.com &amp; admin.sairolotech@gmail.com — Active
-                  </p>
+                  <p className={styles.gmailConnectedSub}>inquirysairolotech@gmail.com &amp; admin.sairolotech@gmail.com — Active</p>
                 </div>
                 <div className={styles.gmailConnectedBadge}>✓ Live</div>
               </div>
@@ -175,13 +164,13 @@ export default function Dashboard() {
                   <span className={styles.gmailStatLabel}>Labels</span>
                 </div>
               </div>
-              <div className={styles.gmailUpgradeNotice}>
-                <span>🔑</span>
-                <div>
-                  <p className={styles.gmailUpgradeTitle}>Lead Scanning ke liye gmail.readonly permission chahiye</p>
-                  <p className={styles.gmailUpgradeSub}>Abhi labels aur inbox stats access ho rahe hain. Full email scan ke liye Gmail app permissions upgrade karein.</p>
-                </div>
-              </div>
+            </div>
+          )}
+
+          {!leadsLoading && !leadsError && !gmailInfo?.connected && (
+            <div className={styles.emptyBox}>
+              <span>📭</span>
+              <p>Gmail connected nahi hai. Replit Gmail connector se connect karein.</p>
             </div>
           )}
         </div>
@@ -206,39 +195,26 @@ export default function Dashboard() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>🔥 System Status</h2>
             <div className={styles.firebaseStatus}>
-              <div className={styles.fbItem}>
-                <span className={styles.fbDot} style={{ background: '#10b981' }}></span>
-                <span>Firebase Auth</span>
-                <span className={styles.fbActive}>Active ✓</span>
-              </div>
-              <div className={styles.fbItem}>
-                <span className={styles.fbDot} style={{ background: '#10b981' }}></span>
-                <span>Firebase Password Reset</span>
-                <span className={styles.fbActive}>Active ✓</span>
-              </div>
-              <div className={styles.fbItem}>
-                <span className={styles.fbDot} style={{ background: leadsError ? '#ef4444' : gmailInfo?.connected ? '#10b981' : '#f59e0b' }}></span>
-                <span>Gmail Connection</span>
-                <span className={leadsError ? styles.fbError : gmailInfo?.connected ? styles.fbActive : styles.fbPending}>
-                  {leadsError ? 'Error ✗' : gmailInfo?.connected ? `Connected ✓` : 'Pending'}
-                </span>
-              </div>
-              <div className={styles.fbItem}>
-                <span className={styles.fbDot} style={{ background: gmailInfo?.inbox ? '#10b981' : '#9ca3af' }}></span>
-                <span>Inbox Stats</span>
-                <span className={gmailInfo?.inbox ? styles.fbActive : styles.fbPending}>
-                  {gmailInfo?.inbox ? `${gmailInfo.inbox.unread?.toLocaleString('en-IN')} unread` : '—'}
-                </span>
-              </div>
-              <div className={styles.fbItem}>
-                <span className={styles.fbDot} style={{ background: '#10b981' }}></span>
-                <span>Auto Refresh (5 min)</span>
-                <span className={styles.fbActive}>Active ✓</span>
-              </div>
+              {[
+                ['Firebase Auth', true],
+                ['Firebase Password Reset', true],
+                ['Gmail Connection', !leadsError && gmailInfo?.connected],
+                ['Auto Refresh (5 min)', true],
+                ['Machine Testing', true],
+                ['PLC Error DB', true],
+                ['PNMG Loan Module', true],
+                ['Buddy Chatbot', true],
+              ].map(([label, active]) => (
+                <div key={label} className={styles.fbItem}>
+                  <span className={styles.fbDot} style={{ background: active ? '#10b981' : '#f59e0b' }}></span>
+                  <span>{label}</span>
+                  <span className={active ? styles.fbActive : styles.fbPending}>{active ? 'Active ✓' : 'Pending'}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   )
 }
