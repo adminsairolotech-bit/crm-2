@@ -259,6 +259,102 @@ REPLY RULES:
           }
         });
 
+        server.middlewares.use('/api/generate-project-report', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { formData: f } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+
+            const subsidyPct = ['SC','ST','OBC','Minority','Ex-Serviceman','Physically Handicapped'].includes(f.category) ? 35 : 25;
+            const totalCost = parseFloat(f.totalProjectCost.replace(/,/g,'')) || 0;
+            const loan = parseFloat(f.loanAmount.replace(/,/g,'')) || 0;
+            const own = parseFloat(f.ownContribution.replace(/,/g,'')) || 0;
+            const revenue = parseFloat(f.expectedRevenueMontly.replace(/,/g,'')) || 0;
+            const rmCost = parseFloat(f.rawMaterialCostMonthly.replace(/,/g,'')) || 0;
+            const labourCost = parseFloat(f.labourCostMonthly.replace(/,/g,'')) || 0;
+            const overhead = parseFloat(f.overheadMonthly.replace(/,/g,'')) || 0;
+            const interest = parseFloat(f.interestRate) || 11.5;
+            const tenure = parseFloat(f.loanTenure) || 7;
+            const monthlyEMI = loan * (interest/1200) * Math.pow(1+interest/1200, tenure*12) / (Math.pow(1+interest/1200, tenure*12) - 1);
+            const monthlyProfit = revenue - rmCost - labourCost - overhead - monthlyEMI;
+            const annualRevenue = revenue * 12;
+            const annualProfit = monthlyProfit * 12;
+            const breakEven = totalCost > 0 && monthlyProfit > 0 ? Math.ceil(totalCost / monthlyProfit) : 0;
+            const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+
+            const prompt = `Write a complete, professional project report in English for bank loan application under ${f.loanScheme} scheme. Use formal report language. Format with clear sections and subsections.
+
+Applicant: ${f.applicantName}, Father: ${f.fatherName || 'N/A'}, DOB: ${f.dob || 'N/A'}, Category: ${f.category}
+Qualification: ${f.qualification}, Experience: ${f.experience}
+Address: ${f.address}, ${f.city}, ${f.state} - ${f.pincode}
+Phone: ${f.phone}, Email: ${f.email}
+Aadhaar: ${f.aadhaar || 'N/A'}, PAN: ${f.pan || 'N/A'}
+
+Business Name: ${f.businessName}, Type: ${f.businessType}
+Location: ${f.proposedLocation || f.city + ', ' + f.state}
+Industry: ${f.industryType}, Loan Scheme: ${f.loanScheme}
+Products: ${f.productDescription}
+Target Market: ${f.targetMarket}
+
+Machine: ${f.machineName} from ${f.machineSupplier}
+Machine Cost: ₹${f.machinePrice}, Capacity: ${f.machineCapacity}
+Land: ${f.landArea} sqft, Building Cost: ₹${f.buildingCost}
+Other Equipment: ${f.otherEquipment}
+Raw Material: ${f.rawMaterial}, Power: ${f.powerRequirement} kW
+Total Employees: ${f.manpowerTotal} (Skilled: ${f.manpowerSkilled}), Working Days: ${f.workingDaysPerYear}/year
+
+Total Project Cost: ₹${totalCost.toLocaleString('en-IN')}
+Own Contribution: ₹${own.toLocaleString('en-IN')} (${totalCost > 0 ? Math.round(own/totalCost*100) : 0}%)
+Bank Loan: ₹${loan.toLocaleString('en-IN')} (${totalCost > 0 ? Math.round(loan/totalCost*100) : 0}%)
+Bank: ${f.bankName}, Tenure: ${tenure} years, Interest: ${interest}%
+Monthly EMI: ₹${Math.round(monthlyEMI).toLocaleString('en-IN')}
+
+Monthly Revenue: ₹${revenue.toLocaleString('en-IN')}
+Monthly Raw Material: ₹${rmCost.toLocaleString('en-IN')}
+Monthly Labour: ₹${labourCost.toLocaleString('en-IN')}
+Monthly Overhead: ₹${overhead.toLocaleString('en-IN')}
+Monthly Net Profit: ₹${Math.round(monthlyProfit).toLocaleString('en-IN')}
+Annual Revenue: ₹${annualRevenue.toLocaleString('en-IN')}
+Annual Net Profit: ₹${Math.round(annualProfit).toLocaleString('en-IN')}
+Payback Period: ~${breakEven} months
+
+Write a detailed project report with these sections (use proper formatting with section titles in capitals):
+
+1. COVER PAGE INFO (Date: ${today}, Ref No: SAI-PR-${Date.now().toString().slice(-6)})
+2. EXECUTIVE SUMMARY (3-4 paragraphs)
+3. PROMOTER'S PROFILE (education, experience, family background)
+4. PROJECT DESCRIPTION (products, manufacturing process with roll forming details)
+5. MARKET ANALYSIS & DEMAND (demand for profiles in construction, infrastructure; competition; USP)
+6. TECHNICAL DETAILS (machine specs, production capacity, infrastructure, power, manpower)
+7. COST OF PROJECT (itemized table: Land & Building, Plant & Machinery, Working Capital, Misc)
+8. MEANS OF FINANCE (own contribution, bank loan, ${f.loanScheme} subsidy if applicable: ${subsidyPct}% of project cost)
+9. FINANCIAL PROJECTIONS - 5 YEAR PLAN (table format: revenue, expenses, profit year-wise, assume 70% capacity Y1, 80% Y2, 90% Y3-5)
+10. REPAYMENT SCHEDULE (EMI: ₹${Math.round(monthlyEMI).toLocaleString('en-IN')}/month, ${tenure} years)
+11. BREAK-EVEN ANALYSIS (fixed costs, variable costs, break-even point)
+12. EMPLOYMENT GENERATION (total jobs: ${f.manpowerTotal || 'N/A'})
+13. SOCIAL & ECONOMIC IMPACT
+14. DECLARATION
+
+Be thorough, professional and bank-ready. Include realistic numbers. Keep total report ~1200-1500 words.`;
+
+            const response = await ai.models.generateContent({
+              model: 'gemini-2.0-flash',
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              config: { maxOutputTokens: 4096, temperature: 0.3 }
+            });
+            const report = response.text || '';
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, report }));
+          } catch (err) {
+            console.error('Project report error:', err.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
         server.middlewares.use('/api/ai-machine-spec', async (req, res) => {
           if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
           try {

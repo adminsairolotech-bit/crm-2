@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Cpu, MapPin, FileText, MessageSquare, Phone, Mail, Star,
   Shield, ChevronRight, Wrench, Package2, BarChart3, Zap,
-  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown, Upload, Settings2, ClipboardList
+  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown, Upload, Settings2, ClipboardList, ScrollText
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -132,6 +132,36 @@ export default function HomePage() {
               Products dekhein
             </button>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.14 }}
+          className="mb-4"
+        >
+          <button
+            onClick={() => setLocation("/project-report")}
+            className="relative w-full overflow-hidden bg-gradient-to-r from-emerald-900 via-teal-900 to-cyan-900 hover:from-emerald-800 hover:via-teal-800 hover:to-cyan-800 border border-emerald-500/40 rounded-2xl p-5 text-left transition-all duration-300 group shadow-xl shadow-emerald-900/40"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-emerald-600/10 via-teal-600/10 to-cyan-600/10" />
+            <div className="absolute top-3 right-4 text-xl opacity-40 group-hover:opacity-80 transition-opacity">🏦📋💰</div>
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <ScrollText className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <IndianRupee className="w-3 h-3 text-emerald-300" />
+                  <span className="text-emerald-300 text-xs font-bold uppercase tracking-wider">PMEGP · MSME · Bank Loan</span>
+                  <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs px-1.5 py-0.5 rounded font-medium">New</span>
+                </div>
+                <h3 className="text-white text-base font-bold leading-tight">AI Project Report Generator</h3>
+                <p className="text-emerald-100/70 text-xs mt-0.5">4 steps mein details bharen → Bank-ready professional project report milegi · PMEGP / MSME / Bank Loan ke liye</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all flex-shrink-0" />
+            </div>
+          </button>
         </motion.div>
 
         <motion.div

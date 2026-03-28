@@ -46,6 +46,7 @@ const QuoteAnalyzerPage = lazy(() => import("@/pages/quote-analyzer"));
 const CustomProfilePage = lazy(() => import("@/pages/custom-profile"));
 const MachineGuidePage = lazy(() => import("@/pages/machine-guide"));
 const MaintenanceGuidePage = lazy(() => import("@/pages/maintenance-guide"));
+const ProjectReportPage = lazy(() => import("@/pages/project-report"));
 
 function PageLoader() {
   return (
@@ -197,6 +198,13 @@ function AppRoutes() {
         {() => (
           <AuthGuard>
             <PublicRoute Component={MaintenanceGuidePage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/project-report">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={ProjectReportPage} />
           </AuthGuard>
         )}
       </Route>
