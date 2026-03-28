@@ -73,6 +73,24 @@ export default function QuotationMakerPage() {
       setMachines(allMachines.map(m => ({ id: m.id, name: m.name, price: m.price ? parseFloat(String(m.price).replace(/[^\d.]/g, '')) || null : null, category: m.category })));
       setLeads(allLeads.map(l => ({ id: l.id, clientName: l.name, clientEmail: null, clientPhone: l.phone, company: l.city, machineInterest: l.machine_interest, budget: l.budget ? parseFloat(String(l.budget).replace(/[^\d.]/g, '')) || null : null })));
     });
+
+    const pending = localStorage.getItem("sai_pending_quote_item");
+    if (pending) {
+      try {
+        const parsed = JSON.parse(pending);
+        if (parsed && parsed.description) {
+          setItems([{
+            description: parsed.description || "",
+            hsn: parsed.hsn || "8455",
+            quantity: parsed.quantity || 1,
+            unit: parsed.unit || "NOS",
+            unitPrice: parsed.unitPrice || 0,
+          }]);
+        }
+        localStorage.removeItem("sai_pending_quote_item");
+      } catch {
+      }
+    }
   }, []);
 
   const handleLeadSelect = (leadId: number) => {
