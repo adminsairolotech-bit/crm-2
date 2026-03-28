@@ -4,7 +4,8 @@ import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader, StatsCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/apiFetch";
+import { supplierMachines as supplierService } from "@/lib/dataService";
+import { supabase } from "@/lib/supabase";
 import {
   Building2, Search, Plus, MapPin, Phone, Mail, Pencil, X, Star,
   BarChart3, Grid3X3, List, Filter, ChevronDown, ChevronRight,
@@ -67,19 +68,31 @@ export default function SupplierManagementPage() {
   const [sortBy, setSortBy] = useState<"name" | "city" | "date">("name");
 
   useEffect(() => {
-    apiFetch<{ suppliers: Supplier[] }>("/admin/suppliers", { showErrorToast: false })
-      .then((d) => setSuppliers(d.suppliers))
-      .catch(() => {
-        setSuppliers([
-          { id: 1, name: "Vikram Sharma", company: "Precision Tools Pvt Ltd", email: "vikram@precisiontools.in", phone: "+91 98765 43210", address: "Plot 23, MIDC", city: "Pune", state: "Maharashtra", country: "India", useOwnApiKey: false, isActive: true, userId: null, createdAt: new Date().toISOString() },
-          { id: 2, name: "Anita Patel", company: "HydroForce India", email: "anita@hydroforce.in", phone: "+91 87654 32109", address: "Survey 45", city: "Ahmedabad", state: "Gujarat", country: "India", useOwnApiKey: true, isActive: true, userId: null, createdAt: new Date().toISOString() },
-          { id: 3, name: "Rajesh Kumar", company: "LaserTech Solutions", email: "rajesh@lasertech.in", phone: "+91 76543 21098", address: "Ambattur Industrial Estate", city: "Chennai", state: "Tamil Nadu", country: "India", useOwnApiKey: false, isActive: true, userId: null, createdAt: new Date().toISOString() },
-          { id: 4, name: "Priya Menon", company: "MillPro Industries", email: "priya@millpro.in", phone: "+91 65432 10987", address: "Peenya Industrial Area", city: "Bangalore", state: "Karnataka", country: "India", useOwnApiKey: false, isActive: true, userId: null, createdAt: new Date().toISOString() },
-          { id: 5, name: "Suresh Reddy", company: "GrindMaster Corp", email: "suresh@grindmaster.in", phone: "+91 54321 09876", address: "HITEC City", city: "Hyderabad", state: "Telangana", country: "India", useOwnApiKey: false, isActive: false, userId: null, createdAt: new Date().toISOString() },
-          { id: 6, name: "Meena Iyer", company: "SparkTech EDM", email: "meena@sparktech.in", phone: "+91 43210 98765", address: "SIDCO Industrial Estate", city: "Coimbatore", state: "Tamil Nadu", country: "India", useOwnApiKey: true, isActive: true, userId: null, createdAt: new Date().toISOString() },
-        ]);
-      })
-      .finally(() => setLoading(false));
+    async function loadSuppliers() {
+      try {
+        const data = await supplierService.getAll();
+        const mapped = data.map(s => ({
+          id: s.id,
+          name: s.supplier_name,
+          company: s.machine_name || s.category || null,
+          email: (s.contact_info as any)?.email || null,
+          phone: (s.contact_info as any)?.phone || null,
+          address: (s.contact_info as any)?.address || null,
+          city: (s.contact_info as any)?.city || null,
+          state: (s.contact_info as any)?.state || null,
+          country: "India",
+          useOwnApiKey: false,
+          isActive: true,
+          userId: null,
+          createdAt: s.created_at,
+        }));
+        setSuppliers(mapped);
+      } catch {
+        setSuppliers([]);
+      }
+      setLoading(false);
+    }
+    loadSuppliers();
   }, []);
 
   const states = ["All", ...new Set(suppliers.map((s) => s.state).filter(Boolean))];

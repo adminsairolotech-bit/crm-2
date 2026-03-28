@@ -4,7 +4,7 @@ import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader, StatsCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/apiFetch";
+import { machines as machineService } from "@/lib/dataService";
 import {
   Cpu, Search, IndianRupee, Loader2, Plus, Eye, Pencil, X, Grid3X3,
   List, Filter, ChevronDown, ChevronRight, Star, Package, Settings,
@@ -55,10 +55,29 @@ export default function MachineCatalogPage() {
   const [compareList, setCompareList] = useState<Machine[]>([]);
 
   useEffect(() => {
-    apiFetch<{ machines: Machine[] }>("/admin/machines", { showErrorToast: false })
-      .then((d) => setMachines(d.machines))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    async function loadMachines() {
+      try {
+        const data = await machineService.getAll();
+        const mapped = data.map(m => ({
+          id: m.id,
+          name: m.name,
+          category: m.category,
+          subcategory: m.model || null,
+          description: m.description,
+          price: m.price ? parseFloat(String(m.price).replace(/[^\d.]/g, '')) || null : null,
+          currency: "INR",
+          isActive: true,
+          specifications: m.specs || m.specifications || {},
+          images: Array.isArray(m.images) ? m.images.map((img: any) => typeof img === 'string' ? img : img?.url || '') : null,
+          createdAt: m.created_at,
+        }));
+        setMachines(mapped);
+      } catch {
+        setMachines([]);
+      }
+      setLoading(false);
+    }
+    loadMachines();
   }, []);
 
   const categories = ["All", ...new Set(machines.map((m) => m.category).filter(Boolean))];

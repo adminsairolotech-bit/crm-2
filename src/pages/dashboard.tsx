@@ -4,33 +4,11 @@ import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader, StatsCard, SectionCard } from "@/components/shared";
 import { Cpu, Building2, Users, TrendingUp, Bell, Loader2, Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { apiFetch } from "@/lib/apiFetch";
-
-interface DashboardData {
-  overview: {
-    totalLeads: number;
-    totalMachines: number;
-    totalSuppliers: number;
-    activeDevices: number;
-    totalConversations: number;
-    hotLeads: number;
-  };
-  pipeline: Record<string, number>;
-  revenue: { pipeline: number; conversion: number; avgDealSize: string };
-  recentLeads: {
-    id: number;
-    clientName: string;
-    company: string;
-    machineInterest: string;
-    stage: string;
-    score: number;
-    budget: number;
-    source: string;
-  }[];
-}
+import { getDashboardStats, leads as leadsService } from "@/lib/dataService";
+import type { Lead } from "@/lib/supabase";
 
 const stageColors: Record<string, string> = {
-  new: "bg-blue-500/10 text-blue-500",
+  new_lead: "bg-blue-500/10 text-blue-500",
   contacted: "bg-amber-500/10 text-amber-500",
   interested: "bg-purple-500/10 text-purple-500",
   demo_scheduled: "bg-pink-500/10 text-pink-500",
@@ -38,23 +16,42 @@ const stageColors: Record<string, string> = {
   negotiating: "bg-orange-500/10 text-orange-500",
   won: "bg-green-500/10 text-green-500",
   lost: "bg-red-500/10 text-red-500",
+  New: "bg-blue-500/10 text-blue-500",
 };
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [stats, setStats] = useState({ totalMachines: 0, totalLeads: 0, totalSuppliers: 0, newLeads: 0, wonLeads: 0, pipelineValue: 0, conversionRate: 0 });
+  const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
+  const [pipeline, setPipeline] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [aiOnline, setAiOnline] = useState(false);
+  const [dbConnected, setDbConnected] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const [dashboard, buddyStatus] = await Promise.all([
-          apiFetch<DashboardData>("/admin/dashboard/stats", { showErrorToast: false }).catch(() => null),
-          apiFetch<{ online: boolean }>("/buddy/status", { showErrorToast: false }).catch(() => ({ online: false })),
+        const [dashStats, recent, allLeads] = await Promise.all([
+          getDashboardStats(),
+          leadsService.getRecent(10),
+          leadsService.getAll(),
         ]);
-        if (dashboard) setData(dashboard);
-        setAiOnline(buddyStatus?.online ?? false);
-      } catch {}
+        setStats(dashStats);
+        setRecentLeads(recent);
+        setDbConnected(true);
+
+        const pipelineMap: Record<string, number> = {};
+        allLeads.forEach(l => {
+          const stage = l.pipeline_stage || l.status || 'new_lead';
+          pipelineMap[stage] = (pipelineMap[stage] || 0) + 1;
+        });
+        setPipeline(pipelineMap);
+
+        const aiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+        setAiOnline(!!aiKey);
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+        setDbConnected(false);
+      }
       setLoading(false);
     }
     load();
@@ -68,26 +65,23 @@ export default function DashboardPage() {
     );
   }
 
-  const stats = data?.overview || { totalLeads: 0, totalMachines: 0, totalSuppliers: 0, activeDevices: 0, totalConversations: 0, hotLeads: 0 };
-  const pipeline = data?.pipeline || {};
-
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
       <PageHeader title="Dashboard" subtitle="Welcome to Sai Rolotech Admin" />
 
       <motion.div variants={staggerItem} className="flex items-center gap-2 p-3 rounded-lg glass-card">
-        {aiOnline ? (
-          <><Wifi className="w-4 h-4 text-emerald-400" /><span className="text-sm text-emerald-400">AI System Online</span></>
+        {dbConnected ? (
+          <><Wifi className="w-4 h-4 text-emerald-400" /><span className="text-sm text-emerald-400">Supabase Connected — Live Data</span></>
         ) : (
-          <><WifiOff className="w-4 h-4 text-amber-400" /><span className="text-sm text-amber-400">AI System Offline — API Keys Required</span></>
+          <><WifiOff className="w-4 h-4 text-amber-400" /><span className="text-sm text-amber-400">Database Offline — Check Supabase Connection</span></>
         )}
       </motion.div>
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard label="Total Machines" value={stats.totalMachines} icon={Cpu} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="Active Leads" value={stats.totalLeads} icon={TrendingUp} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" change={stats.hotLeads > 0 ? `${stats.hotLeads} hot` : undefined} trend="up" />
+        <StatsCard label="Active Leads" value={stats.totalLeads} icon={TrendingUp} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" change={stats.newLeads > 0 ? `${stats.newLeads} new` : undefined} trend="up" />
         <StatsCard label="Suppliers" value={stats.totalSuppliers} icon={Building2} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
-        <StatsCard label="Buddy Conversations" value={stats.totalConversations} icon={Users} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
+        <StatsCard label="Conversion" value={`${stats.conversionRate}%`} icon={Users} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -108,23 +102,23 @@ export default function DashboardPage() {
 
         <SectionCard title="Recent Leads">
           <div className="space-y-3">
-            {data?.recentLeads?.map((lead) => (
+            {recentLeads.map((lead) => (
               <motion.div key={lead.id} variants={staggerItem} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${stageColors[lead.stage] || "bg-muted"}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${stageColors[lead.pipeline_stage] || stageColors[lead.status] || "bg-muted"}`}>
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{lead.clientName}</p>
-                  <p className="text-xs text-muted-foreground">{lead.company} — {lead.machineInterest}</p>
+                  <p className="text-sm font-medium text-foreground">{lead.name}</p>
+                  <p className="text-xs text-muted-foreground">{lead.city} — {lead.machine_interest || 'General'}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge className={stageColors[lead.stage]}>{lead.stage.replace(/_/g, " ")}</Badge>
-                    {lead.budget && <Badge variant="outline">₹{(lead.budget / 100000).toFixed(1)}L</Badge>}
-                    <Badge variant="outline">Score: {lead.score}</Badge>
+                    <Badge className={stageColors[lead.pipeline_stage] || stageColors[lead.status] || "bg-muted"}>{(lead.pipeline_stage || lead.status).replace(/_/g, " ")}</Badge>
+                    {lead.budget && <Badge variant="outline">{lead.budget}</Badge>}
+                    <Badge variant="outline">{lead.source}</Badge>
                   </div>
                 </div>
               </motion.div>
             ))}
-            {(!data?.recentLeads || data.recentLeads.length === 0) && (
+            {recentLeads.length === 0 && (
               <p className="text-sm text-muted-foreground">No leads yet</p>
             )}
           </div>
@@ -135,15 +129,15 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 rounded-lg border border-border bg-muted/20 text-center">
             <p className="text-xs text-muted-foreground mb-1">Pipeline Value</p>
-            <p className="text-2xl font-bold text-primary">₹{((data?.revenue?.pipeline || 0) / 100000).toFixed(1)}L</p>
+            <p className="text-2xl font-bold text-primary">₹{(stats.pipelineValue / 100000).toFixed(1)}L</p>
           </div>
           <div className="p-4 rounded-lg border border-border bg-muted/20 text-center">
             <p className="text-xs text-muted-foreground mb-1">Conversion Rate</p>
-            <p className="text-2xl font-bold text-emerald-500">{data?.revenue?.conversion || 0}%</p>
+            <p className="text-2xl font-bold text-emerald-500">{stats.conversionRate}%</p>
           </div>
           <div className="p-4 rounded-lg border border-border bg-muted/20 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Avg Deal Size</p>
-            <p className="text-2xl font-bold text-amber-500">{data?.revenue?.avgDealSize || "₹0"}</p>
+            <p className="text-xs text-muted-foreground mb-1">Won Deals</p>
+            <p className="text-2xl font-bold text-amber-500">{stats.wonLeads}</p>
           </div>
         </div>
       </SectionCard>

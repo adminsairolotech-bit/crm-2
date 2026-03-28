@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader, StatsCard } from "@/components/shared";
-import { KanbanSquare, Users, DollarSign, Target } from "lucide-react";
+import { KanbanSquare, Users, DollarSign, Target, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { leads as leadsService } from "@/lib/dataService";
 
 interface Lead {
   id: number;
@@ -14,39 +15,25 @@ interface Lead {
   daysInStage: number;
 }
 
-type Stage = "new" | "contacted" | "quotation_sent" | "negotiation" | "order_confirmed" | "lost";
+type Stage = "new_lead" | "contacted" | "quotation_sent" | "negotiating" | "won" | "lost";
 
 const stageConfig: Record<Stage, { label: string; color: string; bgColor: string }> = {
-  new: { label: "New Lead", color: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20" },
+  new_lead: { label: "New Lead", color: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20" },
   contacted: { label: "Contacted", color: "text-cyan-400", bgColor: "bg-cyan-500/10 border-cyan-500/20" },
   quotation_sent: { label: "Quotation Sent", color: "text-amber-400", bgColor: "bg-amber-500/10 border-amber-500/20" },
-  negotiation: { label: "Negotiation", color: "text-purple-400", bgColor: "bg-purple-500/10 border-purple-500/20" },
-  order_confirmed: { label: "Order Confirmed", color: "text-emerald-400", bgColor: "bg-emerald-500/10 border-emerald-500/20" },
+  negotiating: { label: "Negotiation", color: "text-purple-400", bgColor: "bg-purple-500/10 border-purple-500/20" },
+  won: { label: "Won", color: "text-emerald-400", bgColor: "bg-emerald-500/10 border-emerald-500/20" },
   lost: { label: "Lost", color: "text-red-400", bgColor: "bg-red-500/10 border-red-500/20" },
 };
 
-const stages: Stage[] = ["new", "contacted", "quotation_sent", "negotiation", "order_confirmed", "lost"];
+const stages: Stage[] = ["new_lead", "contacted", "quotation_sent", "negotiating", "won", "lost"];
 
 const initialLeads: Record<Stage, Lead[]> = {
-  new: [
-    { id: 1, name: "Rajesh Kumar", company: "Tata AutoComp", machine: "CNC Lathe", value: "₹24.5L", daysInStage: 2 },
-    { id: 2, name: "Priya Nair", company: "Godrej Agrovet", machine: "Hydraulic Press", value: "₹18.0L", daysInStage: 1 },
-    { id: 3, name: "Amit Shah", company: "Bajaj Auto", machine: "Laser Cutter", value: "₹32.0L", daysInStage: 3 },
-  ],
-  contacted: [
-    { id: 4, name: "Sunita Reddy", company: "Mahindra CIE", machine: "Milling Machine", value: "₹16.5L", daysInStage: 5 },
-    { id: 5, name: "Deepak Joshi", company: "L&T Technology", machine: "Wire EDM", value: "₹45.0L", daysInStage: 3 },
-  ],
-  quotation_sent: [
-    { id: 6, name: "Kavitha Rao", company: "TVS Motors", machine: "Surface Grinder", value: "₹9.8L", daysInStage: 7 },
-    { id: 7, name: "Mohan Das", company: "Ashok Leyland", machine: "Power Press", value: "₹12.0L", daysInStage: 4 },
-  ],
-  negotiation: [
-    { id: 8, name: "Ravi Shankar", company: "Hero MotoCorp", machine: "CNC Router", value: "₹28.0L", daysInStage: 10 },
-  ],
-  order_confirmed: [
-    { id: 9, name: "Neha Gupta", company: "Maruti Suzuki", machine: "CNC Lathe Pro", value: "₹24.5L", daysInStage: 1 },
-  ],
+  new_lead: [],
+  contacted: [],
+  quotation_sent: [],
+  negotiating: [],
+  won: [],
   lost: [
     { id: 10, name: "Arun Verma", company: "Tata Steel", machine: "Bandsaw", value: "₹4.5L", daysInStage: 15 },
   ],
@@ -54,8 +41,37 @@ const initialLeads: Record<Stage, Lead[]> = {
 
 export default function SalesPipelinePage() {
   const [leads, setLeads] = useState(initialLeads);
+  const [loading, setLoading] = useState(true);
   const [draggedLead, setDraggedLead] = useState<{ lead: Lead; fromStage: Stage } | null>(null);
   const [dropTarget, setDropTarget] = useState<Stage | null>(null);
+
+  useEffect(() => {
+    async function loadLeads() {
+      try {
+        const allLeads = await leadsService.getAll();
+        const grouped: Record<Stage, Lead[]> = { new_lead: [], contacted: [], quotation_sent: [], negotiating: [], won: [], lost: [] };
+        allLeads.forEach(l => {
+          const stage = (l.pipeline_stage || 'new_lead') as Stage;
+          const daysInStage = l.created_at ? Math.max(1, Math.floor((Date.now() - new Date(l.created_at).getTime()) / 86400000)) : 1;
+          const lead: Lead = {
+            id: l.id,
+            name: l.name,
+            company: l.city || '',
+            machine: l.machine_interest || 'General',
+            value: l.budget || '₹0',
+            daysInStage,
+          };
+          if (grouped[stage]) grouped[stage].push(lead);
+          else grouped.new_lead.push(lead);
+        });
+        setLeads(grouped);
+      } catch {
+        setLeads(initialLeads);
+      }
+      setLoading(false);
+    }
+    loadLeads();
+  }, []);
 
   const handleDragStart = useCallback((lead: Lead, fromStage: Stage) => {
     setDraggedLead({ lead, fromStage });

@@ -5,178 +5,274 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type UserRole = 'admin' | 'supplier' | 'machine_user';
-
-export interface AppUser {
-  id: string;
-  username: string;
+export interface User {
+  id: number;
   name: string;
   email: string;
   phone: string;
-  role: UserRole;
-  avatar_url: string | null;
-  is_active: boolean;
+  password_hash?: string;
+  role: 'admin' | 'supplier' | 'machine_user';
+  company: string | null;
+  verified: boolean;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
+  updated_at: string;
 }
 
-export interface Supplier {
-  id: string;
+export interface Lead {
+  id: number;
   name: string;
-  company: string;
-  email: string;
   phone: string;
   city: string;
-  state: string;
+  source: string;
+  machine_interest: string;
+  budget: string | null;
+  urgency: string | null;
   status: string;
-  api_key: string;
-  notes: string;
-  rating: number;
-  total_orders: number;
-  created_by: string | null;
+  quality: string;
+  notes: string | null;
+  external_id: string | null;
+  raw_data: unknown;
+  last_follow_up: string | null;
+  next_follow_up: string | null;
+  pipeline_stage: string;
+  lead_score: number;
+  assigned_to: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  ai_memory_summary: string | null;
+  call_notes: string | null;
+  last_activity_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface Machine {
-  id: string;
+  id: number;
   name: string;
-  type: string;
-  manufacturer: string;
   model: string;
-  price: number;
-  status: string;
-  description: string;
-  specifications: Record<string, unknown>;
-  image_url: string;
-  supplier_id: string | null;
+  category: string;
+  capacity: string | null;
+  power: string | null;
+  speed: string | null;
+  price: string | null;
+  description: string | null;
+  weight: string | null;
+  dimensions: string | null;
+  rollers: string | null;
+  color: string | null;
+  detailed_description: string | null;
+  warranty: string | null;
+  tags: string[];
+  specs: unknown[];
+  features: unknown[];
+  applications: unknown[];
+  accessories: unknown[];
+  images: unknown[];
+  videos: unknown[];
+  pdf_documents: unknown[];
   created_at: string;
+  updated_at: string;
 }
 
-export interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  company: string;
-  source: string;
-  stage: string;
-  value: number;
-  machine_interest: string;
-  assigned_to: string | null;
-  notes: string;
-  priority: string;
-  last_contact: string | null;
+export interface SupplierMachine {
+  id: number;
+  supplier_name: string;
+  machine_name: string;
+  category: string | null;
+  price: string | null;
+  description: string | null;
+  specs: Record<string, unknown>;
+  contact_info: Record<string, unknown>;
+  source: string | null;
   created_at: string;
+  updated_at: string;
 }
 
-export interface SalesTask {
-  id: string;
-  title: string;
-  description: string;
-  priority: string;
-  status: string;
-  due_date: string | null;
-  assigned_to: string | null;
-  lead_id: string | null;
-  created_by: string | null;
-  created_at: string;
-}
-
-export interface Quotation {
-  id: string;
-  quote_number: string;
-  lead_id: string | null;
-  items: unknown[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: string;
-  valid_until: string | null;
-  notes: string;
-  created_by: string | null;
-  created_at: string;
-}
-
-export interface Service {
-  id: string;
-  machine_id: string | null;
+export interface QuotationRequest {
+  id: number;
+  lead_id: number | null;
+  machine_id: number | null;
   customer_name: string;
   customer_phone: string;
-  service_type: string;
+  customer_email: string | null;
+  customer_city: string | null;
+  machine_name: string | null;
+  quantity: number;
+  special_requirements: string | null;
   status: string;
-  scheduled_date: string | null;
-  completed_date: string | null;
-  notes: string;
-  cost: number;
-  assigned_to: string | null;
+  quoted_price: string | null;
+  admin_notes: string | null;
   created_at: string;
+  updated_at: string;
 }
 
-export interface BuddyConversation {
-  id: string;
-  user_id: string | null;
-  title: string;
-  messages: unknown[];
-  created_at: string;
-}
-
-export interface SalesSequence {
-  id: string;
-  name: string;
-  description: string;
-  steps: unknown[];
-  status: string;
-  leads_enrolled: number;
-  conversion_rate: number;
-  created_by: string | null;
-  created_at: string;
-}
-
-export interface DemoSchedule {
-  id: string;
-  lead_id: string | null;
-  machine_id: string | null;
-  scheduled_date: string;
-  duration_minutes: number;
-  status: string;
-  location: string;
-  notes: string;
-  assigned_to: string | null;
-  created_at: string;
-}
-
-export interface Feedback {
-  id: string;
-  customer_name: string;
-  customer_email: string;
-  rating: number;
-  category: string;
+export interface FeedbackReport {
+  id: number;
+  user_id: number | null;
+  type: string;
+  subject: string;
   message: string;
   status: string;
-  response: string;
+  priority: string | null;
+  admin_notes: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface MarketingContent {
-  id: string;
-  title: string;
+  id: number;
   content_type: string;
-  body: string;
+  title: string;
+  content: string;
+  target_audience: string | null;
   status: string;
-  target_audience: string;
-  campaign: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadTask {
+  id: number;
+  lead_id: number;
+  title: string;
+  description: string | null;
+  assigned_to: string | null;
+  due_date: string | null;
+  status: string;
+  priority: string;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadActivity {
+  id: number;
+  lead_id: number;
+  type: string;
+  title: string;
+  description: string | null;
   created_by: string | null;
   created_at: string;
 }
 
-export interface OutreachTemplate {
-  id: string;
-  name: string;
-  subject: string;
-  body: string;
-  template_type: string;
-  variables: unknown[];
-  usage_count: number;
-  created_by: string | null;
+export interface BuddyRule {
+  id: number;
+  rule_key: string;
+  rule_name: string;
+  description: string | null;
+  category: string;
+  is_enabled: boolean;
+  rule_type: string;
+  parameters: Record<string, unknown>;
+  priority: number;
   created_at: string;
+  updated_at: string;
+}
+
+export interface Showroom {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  state: string | null;
+  pincode: string | null;
+  phone: string | null;
+  email: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  is_active: boolean;
+  images: unknown[];
+  working_hours: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BuddyPolicy {
+  id: number;
+  is_enabled: boolean;
+  allow_ai: boolean;
+  allow_messaging: boolean;
+  allow_email: boolean;
+  allow_automation: boolean;
+  max_ai_requests_per_hour: number;
+  max_messages_per_hour: number;
+  max_emails_per_hour: number;
+  max_automations_per_hour: number;
+  max_monthly_cost_cents: number;
+  alert_threshold_percent: number;
+  allowed_ai_providers: unknown[];
+  blocked_ai_providers: unknown[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IntegrationSetting {
+  id: number;
+  platform: string;
+  api_key: string | null;
+  api_secret: string | null;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  last_sync_at: string | null;
+  last_sync_status: string | null;
+  total_imported: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Coupon {
+  id: number;
+  code: string;
+  description: string | null;
+  discount_type: string;
+  discount_value: number;
+  min_order_value: number | null;
+  max_discount: number | null;
+  usage_limit: number | null;
+  used_count: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+  applicable_machines: unknown[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminSettings {
+  id: number;
+  machine_id: number | null;
+  enable_2d_view: boolean;
+  enable_3d_view: boolean;
+  enable_animation: boolean;
+  enable_part_highlight: boolean;
+  enable_drawing_download: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AIUsageLog {
+  id: number;
+  provider: string;
+  model: string | null;
+  operation: string;
+  tokens_used: number;
+  cost_cents: number;
+  duration_ms: number;
+  status: string;
+  error: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface LeadIntelligence {
+  id: number;
+  lead_id: number;
+  intelligence_type: string;
+  data: Record<string, unknown>;
+  confidence: number;
+  source: string | null;
+  created_at: string;
+  updated_at: string;
 }
