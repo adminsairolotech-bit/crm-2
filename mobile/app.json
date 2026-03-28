@@ -30,8 +30,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.sairolotech.crm",
-      "versionCode": 1,
+      "package": "com.amazingweb.design.sairolotech",
+      "versionCode": 37,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
