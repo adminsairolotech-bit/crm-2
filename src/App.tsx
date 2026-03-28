@@ -47,11 +47,12 @@ const CustomProfilePage = lazy(() => import("@/pages/custom-profile"));
 const MachineGuidePage = lazy(() => import("@/pages/machine-guide"));
 const MaintenanceGuidePage = lazy(() => import("@/pages/maintenance-guide"));
 const ProjectReportPage = lazy(() => import("@/pages/project-report"));
+const LandingPage = lazy(() => import("@/pages/landing"));
 
 function PageLoader() {
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
@@ -121,7 +122,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      setLocation("/login");
+      setLocation("/");
     }
   }, [user, isLoading, setLocation]);
 
@@ -138,9 +139,9 @@ function AppRoutes() {
   useEffect(() => {
     if (!isLoading && !user) {
       const path = window.location.pathname;
-      const publicPaths = ["/login", "/register", "/forgot-password", "/role-select"];
+      const publicPaths = ["/", "/login", "/register", "/forgot-password", "/role-select"];
       if (!publicPaths.includes(path)) {
-        setLocation("/login");
+        setLocation("/");
       }
     }
   }, [user, isLoading, setLocation]);
@@ -149,6 +150,7 @@ function AppRoutes() {
 
   return (
     <Switch>
+      <Route path="/">{() => <PublicRoute Component={LandingPage} />}</Route>
       <Route path="/login">{() => <PublicRoute Component={LoginPage} />}</Route>
       <Route path="/register">{() => <PublicRoute Component={RegisterPage} />}</Route>
       <Route path="/forgot-password">{() => <PublicRoute Component={ForgotPasswordPage} />}</Route>
