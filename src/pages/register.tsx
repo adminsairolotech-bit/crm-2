@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, UserPlus, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, UserPlus, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -16,7 +16,14 @@ export default function RegisterPage() {
   const [showPw, setShowPw]               = useState(false);
   const [loading, setLoading]             = useState(false);
 
-  const pwStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
+  const pwChecks = [
+    { label: "8+ characters",     ok: password.length >= 8 },
+    { label: "Capital letter",    ok: /[A-Z]/.test(password) },
+    { label: "Number (0-9)",      ok: /[0-9]/.test(password) },
+    { label: "Symbol (!@#...)",   ok: /[^a-zA-Z0-9]/.test(password) },
+  ];
+  const pwScore  = pwChecks.filter(c => c.ok).length;
+  const pwStrength = password.length === 0 ? 0 : pwScore <= 1 ? 1 : pwScore === 2 ? 2 : pwScore === 3 ? 3 : 4;
   const pwMatch = confirmPw && password === confirmPw;
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -41,8 +48,8 @@ export default function RegisterPage() {
     }
   };
 
-  const strengthColors = ["", "bg-red-400", "bg-yellow-400", "bg-emerald-500"];
-  const strengthLabels = ["", "Weak", "Medium", "Strong"];
+  const strengthColors = ["", "bg-red-500", "bg-amber-500", "bg-blue-500", "bg-emerald-500"];
+  const strengthLabels = ["", "Kamzor", "Theek", "Acha", "Mazboot"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center p-4">
@@ -126,15 +133,28 @@ export default function RegisterPage() {
                   {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {/* Password strength bar */}
+              {/* Password strength bar + checklist */}
               {password && (
-                <div id="pw-strength" className="mt-2 flex items-center gap-2" aria-live="polite">
-                  <div className="flex gap-1 flex-1">
-                    {[1,2,3].map(i => (
-                      <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= pwStrength ? strengthColors[pwStrength] : "bg-slate-200"}`} />
+                <div id="pw-strength" className="mt-2 space-y-2" aria-live="polite">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1 flex-1">
+                      {[1,2,3,4].map(i => (
+                        <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= pwStrength ? strengthColors[pwStrength] : "bg-slate-200"}`} />
+                      ))}
+                    </div>
+                    <span className="text-xs font-medium text-slate-500 shrink-0">{strengthLabels[pwStrength]}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    {pwChecks.map(check => (
+                      <div key={check.label} className="flex items-center gap-1.5">
+                        {check.ok
+                          ? <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                          : <XCircle className="w-3 h-3 text-slate-300 shrink-0" />
+                        }
+                        <span className={`text-[11px] ${check.ok ? "text-emerald-700" : "text-slate-400"}`}>{check.label}</span>
+                      </div>
                     ))}
                   </div>
-                  <span className="text-xs text-slate-500">{strengthLabels[pwStrength]}</span>
                 </div>
               )}
             </div>
