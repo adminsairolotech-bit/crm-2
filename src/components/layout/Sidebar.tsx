@@ -19,8 +19,13 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     <nav className="flex flex-col h-full">
       <div className="px-4 py-5 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-base font-bold text-foreground">Sai Rolotech</h1>
-          <p className="text-xs text-muted-foreground">Admin Panel</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-foreground">Sai Rolotech</h1>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-widest uppercase bg-amber-100 text-amber-700 border border-amber-300 leading-none">
+              BETA
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">CRM v5.6 PRO · Admin Panel</p>
         </div>
         <button
           onClick={onMobileClose}
@@ -30,7 +35,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 pb-16">
         {sections.map((section) => (
           <div key={section.title}>
             <p className="px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -65,6 +70,15 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             </ul>
           </div>
         ))}
+      </div>
+
+      {/* ── Beta version footer ── */}
+      <div className="absolute bottom-0 left-0 right-0 px-4 py-2.5 border-t border-border bg-amber-50/80 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-[10px] font-semibold text-amber-700">BETA v5.6</span>
+        </div>
+        <span className="text-[9px] text-amber-600/70 font-medium">SAI RoloTech CRM PRO</span>
       </div>
     </nav>
   );

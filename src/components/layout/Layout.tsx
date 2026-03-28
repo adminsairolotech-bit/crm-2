@@ -92,6 +92,12 @@ function Header({
         <Menu className="w-5 h-5" />
       </button>
 
+      {/* Beta badge — visible on mobile topbar */}
+      <span className="md:hidden inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-widest uppercase bg-amber-100 text-amber-700 border border-amber-300 leading-none shrink-0">
+        <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+        BETA
+      </span>
+
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="relative w-full max-w-72">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
