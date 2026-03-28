@@ -3,28 +3,34 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import styles from './Layout.module.css'
 
-const navItems = [
-  { path: '/dashboard', icon: '🏠', label: 'Dashboard' },
-  { path: '/customers', icon: '👥', label: 'Customers' },
-  { path: '/leads', icon: '🎯', label: 'Leads' },
-  { path: '/machine-report', icon: '⚙️', label: 'Machine Testing' },
-  { path: '/plc-errors', icon: '🔴', label: 'PLC Error Codes' },
-  { path: '/pnmg-loan', icon: '💳', label: 'PNMG Loan' },
-  { path: '/ai-questions', icon: '🤖', label: 'AI Question Maker' },
-  { path: '/buddy-bot', icon: '💬', label: 'Buddy Chatbot' },
-  { path: '/inquiry', icon: '📋', label: 'Inquiry Form', external: true },
+const allNavItems = [
+  { path: '/dashboard', icon: '🏠', label: 'Dashboard', module: 'dashboard' },
+  { path: '/customers', icon: '👥', label: 'Customers', module: 'customers' },
+  { path: '/leads', icon: '🎯', label: 'Leads', module: 'leads' },
+  { path: '/machine-report', icon: '⚙️', label: 'Machine Testing', module: 'machine-report' },
+  { path: '/plc-errors', icon: '🔴', label: 'PLC Error Codes', module: 'plc-errors' },
+  { path: '/pnmg-loan', icon: '💳', label: 'PNMG Loan', module: 'pnmg-loan' },
+  { path: '/ai-questions', icon: '🤖', label: 'AI Question Maker', module: 'ai-questions' },
+  { path: '/buddy-bot', icon: '💬', label: 'Buddy Chatbot', module: 'buddy-bot' },
+  { path: '/inquiry', icon: '📋', label: 'Inquiry Form', module: 'inquiry', external: true },
 ]
 
+const roleColors = { Admin: '#667eea', Sales: '#f59e0b', Service: '#10b981', Manager: '#8b5cf6', Technician: '#06b6d4', Finance: '#ec4899', User: '#6b7280' }
+
 export default function Layout({ children }) {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
+
+  const navItems = allNavItems.filter(item => hasPermission(item.module))
 
   const handleLogout = async () => {
     await logout()
     navigate('/login')
   }
+
+  const roleColor = roleColors[user?.role] || '#667eea'
 
   return (
     <div className={styles.root}>
@@ -74,11 +80,11 @@ export default function Layout({ children }) {
 
         <div className={styles.sidebarBottom}>
           <div className={styles.userCard}>
-            <div className={styles.userAvatar}>{user?.name?.charAt(0) || 'U'}</div>
+            <div className={styles.userAvatar} style={{ background: roleColor }}>{user?.name?.charAt(0) || 'U'}</div>
             {!collapsed && (
               <div className={styles.userInfo}>
                 <p className={styles.userName}>{user?.name}</p>
-                <p className={styles.userRole}>{user?.role || 'User'}</p>
+                <p className={styles.userRole} style={{ color: roleColor }}>{user?.role || 'User'}</p>
               </div>
             )}
           </div>
@@ -88,7 +94,7 @@ export default function Layout({ children }) {
         </div>
       </aside>
 
-      <main className={styles.content}>
+      <main className={`${styles.content} ${collapsed ? styles.contentExpanded : ''}`}>
         <div className={styles.topbar}>
           <div className={styles.topbarLeft}>
             <span className={styles.pageTitle}>
@@ -97,8 +103,11 @@ export default function Layout({ children }) {
           </div>
           <div className={styles.topbarRight}>
             <div className={styles.firebaseChip}>🔥 Firebase Active</div>
+            <div className={styles.roleBadge} style={{ background: roleColor + '18', color: roleColor, borderColor: roleColor + '33' }}>
+              {user?.role}
+            </div>
             <div className={styles.userBadge}>
-              <span className={styles.tAvatar}>{user?.name?.charAt(0) || 'U'}</span>
+              <span className={styles.tAvatar} style={{ background: roleColor }}>{user?.name?.charAt(0) || 'U'}</span>
               <span className={styles.tName}>{user?.name}</span>
             </div>
           </div>

@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, DEMO_USERS } from '../context/AuthContext'
 import { isFirebaseConfigured } from '../firebase'
 import styles from './Login.module.css'
+
+const roleIcons = { Admin: '👑', Sales: '🎯', Service: '🔧', Manager: '📊', Technician: '⚙️', Finance: '💳', User: '👤' }
+const roleColors = { Admin: '#667eea', Sales: '#f59e0b', Service: '#10b981', Manager: '#8b5cf6', Technician: '#06b6d4', Finance: '#ec4899', User: '#6b7280' }
 
 export default function Login() {
   const { login } = useAuth()
@@ -30,6 +33,11 @@ export default function Login() {
     }
   }
 
+  const quickLogin = (u) => {
+    setEmail(u.email)
+    setPassword(u.password)
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -38,7 +46,7 @@ export default function Login() {
           <span className={styles.betaBadge}>BETA</span>
         </div>
         <h1 className={styles.title}>Welcome Back</h1>
-        <p className={styles.subtitle}>Apne account mein login karein</p>
+        <p className={styles.subtitle}>SAI RoloTech CRM — Login karein</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
@@ -74,7 +82,7 @@ export default function Login() {
             </div>
           </div>
 
-          {error && <div className={styles.error}>⚠️ {error}</div>}
+          {error && <div className={styles.error}>{error}</div>}
 
           <button type="submit" className={styles.loginBtn} disabled={loading}>
             {loading ? 'Login ho raha hai...' : 'Login Karein'}
@@ -91,15 +99,27 @@ export default function Login() {
             <span>Firebase Authentication Active</span>
           </div>
         ) : (
-          <div className={styles.demoInfo}>
-            <p><strong>Demo Login Credentials:</strong></p>
-            <button
-              type="button"
-              className={styles.demoFill}
-              onClick={() => { setEmail('admin.sairolotech@gmail.com'); setPassword('v9667146889V') }}
-            >
-              👤 admin.sairolotech@gmail.com / v9667146889V
-            </button>
+          <div className={styles.demoSection}>
+            <p className={styles.demoTitle}>Quick Login — Select Role:</p>
+            <div className={styles.demoGrid}>
+              {DEMO_USERS.map((u) => (
+                <button
+                  key={u.email}
+                  type="button"
+                  className={styles.demoCard}
+                  onClick={() => quickLogin(u)}
+                  style={{ borderColor: roleColors[u.role] + '44' }}
+                >
+                  <span className={styles.demoIcon} style={{ background: roleColors[u.role] + '20', color: roleColors[u.role] }}>
+                    {roleIcons[u.role]}
+                  </span>
+                  <div className={styles.demoInfo}>
+                    <span className={styles.demoRole} style={{ color: roleColors[u.role] }}>{u.role}</span>
+                    <span className={styles.demoEmail}>{u.email.split('@')[0]}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

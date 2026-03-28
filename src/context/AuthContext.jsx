@@ -9,12 +9,25 @@ import { auth, isFirebaseConfigured } from '../firebase'
 
 const AuthContext = createContext(null)
 
-// Demo fallback users (jab tak Firebase properly configure na ho)
 const DEMO_USERS = [
   { email: 'admin.sairolotech@gmail.com', password: 'v9667146889V', name: 'SAI RoloTech Admin', role: 'Admin' },
   { email: 'admin@sairolotech.com', password: 'admin@123', name: 'Admin User', role: 'Admin' },
-  { email: 'sales@sairolotech.com', password: 'sales@123', name: 'Sales User', role: 'Sales' },
+  { email: 'sales@sairolotech.com', password: 'sales@123', name: 'Sales Manager', role: 'Sales' },
+  { email: 'service@sairolotech.com', password: 'service@123', name: 'Service Engineer', role: 'Service' },
+  { email: 'manager@sairolotech.com', password: 'manager@123', name: 'Branch Manager', role: 'Manager' },
+  { email: 'technician@sairolotech.com', password: 'tech@123', name: 'PLC Technician', role: 'Technician' },
+  { email: 'finance@sairolotech.com', password: 'finance@123', name: 'Finance Officer', role: 'Finance' },
 ]
+
+const ROLE_PERMISSIONS = {
+  Admin: ['dashboard', 'customers', 'leads', 'machine-report', 'plc-errors', 'pnmg-loan', 'ai-questions', 'buddy-bot', 'inquiry', 'settings'],
+  Sales: ['dashboard', 'customers', 'leads', 'pnmg-loan', 'ai-questions', 'buddy-bot', 'inquiry'],
+  Service: ['dashboard', 'machine-report', 'plc-errors', 'ai-questions', 'buddy-bot'],
+  Manager: ['dashboard', 'customers', 'leads', 'machine-report', 'plc-errors', 'pnmg-loan', 'ai-questions', 'buddy-bot', 'inquiry'],
+  Technician: ['dashboard', 'machine-report', 'plc-errors', 'ai-questions', 'buddy-bot'],
+  Finance: ['dashboard', 'customers', 'pnmg-loan', 'buddy-bot'],
+  User: ['dashboard', 'customers', 'leads', 'machine-report', 'plc-errors', 'pnmg-loan', 'ai-questions', 'buddy-bot', 'inquiry'],
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -37,7 +50,6 @@ export function AuthProvider({ children }) {
       })
       return () => unsubscribe()
     } else {
-      // Demo mode — check localStorage
       const saved = localStorage.getItem('crm_demo_user')
       if (saved) setUser(JSON.parse(saved))
       setLoading(false)
@@ -65,7 +77,6 @@ export function AuthProvider({ children }) {
         return { success: false, error: message }
       }
     } else {
-      // Demo fallback
       const found = DEMO_USERS.find(
         (u) => u.email === email && u.password === password
       )
@@ -111,9 +122,15 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const hasPermission = (module) => {
+    if (!user) return false
+    const perms = ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS['User']
+    return perms.includes(module)
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, recoverPassword, isFirebaseConfigured }}
+      value={{ user, loading, login, logout, recoverPassword, isFirebaseConfigured, hasPermission, ROLE_PERMISSIONS }}
     >
       {!loading && children}
     </AuthContext.Provider>
@@ -123,3 +140,5 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext)
 }
+
+export { DEMO_USERS }
