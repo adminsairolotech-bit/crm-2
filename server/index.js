@@ -89,23 +89,87 @@ app.post('/api/ai-quotation', async (req, res) => {
   try {
     const ip = req.ip;
     if (rateLimit(`quote-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
-    const { clientName, clientPhone, clientEmail, clientCompany, products, budget, requirements, catalogData = {} } = req.body;
+    const { clientName, clientPhone, clientEmail, clientCompany, clientAddress, clientGstin, products, budget, requirements, catalogData = {} } = req.body;
 
-    const productList = (catalogData.products || []).map(p =>
-      `- ${p.name} (${p.category}): ₹${p.basePrice?.toLocaleString('en-IN')}/${p.unit}, HSN: ${p.hsn}`
-    ).join('\n') || 'PLC Panels (₹28,000-₹85,000), HMI (₹18,000-₹32,000), VFD (₹8,500-₹22,000), SCADA (₹85,000)';
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2,'0');
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const yyyy = today.getFullYear();
+    const dateStr = `${dd}-${mm}-${yyyy}`;
 
-    const systemPrompt = `You are a professional quotation generator for SAI RoloTech, Pune (GSTIN: 27AABCS1429B1Z1).
-Available Products: ${productList}
-Payment: ${catalogData.terms?.payment || '50% advance, 50% before delivery'} | GST: 18% | Warranty: 12 months
+    const systemPrompt = `You are a professional quotation generator for SAI ROLOTECH, New Delhi.
+Company: SAI ROLOTECH, PLOT NO 575/1 G.F MUNDKA INDUSTRIAL AREA, NEW DELHI 110041
+GSTIN: 07AWDPV5272C1ZG
+Today's date: ${dateStr}
 
-Generate a professional quotation in JSON format with this EXACT structure:
-{"quotationNo":"SAI-YYYY-NNNN","date":"DD/MM/YYYY","validUntil":"DD/MM/YYYY (30 days)","client":{"name":"","phone":"","email":"","company":""},"items":[{"sno":1,"description":"","hsn":"","qty":1,"unit":"","unitPrice":0,"amount":0}],"subtotal":0,"discount":0,"discountAmount":0,"taxableAmount":0,"gstRate":18,"gstAmount":0,"grandTotal":0,"paymentTerms":"","deliveryTerms":"","warranty":"","notes":"","executiveName":"Technical Sales Team"}
-Return ONLY valid JSON.`;
+Generate a professional roll forming machine quotation in JSON format. The machineSpecs array must list all technical specifications of the machine(s) requested. The items array contains pricing rows.
+
+Return ONLY this exact JSON structure (no markdown, no extra text):
+{
+  "quotationNo": "SAI-Q-NNNN",
+  "date": "${dateStr}",
+  "validUntil": "valid date 30 days from today in DD-MM-YYYY format",
+  "subject": "QUOTATION FOR [MACHINE NAME IN CAPS]",
+  "client": {
+    "name": "${clientName}",
+    "phone": "${clientPhone}",
+    "email": "${clientEmail || ''}",
+    "company": "${clientCompany || ''}",
+    "address": "${clientAddress || ''}",
+    "gstin": "${clientGstin || ''}"
+  },
+  "machineSpecs": [
+    {"param": "No. of Forming Station", "value": ""},
+    {"param": "Rolls Material", "value": "Die-Steel D3 Grade, Temper & Hardened 58-60 HRC on Rolls"},
+    {"param": "Shaft Material", "value": "EN-8, DIA 55MM"},
+    {"param": "Bearing", "value": "SKF MAKE"},
+    {"param": "Frame", "value": "All Steel Body, Plate type, Fabricated By Channel & Angle"},
+    {"param": "Plate Thickness", "value": "25mm, Blocks & Plate Machined on VMC (JAPANESE) For More Accuracy"},
+    {"param": "Gear Box", "value": "Four inch Reduction gear box"},
+    {"param": "Power Transmission", "value": "42 MM WORM GEAR"},
+    {"param": "Gears", "value": "Double Side Gear, All Steel Gears For Extra Life, Driving Gears All on Bearings"},
+    {"param": "Motor", "value": "Crompton/BBL/ABB, 5 HP, Operated by VFD L&T Make For Different Speed And Motor Safety"},
+    {"param": "Power Pack", "value": "Hydraulic, 2HP"},
+    {"param": "Cutting Station", "value": "Hydraulic Cutting Station Through Die, Die & Punch D2 material, Tempered & Hardened"},
+    {"param": "De-Coiler", "value": "Capacity 300 Kg Standing type"},
+    {"param": "Electric Panel", "value": "PLC Operated panel"},
+    {"param": "Electrical", "value": "Touch Screen For Size & Quantity Input Screen Size 7 inch (VEICHI), PLC Programmable Device"},
+    {"param": "Channel Length", "value": "Length Measurement Through Encoder For Precise Length"},
+    {"param": "Machine", "value": "Heavy Duty, Maintenance Free"},
+    {"param": "Toolings", "value": "All tooling on CNC & VMC machining to close the tolerance & for High Accuracy"},
+    {"param": "Material Thickness", "value": "0.3 TO 0.65 MM"}
+  ],
+  "items": [
+    {"sno": 1, "description": "ROLL FORMING MACHINE FOR [PROFILE NAME]", "hsn": "8455", "qty": 1, "unit": "Units", "unitPrice": 0, "amount": 0}
+  ],
+  "subtotal": 0,
+  "cgstRate": 9,
+  "sgstRate": 9,
+  "cgstAmount": 0,
+  "sgstAmount": 0,
+  "grandTotal": 0,
+  "amountInWords": "Rupees [amount in words] Only",
+  "deliveryDays": "60 DAYS",
+  "paymentStructure": "20% ADVANCE WITH CONFIRMED ORDER, 20% PROGRESS ON WORK AND 60% BALANCE AT THE TIME OF MACHINE DELIVERY",
+  "notes": ""
+}
+
+IMPORTANT RULES:
+- Fill machineSpecs values accurately based on the machine requested
+- Set realistic prices for Indian roll forming machines (typically ₹1,50,000 to ₹8,00,000)
+- Calculate cgstAmount = subtotal * 0.09, sgstAmount = subtotal * 0.09, grandTotal = subtotal + cgstAmount + sgstAmount
+- amountInWords must be the full grand total in Indian numbering words
+- quotationNo format: SAI-Q-${Math.floor(Math.random()*900)+100}
+- Return ONLY valid JSON, nothing else`;
+
+    const userMsg = `Machine/Product Required: ${products}
+Budget: ${budget || 'Not specified'}
+Special Requirements: ${requirements || 'None'}
+Client: ${clientName}, ${clientPhone}${clientCompany ? ', ' + clientCompany : ''}`;
 
     const text = await gemini(
-      [{ role: 'user', parts: [{ text: `Client: ${clientName}, ${clientPhone}, ${clientEmail || 'N/A'}, ${clientCompany || 'Individual'}\nNeeds: ${products}\nBudget: ${budget || 'Not specified'}\nRequirements: ${requirements || 'None'}` }] }],
-      systemPrompt, { maxTokens: 2048, temp: 0.3 }
+      [{ role: 'user', parts: [{ text: userMsg }] }],
+      systemPrompt, { maxTokens: 3000, temp: 0.2 }
     );
     const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const quotation = JSON.parse(clean);
