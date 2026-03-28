@@ -234,4 +234,9 @@ ${new Date().toLocaleDateString('en-IN')}
   return sendRaw(ADMIN_PHONE, msg);
 }
 
+/** Send a fully custom message text to any number */
+export async function sendCustom(phone, text) {
+  return sendRaw(phone, text);
+}
+
 export { isConfigured };

@@ -4,9 +4,9 @@ import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader } from "@/components/shared";
 import {
   FlaskConical, Play, CheckCircle2, XCircle, Clock, RefreshCw,
-  MessageSquare, Bot, Zap, Mail, Bell, Wifi, WifiOff,
-  ToggleLeft, ToggleRight, AlertTriangle, Info, Database,
-  Phone, Globe, ChevronDown, ChevronUp, Sparkles, ShieldCheck,
+  MessageSquare, Bot, Zap, Mail, Bell, Wifi,
+  AlertTriangle, Info, Database,
+  Globe, ChevronDown, ChevronUp, Sparkles, ShieldCheck, Lock, Unlock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
@@ -195,6 +195,9 @@ function buildTests(mode: CRMMode): TestDef[] {
   ];
 }
 
+/* ── Required tests that must pass to unlock Real mode ── */
+const REQUIRED_IDS = ["whatsapp_status", "lead_analytics", "network_online"];
+
 /* ── Main Component ──────────────────────────────────────── */
 export default function TestingPage() {
   const [mode, setMode] = useState<CRMMode>(() => (localStorage.getItem(MODE_KEY) as CRMMode) || "demo");
@@ -202,11 +205,29 @@ export default function TestingPage() {
   const [running, setRunning]   = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [runAll, setRunAll]     = useState(false);
+  const [gateWarn, setGateWarn] = useState(false);
 
   const tests = buildTests(mode);
 
-  /* Persist mode */
+  /* Gate: required tests passed / warned */
+  const requiredDone = REQUIRED_IDS.filter(id => {
+    const s = results[id]?.status;
+    return s === "pass" || s === "warn";
+  }).length;
+  const gateOpen = requiredDone >= REQUIRED_IDS.length;
+
+  /* Persist mode — gate blocks Real unless tests pass */
   function switchMode(m: CRMMode) {
+    if (m === "real" && !gateOpen) {
+      setGateWarn(true);
+      toast({
+        title: "⛔ Real Mode locked",
+        description: `Pehle ${REQUIRED_IDS.length - requiredDone} required test(s) pass karo — phir Real Mode enable hoga`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setGateWarn(false);
     setMode(m);
     localStorage.setItem(MODE_KEY, m);
     toast({
@@ -296,12 +317,33 @@ export default function TestingPage() {
 
                 <button
                   onClick={() => switchMode("real")}
-                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${mode === "real" ? "bg-red-500 text-white shadow-md" : "text-muted-foreground hover:bg-muted"}`}>
+                  className={`flex flex-col items-center gap-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all relative ${mode === "real" ? "bg-red-500 text-white shadow-md" : "text-muted-foreground hover:bg-muted"}`}>
                   <span className="text-xl">🔴</span>
                   <span>REAL</span>
+                  {!gateOpen && <Lock className="absolute -top-1 -right-1 w-3.5 h-3.5 text-amber-600 bg-white rounded-full p-0.5" />}
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* ── Gate progress bar ── */}
+          <div className={`mt-4 rounded-xl border p-3 transition-all ${gateOpen ? "bg-emerald-50 border-emerald-200" : gateWarn ? "bg-red-50 border-red-300" : "bg-amber-50 border-amber-200"}`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className={`text-xs font-bold flex items-center gap-1.5 ${gateOpen ? "text-emerald-700" : gateWarn ? "text-red-700" : "text-amber-700"}`}>
+                {gateOpen ? <><Unlock className="w-3.5 h-3.5" /> Real Mode Unlocked</> : <><Lock className="w-3.5 h-3.5" /> Real Mode Locked</>}
+              </p>
+              <span className={`text-xs font-semibold ${gateOpen ? "text-emerald-600" : "text-amber-700"}`}>{requiredDone}/{REQUIRED_IDS.length} required tests pass</span>
+            </div>
+            <div className="h-2 bg-white/60 rounded-full overflow-hidden">
+              <motion.div className={`h-full rounded-full transition-all ${gateOpen ? "bg-emerald-500" : "bg-amber-400"}`}
+                animate={{ width: `${(requiredDone / REQUIRED_IDS.length) * 100}%` }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }} />
+            </div>
+            {!gateOpen && (
+              <p className="text-[10px] mt-1.5 text-amber-700">
+                Run these tests: <strong>WhatsApp Status</strong>, <strong>Lead Analytics DB</strong>, <strong>Network Connectivity</strong>
+              </p>
+            )}
           </div>
 
           {/* Mode detail cards */}

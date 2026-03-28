@@ -939,6 +939,71 @@ Source: ${source || 'indiamart'}`;
           }
         });
 
+        /* ── Beta Testing Endpoints ──────────────── */
+        {
+          const devBetaLog = [];
+
+          server.middlewares.use('/api/beta/create-lead', async (req, res) => {
+            if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+            try {
+              let body = ''; for await (const c of req) body += c;
+              const { name, phone, source = 'beta_test', state = 'Delhi', notes = '' } = JSON.parse(body);
+              if (!name || !phone) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: false, error: 'name and phone required' })); return; }
+              const { createLead } = await import('./server/models/leadModel.js').catch(() => ({}));
+              if (!createLead) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true, mock: true, lead: { name, phone: phone.replace(/\D/g,''), source, state } })); return; }
+              const result = createLead({ name, phone, source, extra: { state, notes, isBetaTest: true } });
+              res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true, ...result }));
+            } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: false, error: e.message })); }
+          });
+
+          server.middlewares.use('/api/beta/send-wa', async (req, res) => {
+            if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+            try {
+              let body = ''; for await (const c of req) body += c;
+              const { phone, messageType, dayIndex = 0, customText } = JSON.parse(body);
+              const { getLead } = await import('./server/models/leadModel.js').catch(() => ({}));
+              const lead = getLead ? getLead(phone.replace(/\D/g, '')) : null;
+              const mockLead = lead || { name: 'Beta Tester', phone: phone.replace(/\D/g, ''), score: 'WARM', locationPriority: 'HIGH', source: 'beta_test' };
+              const entry = { id: `msg_${Date.now()}`, phone: mockLead.phone, leadName: mockLead.name, messageType, label: { welcome: 'Welcome', followup: `Follow-up D${dayIndex}`, admin_alert: 'Admin Alert', quotation: 'Quotation', custom: 'Custom' }[messageType] || messageType, dayIndex, mock: !(process.env.WHATSAPP_ACCESS_TOKEN), blocked: false, waMessageId: null, status: process.env.WHATSAPP_ACCESS_TOKEN ? 'real_sent' : 'mock_sent', timestamp: new Date().toISOString() };
+              if (process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_ID) {
+                const wa = await import('./server/services/whatsappService.js').catch(() => ({}));
+                try {
+                  let waResult;
+                  if (messageType === 'welcome') waResult = await wa.sendWelcomeMessage?.(mockLead);
+                  else if (messageType === 'followup') waResult = await wa.sendFollowup?.(mockLead, dayIndex);
+                  else if (messageType === 'admin_alert') waResult = await wa.sendAdminAlert?.(mockLead, 'Beta Test');
+                  else if (messageType === 'quotation') waResult = await wa.sendQuotationFollowup?.(mockLead);
+                  else if (messageType === 'custom' && customText) waResult = await wa.sendCustom?.(phone, customText);
+                  entry.waMessageId = waResult?.messages?.[0]?.id || null;
+                  entry.mock = !!waResult?.mock; entry.blocked = !!waResult?.blocked;
+                  entry.status = waResult?.blocked ? 'blocked' : waResult?.mock ? 'mock_sent' : 'real_sent';
+                } catch (err) { entry.status = 'error'; entry.error = err.message; }
+              }
+              devBetaLog.unshift(entry); if (devBetaLog.length > 200) devBetaLog.pop();
+              res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true, entry }));
+            } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: false, error: e.message })); }
+          });
+
+          server.middlewares.use('/api/beta/get-lead', async (req, res) => {
+            const url = new URL(req.url, 'http://x'); const phone = (url.searchParams.get('phone') || '').replace(/\D/g, '');
+            const { getLead } = await import('./server/models/leadModel.js').catch(() => ({}));
+            const lead = getLead ? getLead(phone) : null;
+            if (!lead) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: false, error: 'Lead not found' })); return; }
+            res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true, lead }));
+          });
+
+          server.middlewares.use('/api/beta/message-log', (req, res) => {
+            const url = new URL(req.url, 'http://x'); const phone = (url.searchParams.get('phone') || '').replace(/\D/g, '');
+            const log = phone ? devBetaLog.filter(m => m.phone === phone) : devBetaLog;
+            res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true, log, total: log.length }));
+          });
+
+          server.middlewares.use('/api/beta/clear-log', (req, res) => {
+            devBetaLog.length = 0;
+            res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true }));
+          });
+        }
+
         /* ── AI: Smart Timing Advisor ────────────── */
         server.middlewares.use('/api/smart-timing', async (req, res) => {
           if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }

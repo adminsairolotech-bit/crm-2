@@ -8,7 +8,7 @@ import { GoogleGenAI } from '@google/genai';
 /* ── CRM Backend Services ── */
 import { registerHandler, getQueueStats } from './services/queueService.js';
 import { getLead, getAllLeads, getStats, getSourceAnalytics, getLocationAnalytics, getPriorityLeads } from './models/leadModel.js';
-import { sendWelcomeMessage, sendFollowup, sendAdminAlert, sendQuotationFollowup } from './services/whatsappService.js';
+import { sendWelcomeMessage, sendFollowup, sendAdminAlert, sendQuotationFollowup, sendCustom } from './services/whatsappService.js';
 import { sendPushNotification } from './services/fcmService.js';
 import { generateReply } from './services/aiManager.js';
 import { resumeFollowups } from './services/followupService.js';
@@ -626,6 +626,79 @@ registerHandler('SEND_PUSH', async ({ phone, fcmToken, title, body }) => {
     const lead = getLead(phone);
     if (lead) await sendFollowup(lead, 0);
   }
+});
+
+/* ── Beta Testing Endpoints ─────────────── */
+const betaLog = [];   // in-memory session log, max 200
+
+app.post('/api/beta/create-lead', async (req, res) => {
+  try {
+    const { createLead } = await import('./models/leadModel.js');
+    const { name, phone, source = 'beta_test', state = 'Delhi', notes = '' } = req.body;
+    if (!name || !phone) return res.status(400).json({ success: false, error: 'name and phone required' });
+    const result = createLead({ name, phone, source, extra: { state, notes, isBetaTest: true } });
+    res.json({ success: true, ...result });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/beta/send-wa', async (req, res) => {
+  try {
+    const { phone, messageType, dayIndex = 0, customText } = req.body;
+    if (!phone) return res.status(400).json({ success: false, error: 'phone required' });
+    const lead = getLead(phone.replace(/\D/g, ''));
+    if (!lead) return res.status(404).json({ success: false, error: 'Lead not found — pehle Create Lead karo' });
+
+    let waResult;
+    const typeLabels = { welcome: 'Welcome', followup: `Follow-up D${dayIndex}`, admin_alert: 'Admin Alert', quotation: 'Quotation Follow-up', custom: 'Custom' };
+
+    switch (messageType) {
+      case 'welcome':   waResult = await sendWelcomeMessage(lead); break;
+      case 'followup':  waResult = await sendFollowup(lead, dayIndex); break;
+      case 'admin_alert': waResult = await sendAdminAlert(lead, 'Beta Test'); break;
+      case 'quotation': waResult = await sendQuotationFollowup(lead); break;
+      case 'custom':
+        if (!customText) return res.status(400).json({ success: false, error: 'customText required' });
+        waResult = await sendCustom(phone, customText); break;
+      default: return res.status(400).json({ success: false, error: 'Invalid messageType' });
+    }
+
+    const entry = {
+      id: `msg_${Date.now()}`,
+      phone: lead.phone,
+      leadName: lead.name,
+      messageType,
+      label: typeLabels[messageType] || messageType,
+      dayIndex,
+      mock: !!waResult?.mock,
+      blocked: !!waResult?.blocked,
+      blockedReason: waResult?.reason || null,
+      waMessageId: waResult?.messages?.[0]?.id || null,
+      status: waResult?.blocked ? 'blocked' : waResult?.mock ? 'mock_sent' : 'real_sent',
+      timestamp: new Date().toISOString(),
+    };
+    betaLog.unshift(entry);
+    if (betaLog.length > 200) betaLog.pop();
+    res.json({ success: true, entry, waResult });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/beta/get-lead', (req, res) => {
+  const phone = (req.query.phone || '').replace(/\D/g, '');
+  if (!phone) return res.status(400).json({ success: false, error: 'phone required' });
+  const lead = getLead(phone);
+  if (!lead) return res.status(404).json({ success: false, error: 'Lead not found' });
+  res.json({ success: true, lead });
+});
+
+app.get('/api/beta/message-log', (req, res) => {
+  const phone = (req.query.phone || '').replace(/\D/g, '');
+  const log = phone ? betaLog.filter(m => m.phone === phone) : betaLog;
+  res.json({ success: true, log, total: log.length });
+});
+
+app.delete('/api/beta/clear-log', (req, res) => {
+  betaLog.length = 0;
+  res.json({ success: true, message: 'Log cleared' });
 });
 
 /* ── Health check ───────────────────────── */

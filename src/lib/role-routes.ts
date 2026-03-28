@@ -28,6 +28,7 @@ import {
   Flame,
   Activity,
   FlaskConical,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -96,6 +97,7 @@ export const navSections: NavSection[] = [
     title: "System",
     items: [
       { href: "/testing", label: "Testing Lab", icon: FlaskConical, roles: ["admin"] },
+      { href: "/wa-beta", label: "WhatsApp Beta", icon: Smartphone, roles: ["admin"] },
       { href: "/power-dashboard", label: "Power Dashboard", icon: Flame, roles: ["admin"] },
       { href: "/admin-health", label: "App Health", icon: Activity, roles: ["admin"] },
       { href: "/users", label: "User Management", icon: Users, roles: ["admin"] },
