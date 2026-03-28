@@ -18,11 +18,8 @@
       "android": {
         "buildType": "app-bundle"
       },
-      "ios": {
-        "enterpriseProvisioning": "universal"
-      },
-      "env": {
-        "EXPO_NO_CAPABILITY_SYNC": "1"
+      "cache": {
+        "disabled": true
       }
     }
   },
@@ -31,11 +28,6 @@
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
         "track": "internal"
-      },
-      "ios": {
-        "appleId": "your-apple-id@email.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-team-id"
       }
     }
   }
