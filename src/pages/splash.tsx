@@ -91,7 +91,8 @@ export default function SplashPage() {
     const t2 = setTimeout(() => setPhase("labels"), 1800);
     const t3 = setTimeout(() => setPhase("brand"), 2600);
     const t4 = setTimeout(() => setPhase("out"), 4000);
-    const t5 = setTimeout(() => setLocation("/login"), 4500);
+    const alreadyOnboarded = localStorage.getItem("sai_crm_onboarded") === "true";
+    const t5 = setTimeout(() => setLocation(alreadyOnboarded ? "/login" : "/onboarding"), 4500);
     return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
   }, [setLocation]);
 
