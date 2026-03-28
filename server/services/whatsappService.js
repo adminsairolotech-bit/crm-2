@@ -142,19 +142,42 @@ export async function sendFollowup(lead, dayIndex) {
   return sendRaw(phone, msg);
 }
 
-/** Send hot lead alert to admin */
+/** Send hot lead alert to admin — enhanced with location+score combo detection */
 export async function sendAdminAlert(lead, event) {
   const ADMIN_PHONE = process.env.ADMIN_PHONE;
   if (!ADMIN_PHONE) return;
 
-  const msg =
-`🔥 HOT LEAD ALERT!
+  const loc   = (lead.locationPriority || 'UNKNOWN').toUpperCase();
+  const score = (lead.score || '').toUpperCase();
 
-Name: ${lead.name}
-Phone: ${lead.phone}
-Event: ${event}
-Score: ${lead.score}
-Time: ${new Date().toLocaleString('en-IN')}`;
+  // 🚨 GOLDEN COMBO: NEAR + HOT = maximum priority alert
+  const isGolden = loc === 'HIGH' && (score === 'HOT' || score === 'VERY_HOT' || score === 'VERY HOT');
+
+  const header = isGolden
+    ? '🚨 URGENT — GOLDEN LEAD!\n(NEAR + HOT = MAX PROFIT 💰)\n'
+    : '🔥 HOT LEAD ALERT!\n';
+
+  const locationLabel =
+    loc === 'HIGH'   ? '📍 NEAR (Delhi/NCR) — Fast close possible!' :
+    loc === 'MEDIUM' ? '📍 MEDIUM (North India)' :
+    loc === 'LOW'    ? '📍 FAR (South/Other)' : '📍 Location unknown';
+
+  const action = isGolden
+    ? '\n👉 Call IMMEDIATELY — same-day visit arrange karo!'
+    : loc === 'HIGH'
+      ? '\n👉 Call today — nearby lead, fast close possible.'
+      : '\n👉 Follow up within 2-3 days.';
+
+  const msg =
+`${header}
+Name:     ${lead.name}
+Phone:    ${lead.phone}
+${locationLabel}
+Score:    ${lead.score || 'N/A'}
+Source:   ${lead.source || 'N/A'}
+Event:    ${event}
+Time:     ${new Date().toLocaleString('en-IN')}
+${action}`;
 
   return sendRaw(ADMIN_PHONE, msg);
 }

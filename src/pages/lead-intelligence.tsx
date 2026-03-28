@@ -366,11 +366,11 @@ export default function LeadIntelligencePage() {
             </h3>
             <div className="space-y-3">
               {[
-                { zone: "🔥 HIGH — Delhi/NCR", action: "Immediate call → Factory visit offer → Meeting book karo", goal: "Meeting fix", freq: "Har 3 din" },
-                { zone: "📋 MEDIUM — North India", action: "Video call → Detailed quote + delivery plan", goal: "Quote + Demo", freq: "Har 7 din" },
-                { zone: "💬 LOW — South/Far", action: "App link + self-service follow-up only", goal: "Time save karo", freq: "Har 15 din" },
-              ].map(({ zone, action, goal, freq }) => (
-                <div key={zone} className="border border-border/50 rounded-xl p-4 bg-background/60">
+                { zone: "🔥 HIGH — Delhi/NCR", action: "Immediate call → Factory visit offer → Meeting book karo", goal: "Meeting fix", freq: "Daily (8 msgs)", color: "border-red-200 bg-red-50/50" },
+                { zone: "📋 MEDIUM — North India", action: "Video call → Detailed quote + delivery plan", goal: "Quote + Demo", freq: "2-3 din (6 msgs)", color: "border-blue-200 bg-blue-50/50" },
+                { zone: "💬 LOW — South/Far", action: "App link + self-service follow-up only", goal: "Time save karo", freq: "Weekly (4 msgs)", color: "border-gray-200 bg-gray-50/50" },
+              ].map(({ zone, action, goal, freq, color }) => (
+                <div key={zone} className={`border rounded-xl p-4 ${color}`}>
                   <p className="text-sm font-semibold text-foreground mb-2">{zone}</p>
                   <div className="flex items-start gap-2 mb-2">
                     <ArrowRight className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
@@ -382,6 +382,36 @@ export default function LeadIntelligencePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </motion.div>
+
+          {/* Smart Automation Rules */}
+          <motion.div variants={staggerItem} className="glass-card rounded-2xl p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary" /> Auto System Rules — Backend Active
+            </h3>
+            <div className="space-y-2.5">
+              <div className="flex gap-3 p-3 rounded-xl bg-red-50 border border-red-200">
+                <span className="text-base shrink-0">🚨</span>
+                <div>
+                  <p className="text-xs font-bold text-red-700">GOLDEN ALERT — HIGH + HOT</p>
+                  <p className="text-xs text-red-600 mt-0.5">Jab Delhi/NCR lead HOT/VERY_HOT ho → Admin ko turant WhatsApp alert + call instruction bhejta hai</p>
+                </div>
+              </div>
+              <div className="flex gap-3 p-3 rounded-xl bg-orange-50 border border-orange-200">
+                <span className="text-base shrink-0">⏭️</span>
+                <div>
+                  <p className="text-xs font-bold text-orange-700">TIME WASTE FILTER — LOW + COLD</p>
+                  <p className="text-xs text-orange-600 mt-0.5">South India ka COLD lead → automatically skip. Koi WhatsApp nahi bhejta, time aur paise bachte hain</p>
+                </div>
+              </div>
+              <div className="flex gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                <span className="text-base shrink-0">✅</span>
+                <div>
+                  <p className="text-xs font-bold text-emerald-700">AUTO-STOP — Reply ya Meeting ke baad</p>
+                  <p className="text-xs text-emerald-600 mt-0.5">Lead ne reply kiya ya meeting book ki → baaki saare follow-ups automatically stop</p>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -398,7 +428,7 @@ export default function LeadIntelligencePage() {
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { l: "Location", v: "Delhi / NCR", c: "text-emerald-600" },
-                { l: "Action", v: "Quotation Used", c: "text-blue-600" },
+                { l: "Activity", v: "Quotation Used", c: "text-blue-600" },
                 { l: "Source", v: "IndiaMART / App", c: "text-violet-600" },
               ].map(({ l, v, c }) => (
                 <div key={l} className="bg-white rounded-xl p-2.5 border border-amber-200">
@@ -407,7 +437,7 @@ export default function LeadIntelligencePage() {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-amber-700 mt-3 text-center font-medium">✨ Nearby + HOT + Fast response = Highest conversion</p>
+            <p className="text-xs text-amber-700 mt-3 text-center font-medium">✨ NEAR + HOT + Fast Response = MAX PROFIT 💰</p>
           </motion.div>
 
         </motion.div>

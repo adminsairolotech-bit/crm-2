@@ -431,9 +431,17 @@ registerHandler('SEND_WELCOME', async ({ phone }) => {
 
 registerHandler('SEND_FOLLOWUP', async ({ phone, followupIndex }) => {
   const lead = getLead(phone);
-  if (lead && !lead.dnd && lead.followupIndex < 999) {
-    await sendFollowup(lead, followupIndex);
+  if (!lead || lead.dnd || lead.followupIndex >= 999) return;
+
+  // ⏭️ Time Waste Filter: LOW location + COLD score = auto-skip (no follow-up wasted)
+  const loc = lead.locationPriority || 'UNKNOWN';
+  const score = (lead.score || '').toUpperCase();
+  if (loc === 'LOW' && score === 'COLD') {
+    console.log(`⏭️ Skipped follow-up for LOW+COLD lead ${phone} — time waste filter`);
+    return;
   }
+
+  await sendFollowup(lead, followupIndex);
 });
 
 registerHandler('SEND_AI_REPLY', async ({ phone, message, leadName }) => {
