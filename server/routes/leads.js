@@ -9,7 +9,7 @@
  * POST /api/report        — Trigger manual daily report
  */
 import express from 'express';
-import { createLead, getLead, updateLead, getAllLeads, getStats, recalculateScore } from '../models/leadModel.js';
+import { createLead, getLead, updateLead, getAllLeads, getStats, recalculateScore, getSourceAnalytics, getLocationAnalytics, getPriorityLeads } from '../models/leadModel.js';
 import { enqueue } from '../services/queueService.js';
 import { scheduleFollowups, stopFollowups } from '../services/followupService.js';
 import { handleIncoming, sendAdminAlert } from '../services/whatsappService.js';
@@ -39,7 +39,7 @@ function sanitize(str) {
  */
 router.post('/new-lead', async (req, res) => {
   try {
-    const { name, phone, source, email, notes } = req.body;
+    const { name, phone, source, email, notes, city, state } = req.body;
 
     if (!phone) return res.status(400).json({ error: 'Phone required' });
 
@@ -48,7 +48,7 @@ router.post('/new-lead', async (req, res) => {
       phone: sanitize(phone),
       source: sanitize(source) || 'pabbly',
       email: sanitize(email),
-      extra: { notes: sanitize(notes) },
+      extra: { notes: sanitize(notes), city: sanitize(city || ''), state: sanitize(state || '') },
     });
 
     if (existing) {
@@ -222,6 +222,20 @@ router.get('/api/leads', adminAuth, (req, res) => {
  */
 router.get('/api/lead-stats', adminAuth, (req, res) => {
   res.json({ success: true, stats: getStats() });
+});
+
+/**
+ * GET /api/lead-analytics — Source + Location analytics (Admin)
+ */
+router.get('/api/lead-analytics', adminAuth, (req, res) => {
+  res.json({
+    success: true,
+    sources: getSourceAnalytics(),
+    locations: getLocationAnalytics(),
+    priorityLeads: getPriorityLeads(10),
+    stats: getStats(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 /**

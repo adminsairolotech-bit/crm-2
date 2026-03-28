@@ -857,6 +857,27 @@ Return ONLY the JSON array, no other text.`;
       ignored: ['**/.local/**', '**/node_modules/**'],
     },
   },
+  build: {
+    target: 'es2015',
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-charts': ['recharts'],
+          'vendor-router': ['wouter'],
+          'vendor-ui': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+          ],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
   define: {
     'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(
       process.env.VITE_FIREBASE_API_KEY ||

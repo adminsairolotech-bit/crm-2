@@ -103,20 +103,40 @@ export async function sendFollowup(lead, dayIndex) {
   const existing = getLead(phone);
   if (existing?.dnd) return;
 
-  const MESSAGES = [
-    // Day 3
-    `Hi ${name}! App download kiya? Hum aapki koi bhi machine query instantly solve kar sakte hain. 😊 ${APP_LINK}?user=${phone}`,
-    // Day 7
-    `${name} ji, kya aapko kisi machine ki zaroorat hai ya koi problem solve karni hai? Bata dein, free consultation dete hain! 📞`,
-    // Day 15
-    `Namaste ${name}! SAI RoloTech mein is mahine special offer chal raha hai. Apni requirement share karein, customize quote bhejte hain. 🏭`,
-    // Month 2
-    `${name} ji, hum chahte hain ki aapka production smooth chale. Koi machine problem? Ya naye machine ki zaroorat? Free demo book karo!`,
-    // Month 3
-    `Hi ${name}! Kai customers ne hamare saath switch karke production cost 30% kam ki. Aap bhi discuss karna chahenge? 15-min call?`,
-    // Month 4
-    `${name} ji, last message — agar future mein kabhi bhi machine ki zaroorat ho, SAI RoloTech yaad rakhein. Shukriya! 🙏`,
+  const loc = existing?.locationPriority || 'UNKNOWN';
+
+  // Location-aware message templates
+  const NEAR_MESSAGES = [
+    `Hi ${name}! App download kiya? Aap Delhi/NCR mein hain — hum same-day visit arrange kar sakte hain! 🔥 ${APP_LINK}?user=${phone}`,
+    `${name} ji, aap nearby hain isliye personally discuss karna chahenge? Free factory visit arrange karte hain — bas ek call karein! 📞`,
+    `Namaste ${name}! Nearby customers ke liye fast delivery + free installation support dete hain. Apni requirement share karein! 🏭`,
+    `${name} ji, 2-3 din mein machine demo arrange kar sakte hain aapke paas. Kab convenient rahega? Meeting fix karte hain! 📅`,
+    `Hi ${name}! Nearby hone ki wajah se 48-hour delivery aur lifetime support milta hai. Kya is week discuss kar sakte hain?`,
+    `${name} ji, last message — kabhi bhi machine ki zaroorat ho, SAI RoloTech ek call door hai. Hum Delhi/NCR mein hain! 🙏`,
   ];
+
+  const MEDIUM_MESSAGES = [
+    `Hi ${name}! App download kiya? Hum aapki machine query instantly solve kar sakte hain — free consultation bhi! ${APP_LINK}?user=${phone}`,
+    `${name} ji, aapki requirement ke hisaab se best machine suggest kar sakte hain. Detail share karein, quote bhejte hain! 📋`,
+    `Namaste ${name}! Is mahine special offer hai. Customize quote + delivery plan ke saath bhejte hain — bata dein requirements! 🏭`,
+    `${name} ji, video call pe machine demo arrange kar sakte hain. Aap interested hain to time fix karte hain!`,
+    `Hi ${name}! Customers ne hamare saath switch karke cost 25% kam ki. Aap bhi discuss karna chahenge? 15-min video call?`,
+    `${name} ji, last message — future mein machine zaroorat ho to zaroor batayein. SAI RoloTech hamesha available! 🙏`,
+  ];
+
+  const FAR_MESSAGES = [
+    `Hi ${name}! SAI RoloTech CRM app mein detailed machine info, specs aur quotes mil jaate hain. Explore karein! ${APP_LINK}?user=${phone}`,
+    `${name} ji, app mein apni requirement ke hisaab se quote generate kar sakte hain. Koi sawaal ho toh bata dein! 💬`,
+    `Namaste ${name}! Aap app mein machine guide aur troubleshooting bhi dekh sakte hain — bilkul free! 🔧`,
+    `${name} ji, agar future mein machine ki zaroorat ho toh please consider karein. Online delivery arrangement possible hai!`,
+    `Hi ${name}! Aapki requirement note kar li gayi hai. Jab bhi decide karein, main details share kar sakta hoon.`,
+    `${name} ji, thank you for considering SAI RoloTech. Kabhi bhi contact karein — always here to help! 🙏`,
+  ];
+
+  let MESSAGES;
+  if (loc === 'HIGH') MESSAGES = NEAR_MESSAGES;
+  else if (loc === 'MEDIUM') MESSAGES = MEDIUM_MESSAGES;
+  else MESSAGES = FAR_MESSAGES;
 
   const msg = MESSAGES[Math.min(dayIndex, MESSAGES.length - 1)];
   return sendRaw(phone, msg);
