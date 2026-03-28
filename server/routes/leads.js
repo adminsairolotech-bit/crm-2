@@ -133,7 +133,9 @@ router.get('/api/wa-webhook', (req, res) => {
 
   const VERIFY_TOKEN = process.env.WA_VERIFY_TOKEN;
   if (VERIFY_TOKEN && mode === 'subscribe' && token === VERIFY_TOKEN) {
-    return res.send(challenge);
+    // Echo only the numeric challenge — prevents any injection via crafted query params
+    const safeChallenge = String(parseInt(challenge, 10) || '');
+    return res.send(safeChallenge);
   }
   res.sendStatus(403);
 });

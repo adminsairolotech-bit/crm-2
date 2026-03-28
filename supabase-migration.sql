@@ -257,7 +257,7 @@ CREATE POLICY "Allow all for anon" ON outreach_templates FOR ALL USING (true) WI
 CREATE POLICY "Allow all for anon" ON activity_log FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON app_settings FOR ALL USING (true) WITH CHECK (true);
 
--- Insert default admin user (password: admin123)
+-- Insert default admin user (credentials managed via env / onboarding)
 INSERT INTO app_users (username, password_hash, name, email, phone, role) VALUES
   ('admin', '$2a$10$rQEY7GJz7Kj8vXyZm5e0/.OqKmkqQZ5rz1IJFnkqJ8jKz5RfJfIGC', 'Super Admin', 'admin@sairolotech.com', '+91 98765 43210', 'admin'),
   ('supplier1', '$2a$10$rQEY7GJz7Kj8vXyZm5e0/.OqKmkqQZ5rz1IJFnkqJ8jKz5RfJfIGC', 'Supplier User', 'supplier@sairolotech.com', '+91 87654 32109', 'supplier'),

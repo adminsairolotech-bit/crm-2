@@ -58,9 +58,22 @@ async function startWorker() {
   }
 }
 
+// Valid job types — only registered strings allowed (prevents prototype injection)
+const ALLOWED_JOB_TYPES = new Set([
+  'SEND_WELCOME', 'SEND_FOLLOWUP', 'SEND_AI_REPLY',
+  'SEND_QUOTATION_FOLLOWUP', 'ADMIN_ALERT', 'SEND_PUSH',
+]);
+
 async function runJob(job) {
   const idx = queue.indexOf(job);
   if (idx === -1) return; // already removed
+
+  // Validate job type is a known string (prevents prototype pollution)
+  if (typeof job.type !== 'string' || !ALLOWED_JOB_TYPES.has(job.type)) {
+    console.warn(`⚠️  Rejected unknown job type: ${String(job.type).slice(0, 30)}`);
+    queue.splice(idx, 1);
+    return;
+  }
 
   const handler = handlers[job.type];
   if (!handler) {
