@@ -145,6 +145,54 @@ Return ONLY valid JSON, no other text. Match products to client requirements int
           }
         });
 
+        server.middlewares.use('/api/ai-machine-spec', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { form } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+
+            const prompt = `You are a roll forming machine expert at SAI RoloTech, Pune.
+Based on the following customer requirements, provide a brief technical machine specification estimate in Hinglish (Hindi+English).
+
+Customer Requirements:
+- Material: ${form.materialType}
+- Thickness Range: ${form.minThickness}mm to ${form.maxThickness}mm
+- Strip Width Range: ${form.minStripWidth}mm to ${form.maxStripWidth}mm
+- Profile Height: ${form.profileHeight || 'Not specified'}mm
+- Machine Type: ${form.machineType}
+- Punching: ${form.punchingOption} ${form.punchingDetails || ''}
+- Output Speed: ${form.outputSpeed || 'Not specified'} m/min
+- Coil Weight: ${form.coilWeight || 'Not specified'} kg
+- Cut Type: ${form.cutType || 'Not specified'}
+- Control System: ${form.controlSystem || 'Not specified'}
+- Special: ${form.specialRequirements || 'None'}
+
+Give a 5-8 line technical estimate covering:
+1. Estimated number of forming stations
+2. Motor/drive requirements  
+3. Frame/structure recommendations
+4. Tooling material recommendation
+5. Approximate machine size (L x W x H)
+6. Any special technical notes
+Keep it concise, practical and professional.`;
+
+            const response = await ai.models.generateContent({
+              model: 'gemini-2.0-flash',
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              config: { maxOutputTokens: 512, temperature: 0.3 }
+            });
+            const spec = response.text || '';
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, spec }));
+          } catch (err) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
         server.middlewares.use('/api/analyze-quotation', async (req, res) => {
           if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
           try {

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Cpu, MapPin, FileText, MessageSquare, Phone, Mail, Star,
   Shield, ChevronRight, Wrench, Package2, BarChart3, Zap,
-  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown
+  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown, Upload
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -186,6 +186,40 @@ export default function HomePage() {
                   <ThumbsUp className="w-3 h-3" /> Pro &amp; Con Analysis
                 </span>
                 <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </div>
+            </div>
+          </button>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mb-6"
+        >
+          <button
+            onClick={() => setLocation("/custom-profile")}
+            className="w-full relative overflow-hidden bg-gradient-to-br from-green-800 via-emerald-800 to-teal-800 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 border border-green-500/40 rounded-2xl p-5 text-left transition-all duration-300 group shadow-xl shadow-green-900/40"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-green-600/20 via-transparent to-teal-600/20" />
+            <div className="absolute top-2 right-3 text-base opacity-50 group-hover:opacity-100 transition-opacity">🏭📐📄</div>
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <Factory className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Upload className="w-3 h-3 text-green-300" />
+                  <span className="text-green-300 text-xs font-semibold uppercase tracking-wider">Roll Forming Machine</span>
+                </div>
+                <h3 className="text-white text-base font-bold leading-tight">Custom Profile Inquiry</h3>
+                <p className="text-green-200 text-xs mt-0.5">DXF / DWG / PDF upload karein · Thickness, Width, Punching options specify karein · AI machine specs generate karega</p>
+              </div>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-white text-xs font-medium whitespace-nowrap">
+                  <Upload className="w-3 h-3" /> Upload Profile
+                </span>
+                <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all mt-1" />
               </div>
             </div>
           </button>

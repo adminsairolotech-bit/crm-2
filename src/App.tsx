@@ -43,6 +43,7 @@ const RoleSelectPage = lazy(() => import("@/pages/role-select"));
 const HomePage = lazy(() => import("@/pages/home"));
 const AIQuotePage = lazy(() => import("@/pages/ai-quote"));
 const QuoteAnalyzerPage = lazy(() => import("@/pages/quote-analyzer"));
+const CustomProfilePage = lazy(() => import("@/pages/custom-profile"));
 
 function PageLoader() {
   return (
@@ -173,6 +174,13 @@ function AppRoutes() {
         {() => (
           <AuthGuard>
             <PublicRoute Component={QuoteAnalyzerPage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/custom-profile">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={CustomProfilePage} />
           </AuthGuard>
         )}
       </Route>
