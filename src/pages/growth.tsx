@@ -24,9 +24,9 @@ const conversionFunnel = [
 ];
 
 const tooltipStyle = {
-  contentStyle: { background: "hsl(222.2 84% 7%)", border: "1px solid hsl(217.2 32.6% 17.5%)", borderRadius: "8px", fontSize: "12px" },
-  labelStyle: { color: "hsl(215 20.2% 65.1%)" },
-  itemStyle: { color: "hsl(210 40% 98%)" },
+  contentStyle: { background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" },
+  labelStyle: { color: "#374151", fontWeight: 600 },
+  itemStyle: { color: "#6b7280" },
 };
 
 export default function GrowthAnalyticsPage() {
@@ -58,13 +58,13 @@ export default function GrowthAnalyticsPage() {
           <div className="h-64 mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217.2 32.6% 17.5%)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="month" tick={{ fill: "hsl(215 20.2% 65.1%)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "hsl(215 20.2% 65.1%)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip {...tooltipStyle} />
                 <Bar dataKey="leads" name="Leads" radius={[6, 6, 0, 0]}>
                   {monthlyData.map((_, i) => (
-                    <Cell key={i} fill={i === monthlyData.length - 1 ? "hsl(217.2 91.2% 59.8%)" : "hsl(217.2 91.2% 59.8% / 0.5)"} />
+                    <Cell key={i} fill={i === monthlyData.length - 1 ? "#6366f1" : "#a5b4fc"} />
                   ))}
                 </Bar>
                 <Bar dataKey="conversions" name="Conversions" fill="hsl(262.1 83.3% 57.8%)" radius={[6, 6, 0, 0]} />
@@ -83,7 +83,7 @@ export default function GrowthAnalyticsPage() {
                     <stop offset="95%" stopColor="hsl(142 71% 45%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217.2 32.6% 17.5%)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="month" tick={{ fill: "hsl(215 20.2% 65.1%)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "hsl(215 20.2% 65.1%)", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `₹${v}L`} />
                 <Tooltip {...tooltipStyle} formatter={(value: string | number | Array<string | number>) => [`₹${value}L`, "Revenue"]} />

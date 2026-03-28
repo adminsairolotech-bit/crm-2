@@ -524,10 +524,10 @@ export default function ServiceManagerPage() {
               </h4>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={issueChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 11 }} />
                   <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                  <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#f8fafc" }} />
+                  <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
                   <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -542,7 +542,7 @@ export default function ServiceManagerPage() {
                   <Pie data={statusChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
                     {statusChartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#f8fafc" }} />
+                  <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -553,10 +553,10 @@ export default function ServiceManagerPage() {
               </h4>
               <ResponsiveContainer width="100%" height={250}>
                 <AreaChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" tick={{ fill: "#94a3b8", fontSize: 11 }} />
                   <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                  <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#f8fafc" }} />
+                  <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
                   <Area type="monotone" dataKey="tickets" stroke="#3b82f6" fill="rgba(59,130,246,0.1)" name="Total Tickets" />
                   <Area type="monotone" dataKey="resolved" stroke="#10b981" fill="rgba(16,185,129,0.1)" name="Resolved" />
                 </AreaChart>

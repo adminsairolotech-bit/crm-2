@@ -130,10 +130,12 @@ export default function GraphsPage() {
     { provider: "ElevenLabs", cost: 420, limit: 420, usage: 100 },
   ];
 
+  const GRID_COLOR = "#e5e7eb";
+  const TICK_COLOR = "#6b7280";
   const tooltipStyle = {
-    contentStyle: { background: "hsl(222 47% 11%)", border: "1px solid hsl(217 33% 17%)", borderRadius: 8, fontSize: 12 },
-    labelStyle: { color: "#a1a1aa" },
-    itemStyle: { color: "#e4e4e7" },
+    contentStyle: { background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" },
+    labelStyle: { color: "#374151", fontWeight: 600 },
+    itemStyle: { color: "#6b7280" },
   };
 
   return (
@@ -153,9 +155,9 @@ export default function GraphsPage() {
                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 17%)" />
-              <XAxis dataKey="month" tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
-              <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+              <XAxis dataKey="month" tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
+              <YAxis tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
               <Tooltip {...tooltipStyle} />
               <Area type="monotone" dataKey="revenue" stroke="#6366f1" fill="url(#revGradient)" strokeWidth={2} name="Revenue (₹L)" />
               <Area type="monotone" dataKey="leads" stroke="#8b5cf6" fill="none" strokeWidth={2} strokeDasharray="5 5" name="Leads" />
@@ -169,9 +171,9 @@ export default function GraphsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={pipelineData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 17%)" />
-              <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 11 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
-              <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+              <XAxis dataKey="name" tick={{ fill: TICK_COLOR, fontSize: 11 }} axisLine={{ stroke: GRID_COLOR }} />
+              <YAxis tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
               <Tooltip {...tooltipStyle} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]} name="Leads">
                 {pipelineData.map((entry, i) => (
@@ -240,9 +242,9 @@ export default function GraphsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={machinePriceData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 17%)" />
-              <XAxis type="number" tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
-              <YAxis dataKey="name" type="category" tick={{ fill: "#a1a1aa", fontSize: 11 }} width={100} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+              <XAxis type="number" tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
+              <YAxis dataKey="name" type="category" tick={{ fill: TICK_COLOR, fontSize: 11 }} width={100} axisLine={{ stroke: GRID_COLOR }} />
               <Tooltip {...tooltipStyle} formatter={(val: number) => [`₹${val}L`, "Price"]} />
               <Bar dataKey="price" radius={[0, 6, 6, 0]} name="Price (₹L)">
                 {machinePriceData.map((_: any, i: number) => (
@@ -259,11 +261,11 @@ export default function GraphsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={leadScoreData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 17%)" />
-              <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
-              <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+              <XAxis dataKey="name" tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
+              <YAxis tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
               <Tooltip {...tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 12, color: "#a1a1aa" }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: TICK_COLOR }} />
               <Bar dataKey="score" fill="#6366f1" radius={[4, 4, 0, 0]} name="Score" />
               <Bar dataKey="budget" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Budget (₹L)" />
             </BarChart>
@@ -278,11 +280,11 @@ export default function GraphsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={weeklyActivityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 17%)" />
-              <XAxis dataKey="day" tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
-              <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+              <XAxis dataKey="day" tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
+              <YAxis tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} />
               <Tooltip {...tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 12, color: "#a1a1aa" }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: TICK_COLOR }} />
               <Line type="monotone" dataKey="chats" stroke="#6366f1" strokeWidth={2} dot={{ r: 4 }} name="Buddy Chats" />
               <Line type="monotone" dataKey="followups" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} name="Follow-ups" />
               <Line type="monotone" dataKey="quotations" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} name="Quotations" />
@@ -296,9 +298,9 @@ export default function GraphsPage() {
           </h3>
           <ResponsiveContainer width="100%" height={280}>
             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-              <PolarGrid stroke="hsl(217 33% 17%)" />
-              <PolarAngleAxis dataKey="metric" tick={{ fill: "#a1a1aa", fontSize: 11 }} />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "#a1a1aa", fontSize: 10 }} />
+              <PolarGrid stroke={GRID_COLOR} />
+              <PolarAngleAxis dataKey="metric" tick={{ fill: TICK_COLOR, fontSize: 11 }} />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: TICK_COLOR, fontSize: 10 }} />
               <Radar name="Score" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} strokeWidth={2} />
             </RadarChart>
           </ResponsiveContainer>
@@ -311,11 +313,11 @@ export default function GraphsPage() {
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={budgetData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 17%)" />
-            <XAxis type="number" tick={{ fill: "#a1a1aa", fontSize: 12 }} axisLine={{ stroke: "hsl(217 33% 17%)" }} domain={[0, 600]} />
-            <YAxis dataKey="provider" type="category" tick={{ fill: "#a1a1aa", fontSize: 12 }} width={90} axisLine={{ stroke: "hsl(217 33% 17%)" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+            <XAxis type="number" tick={{ fill: TICK_COLOR, fontSize: 12 }} axisLine={{ stroke: GRID_COLOR }} domain={[0, 600]} />
+            <YAxis dataKey="provider" type="category" tick={{ fill: TICK_COLOR, fontSize: 12 }} width={90} axisLine={{ stroke: GRID_COLOR }} />
             <Tooltip {...tooltipStyle} formatter={(val: number) => [`₹${val}`, "Cost"]} />
-            <Legend wrapperStyle={{ fontSize: 12, color: "#a1a1aa" }} />
+            <Legend wrapperStyle={{ fontSize: 12, color: TICK_COLOR }} />
             <Bar dataKey="cost" fill="#22c55e" radius={[0, 4, 4, 0]} name="Current Cost (₹)" />
             <Bar dataKey="limit" fill="#6366f130" radius={[0, 4, 4, 0]} name="Budget Limit (₹)" />
           </BarChart>

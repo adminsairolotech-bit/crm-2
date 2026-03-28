@@ -18,12 +18,12 @@ interface Lead {
 type Stage = "new_lead" | "contacted" | "quotation_sent" | "negotiating" | "won" | "lost";
 
 const stageConfig: Record<Stage, { label: string; color: string; bgColor: string }> = {
-  new_lead: { label: "New Lead", color: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20" },
-  contacted: { label: "Contacted", color: "text-cyan-400", bgColor: "bg-cyan-500/10 border-cyan-500/20" },
-  quotation_sent: { label: "Quotation Sent", color: "text-amber-400", bgColor: "bg-amber-500/10 border-amber-500/20" },
-  negotiating: { label: "Negotiation", color: "text-purple-400", bgColor: "bg-purple-500/10 border-purple-500/20" },
-  won: { label: "Won", color: "text-emerald-400", bgColor: "bg-emerald-500/10 border-emerald-500/20" },
-  lost: { label: "Lost", color: "text-red-400", bgColor: "bg-red-500/10 border-red-500/20" },
+  new_lead: { label: "New Lead", color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200" },
+  contacted: { label: "Contacted", color: "text-cyan-700", bgColor: "bg-cyan-50 border-cyan-200" },
+  quotation_sent: { label: "Quotation Sent", color: "text-amber-600", bgColor: "bg-amber-50 border-amber-200" },
+  negotiating: { label: "Negotiation", color: "text-violet-600", bgColor: "bg-violet-50 border-violet-200" },
+  won: { label: "Won", color: "text-emerald-600", bgColor: "bg-emerald-50 border-emerald-200" },
+  lost: { label: "Lost", color: "text-red-600", bgColor: "bg-red-50 border-red-200" },
 };
 
 const stages: Stage[] = ["new_lead", "contacted", "quotation_sent", "negotiating", "won", "lost"];
@@ -146,7 +146,7 @@ export default function SalesPipelinePage() {
                         <p className="text-sm font-medium text-foreground">{lead.name}</p>
                         <p className="text-xs text-muted-foreground">{lead.company}</p>
                       </div>
-                      <Badge className="bg-emerald-500/10 text-emerald-400 text-xs">{lead.value}</Badge>
+                      <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">{lead.value}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">{lead.machine}</p>
                     <div className="flex items-center justify-between">
