@@ -3,8 +3,8 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, ArrowLeft, Send, Printer,
-  CheckCircle2, User, Phone, Mail, Building2,
-  Package, Loader2, RefreshCw, ChevronDown, ChevronUp, MapPin, Hash
+  CheckCircle2, User,
+  Package, Loader2, RefreshCw, MapPin, Hash
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -320,7 +320,6 @@ export default function AIQuotePage() {
 
   const [step, setStep] = useState<"form" | "loading" | "result">("form");
   const [quotation, setQuotation] = useState<Quotation | null>(null);
-  const [showExtra, setShowExtra] = useState(false);
 
   const [form, setForm] = useState({
     clientName: user?.name || "",
@@ -404,52 +403,60 @@ export default function AIQuotePage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Client Details */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+                {/* Party Details — always visible */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
                   <h3 className="text-slate-800 font-semibold flex items-center gap-2 pb-2 border-b border-slate-100">
                     <User className="w-4 h-4 text-blue-600" aria-hidden="true" /> Party Details
                   </h3>
-                  <div>
-                    <label htmlFor="q-name" className="block text-xs font-medium text-slate-600 mb-1.5">Client / Firm Name <span className="text-red-500">*</span></label>
-                    <input id="q-name" value={form.clientName} onChange={e => upd("clientName", e.target.value)}
-                      placeholder="Rahul Kumar / ABC Enterprises" aria-required="true" className={inputCls} />
-                  </div>
-                  <div>
-                    <label htmlFor="q-phone" className="block text-xs font-medium text-slate-600 mb-1.5">Phone Number <span className="text-red-500">*</span></label>
-                    <input id="q-phone" value={form.clientPhone} onChange={e => upd("clientPhone", e.target.value)}
-                      placeholder="+91 98765 43210" type="tel" aria-required="true" className={inputCls} />
-                  </div>
-                  <div>
-                    <label htmlFor="q-email" className="block text-xs font-medium text-slate-600 mb-1.5">Email (optional)</label>
-                    <input id="q-email" value={form.clientEmail} onChange={e => upd("clientEmail", e.target.value)}
-                      placeholder="aapka@email.com" type="email" className={inputCls} />
-                  </div>
-                  <div>
-                    <label htmlFor="q-company" className="block text-xs font-medium text-slate-600 mb-1.5">Company / Firm</label>
-                    <input id="q-company" value={form.clientCompany} onChange={e => upd("clientCompany", e.target.value)}
-                      placeholder="ABC Industries Pvt Ltd" className={inputCls} />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="q-name" className="block text-xs font-medium text-slate-600 mb-1.5">
+                        Client / Firm Name <span className="text-red-500">*</span>
+                      </label>
+                      <input id="q-name" value={form.clientName} onChange={e => upd("clientName", e.target.value)}
+                        placeholder="Rahul Kumar / ABC Enterprises" aria-required="true" className={inputCls} />
+                    </div>
+                    <div>
+                      <label htmlFor="q-phone" className="block text-xs font-medium text-slate-600 mb-1.5">
+                        Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input id="q-phone" value={form.clientPhone} onChange={e => upd("clientPhone", e.target.value)}
+                        placeholder="+91 98765 43210" type="tel" aria-required="true" className={inputCls} />
+                    </div>
                   </div>
 
-                  {/* Extra fields toggle */}
-                  <button type="button" onClick={() => setShowExtra(!showExtra)} aria-expanded={showExtra}
-                    className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-slate-700 transition-colors pt-1">
-                    <span>Address / GSTIN add karein (optional)</span>
-                    {showExtra ? <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
-                  </button>
-                  {showExtra && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-3">
-                      <div>
-                        <label htmlFor="q-addr" className="block text-xs font-medium text-slate-600 mb-1.5">Address</label>
-                        <input id="q-addr" value={form.clientAddress} onChange={e => upd("clientAddress", e.target.value)}
-                          placeholder="H No. 123, Block A, Delhi 110001" className={inputCls} />
-                      </div>
-                      <div>
-                        <label htmlFor="q-gstin" className="block text-xs font-medium text-slate-600 mb-1.5">GSTIN</label>
-                        <input id="q-gstin" value={form.clientGstin} onChange={e => upd("clientGstin", e.target.value)}
-                          placeholder="07XXXXX1234X1ZX" className={inputCls} />
-                      </div>
-                    </motion.div>
-                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="q-company" className="block text-xs font-medium text-slate-600 mb-1.5">Company / Firm</label>
+                      <input id="q-company" value={form.clientCompany} onChange={e => upd("clientCompany", e.target.value)}
+                        placeholder="ABC Industries Pvt Ltd" className={inputCls} />
+                    </div>
+                    <div>
+                      <label htmlFor="q-email" className="block text-xs font-medium text-slate-600 mb-1.5">Email</label>
+                      <input id="q-email" value={form.clientEmail} onChange={e => upd("clientEmail", e.target.value)}
+                        placeholder="aapka@email.com" type="email" className={inputCls} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="q-addr" className="block text-xs font-medium text-slate-600 mb-1.5">
+                      <MapPin className="w-3 h-3 inline mr-1 text-slate-400" aria-hidden="true" />
+                      Address
+                    </label>
+                    <textarea id="q-addr" value={form.clientAddress} onChange={e => upd("clientAddress", e.target.value)}
+                      placeholder="H No. 1055, Block S, Mangol Puri, Delhi 110083"
+                      rows={2} className={`${inputCls} resize-none`} />
+                  </div>
+
+                  <div>
+                    <label htmlFor="q-gstin" className="block text-xs font-medium text-slate-600 mb-1.5">
+                      <Hash className="w-3 h-3 inline mr-1 text-slate-400" aria-hidden="true" />
+                      GSTIN / UIN
+                    </label>
+                    <input id="q-gstin" value={form.clientGstin} onChange={e => upd("clientGstin", e.target.value)}
+                      placeholder="07BLFPK6652P1ZH" className={inputCls} />
+                  </div>
                 </div>
 
                 {/* Machine Requirements */}
