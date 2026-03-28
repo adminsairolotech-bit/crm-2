@@ -26,9 +26,9 @@ const mockDemos: Demo[] = [
 ];
 
 const statusConfig: Record<string, { color: string; icon: typeof CalendarDays }> = {
-  scheduled: { color: "bg-blue-500/10 text-blue-400", icon: CalendarDays },
-  completed: { color: "bg-emerald-500/10 text-emerald-400", icon: CheckCircle2 },
-  cancelled: { color: "bg-red-500/10 text-red-400", icon: XCircle },
+  scheduled: { color: "bg-blue-50 text-blue-600", icon: CalendarDays },
+  completed: { color: "bg-emerald-50 text-emerald-700", icon: CheckCircle2 },
+  cancelled: { color: "bg-red-50 text-red-600", icon: XCircle },
 };
 
 export default function DemoSchedulerPage() {
@@ -40,9 +40,9 @@ export default function DemoSchedulerPage() {
       <PageHeader title="Demo Scheduler" subtitle="Schedule and track machine demonstrations" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatsCard label="Upcoming Demos" value={upcoming.length} icon={CalendarDays} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="Completed" value={mockDemos.filter((d) => d.status === "completed").length} icon={CheckCircle2} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" />
-        <StatsCard label="This Week" value={upcoming.length} icon={Clock} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
+        <StatsCard label="Upcoming Demos" value={upcoming.length} icon={CalendarDays} iconBg="bg-blue-50" iconColor="text-blue-500" />
+        <StatsCard label="Completed" value={mockDemos.filter((d) => d.status === "completed").length} icon={CheckCircle2} iconBg="bg-emerald-50" iconColor="text-emerald-500" />
+        <StatsCard label="This Week" value={upcoming.length} icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-500" />
       </motion.div>
 
       <SectionCard title="Upcoming Demos">

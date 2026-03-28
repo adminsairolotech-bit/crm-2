@@ -457,7 +457,7 @@ export default function AIControlCenterPage() {
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
             {logs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-400" />
+                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-700" />
                 <p className="text-sm">Koi errors nahi — system healthy hai!</p>
               </div>
             ) : (

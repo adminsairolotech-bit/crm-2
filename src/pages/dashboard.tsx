@@ -71,9 +71,9 @@ export default function DashboardPage() {
 
       <motion.div variants={staggerItem} className="flex items-center gap-2 p-3 rounded-lg glass-card">
         {dbConnected ? (
-          <><Wifi className="w-4 h-4 text-emerald-400" /><span className="text-sm text-emerald-400">Supabase Connected — Live Data</span></>
+          <><Wifi className="w-4 h-4 text-emerald-600" /><span className="text-sm text-emerald-600">Supabase Connected — Live Data</span></>
         ) : (
-          <><WifiOff className="w-4 h-4 text-amber-400" /><span className="text-sm text-amber-400">Database Offline — Check Supabase Connection</span></>
+          <><WifiOff className="w-4 h-4 text-amber-600" /><span className="text-sm text-amber-600">Database Offline — Check Supabase Connection</span></>
         )}
       </motion.div>
 

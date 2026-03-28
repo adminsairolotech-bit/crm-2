@@ -309,7 +309,7 @@ export default function QuotationMakerPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Item #{idx + 1}</span>
                     {items.length > 1 && (
-                      <button onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-300"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => removeItem(idx)} className="text-red-600 hover:text-red-300"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </div>
                   <input type="text" value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)}
@@ -344,7 +344,7 @@ export default function QuotationMakerPage() {
               </div>
               <div className="text-right space-y-1 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmt(subtotal)}</span></div>
-                {discount > 0 && <div className="flex justify-between text-red-400"><span>Discount ({discount}%)</span><span>-{fmt(discountAmt)}</span></div>}
+                {discount > 0 && <div className="flex justify-between text-red-600"><span>Discount ({discount}%)</span><span>-{fmt(discountAmt)}</span></div>}
                 <div className="flex justify-between"><span className="text-muted-foreground">GST ({tax}%)</span><span>{fmt(taxAmt)}</span></div>
                 <div className="flex justify-between text-lg font-bold text-primary border-t border-border pt-2">
                   <span>Grand Total</span><span>{fmt(grandTotal)}</span>

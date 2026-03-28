@@ -60,18 +60,18 @@ const ISSUE_TYPES = [
 ];
 
 const PRIORITIES = [
-  { value: "critical", label: "Critical", color: "bg-red-500/10 text-red-500 border-red-500/20" },
-  { value: "high", label: "High", color: "bg-orange-500/10 text-orange-500 border-orange-500/20" },
-  { value: "medium", label: "Medium", color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
-  { value: "low", label: "Low", color: "bg-green-500/10 text-green-500 border-green-500/20" },
+  { value: "critical", label: "Critical", color: "bg-red-50 text-red-500 border-red-200" },
+  { value: "high", label: "High", color: "bg-orange-50 text-orange-500 border-orange-200" },
+  { value: "medium", label: "Medium", color: "bg-amber-50 text-yellow-500 border-amber-200" },
+  { value: "low", label: "Low", color: "bg-emerald-50 text-green-500 border-emerald-200" },
 ];
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
-  open: { label: "Open", color: "bg-blue-500/10 text-blue-500", icon: Clock },
-  in_progress: { label: "In Progress", color: "bg-amber-500/10 text-amber-500", icon: Play },
-  on_hold: { label: "On Hold", color: "bg-purple-500/10 text-purple-500", icon: Clock },
-  completed: { label: "Completed", color: "bg-emerald-500/10 text-emerald-500", icon: CheckCircle2 },
-  cancelled: { label: "Cancelled", color: "bg-gray-500/10 text-gray-400", icon: X },
+  open: { label: "Open", color: "bg-blue-50 text-blue-500", icon: Clock },
+  in_progress: { label: "In Progress", color: "bg-amber-50 text-amber-500", icon: Play },
+  on_hold: { label: "On Hold", color: "bg-violet-50 text-purple-500", icon: Clock },
+  completed: { label: "Completed", color: "bg-emerald-50 text-emerald-500", icon: CheckCircle2 },
+  cancelled: { label: "Cancelled", color: "bg-slate-50 text-slate-600", icon: X },
 };
 
 const ENGINEERS = ["Rajesh Kumar", "Amit Singh", "Priya Patel", "Suresh Nair", "Vikram Reddy"];
@@ -218,13 +218,13 @@ export default function ServiceManagerPage() {
       <PageHeader title="Service Manager" subtitle="Complete service management with Buddy AI assistance" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        <StatsCard label="Total" value={stats.total} icon={Wrench} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="Open" value={stats.open} icon={Clock} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
-        <StatsCard label="In Progress" value={stats.inProgress} icon={Play} iconBg="bg-cyan-500/10" iconColor="text-cyan-500" />
-        <StatsCard label="Completed" value={stats.completed} icon={CheckCircle2} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" />
-        <StatsCard label="Critical" value={stats.critical} icon={AlertTriangle} iconBg="bg-red-500/10" iconColor="text-red-500" />
-        <StatsCard label="Rating" value={stats.avgRating > 0 ? `${stats.avgRating.toFixed(1)}/5` : "—"} icon={Star} iconBg="bg-yellow-500/10" iconColor="text-yellow-500" />
-        <StatsCard label="Total Cost" value={`₹${(stats.totalCost / 1000).toFixed(0)}K`} icon={IndianRupee} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
+        <StatsCard label="Total" value={stats.total} icon={Wrench} iconBg="bg-blue-50" iconColor="text-blue-500" />
+        <StatsCard label="Open" value={stats.open} icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-500" />
+        <StatsCard label="In Progress" value={stats.inProgress} icon={Play} iconBg="bg-cyan-50" iconColor="text-cyan-500" />
+        <StatsCard label="Completed" value={stats.completed} icon={CheckCircle2} iconBg="bg-emerald-50" iconColor="text-emerald-500" />
+        <StatsCard label="Critical" value={stats.critical} icon={AlertTriangle} iconBg="bg-red-50" iconColor="text-red-500" />
+        <StatsCard label="Rating" value={stats.avgRating > 0 ? `${stats.avgRating.toFixed(1)}/5` : "—"} icon={Star} iconBg="bg-amber-50" iconColor="text-yellow-500" />
+        <StatsCard label="Total Cost" value={`₹${(stats.totalCost / 1000).toFixed(0)}K`} icon={IndianRupee} iconBg="bg-violet-50" iconColor="text-purple-500" />
       </motion.div>
 
       <motion.div variants={staggerItem} className="flex flex-wrap gap-2">
@@ -374,24 +374,24 @@ export default function ServiceManagerPage() {
 
                         <div className="flex flex-wrap gap-2">
                           {ticket.clientPhone && (
-                            <a href={`tel:${ticket.clientPhone}`} className="flex items-center gap-1 px-3 py-1.5 bg-green-500/10 text-green-500 rounded-lg text-xs font-medium hover:bg-green-500/20 transition-colors">
+                            <a href={`tel:${ticket.clientPhone}`} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-green-500 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors">
                               <Phone className="w-3 h-3" /> Call Client
                             </a>
                           )}
                           {ticket.clientPhone && (
                             <a href={`https://wa.me/${ticket.clientPhone?.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium hover:bg-emerald-500/20 transition-colors">
+                              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-500 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors">
                               <MessageSquare className="w-3 h-3" /> WhatsApp
                             </a>
                           )}
                           {ticket.clientEmail && (
                             <a href={`mailto:${ticket.clientEmail}`}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-500/10 text-blue-500 rounded-lg text-xs font-medium hover:bg-blue-500/20 transition-colors">
+                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-500 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors">
                               <Mail className="w-3 h-3" /> Email
                             </a>
                           )}
                           <button onClick={() => getBuddyAdvice(ticket.issueType, ticket.machineName || "", ticket.description || "")}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-purple-500/10 text-purple-500 rounded-lg text-xs font-medium hover:bg-purple-500/20 transition-colors">
+                            className="flex items-center gap-1 px-3 py-1.5 bg-violet-50 text-purple-500 rounded-lg text-xs font-medium hover:bg-violet-100 transition-colors">
                             <Bot className="w-3 h-3" /> Buddy Advice
                           </button>
                         </div>
@@ -655,7 +655,7 @@ export default function ServiceManagerPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
+                  <div className="p-4 bg-green-500/5 border border-emerald-200 rounded-xl">
                     <h4 className="text-xs font-semibold text-green-500 mb-2 flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3" /> Prevention Tips
                     </h4>
@@ -667,13 +667,13 @@ export default function ServiceManagerPage() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                <div className="p-4 bg-emerald-500/5 border border-emerald-200 rounded-xl">
                   <h4 className="font-semibold text-foreground flex items-center gap-2 mb-2">
                     <Send className="w-4 h-4 text-emerald-500" /> Client Message (Ready to Send)
                   </h4>
                   <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans">{buddyAdvice.clientMessage}</pre>
                   <button onClick={() => navigator.clipboard.writeText(buddyAdvice.clientMessage)}
-                    className="mt-3 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium hover:bg-emerald-500/20 transition-colors">
+                    className="mt-3 px-4 py-2 bg-emerald-50 text-emerald-500 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors">
                     Copy Message
                   </button>
                 </div>

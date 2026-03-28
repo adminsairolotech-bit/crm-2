@@ -28,10 +28,10 @@ const mockQuotations: Quotation[] = [
 ];
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-500/10 text-gray-400",
-  sent: "bg-blue-500/10 text-blue-400",
-  accepted: "bg-emerald-500/10 text-emerald-400",
-  rejected: "bg-red-500/10 text-red-400",
+  draft: "bg-slate-50 text-slate-600",
+  sent: "bg-blue-50 text-blue-600",
+  accepted: "bg-emerald-50 text-emerald-700",
+  rejected: "bg-red-50 text-red-600",
 };
 
 export default function QuotationLogsPage() {
@@ -65,10 +65,10 @@ export default function QuotationLogsPage() {
       <PageHeader title="AI Quotation Logs" subtitle="Track all generated quotations" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label="Total Quotations" value={mockQuotations.length} icon={FileText} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="AI Generated" value={mockQuotations.filter((q) => q.generatedByAi).length} icon={Bot} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
-        <StatsCard label="Accepted" value={mockQuotations.filter((q) => q.status === "accepted").length} icon={CheckCircle2} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" />
-        <StatsCard label="Total Value" value={`₹${(mockQuotations.reduce((a, q) => a + q.amount, 0) / 10000000).toFixed(1)}Cr`} icon={DollarSign} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
+        <StatsCard label="Total Quotations" value={mockQuotations.length} icon={FileText} iconBg="bg-blue-50" iconColor="text-blue-500" />
+        <StatsCard label="AI Generated" value={mockQuotations.filter((q) => q.generatedByAi).length} icon={Bot} iconBg="bg-violet-50" iconColor="text-purple-500" />
+        <StatsCard label="Accepted" value={mockQuotations.filter((q) => q.status === "accepted").length} icon={CheckCircle2} iconBg="bg-emerald-50" iconColor="text-emerald-500" />
+        <StatsCard label="Total Value" value={`₹${(mockQuotations.reduce((a, q) => a + q.amount, 0) / 10000000).toFixed(1)}Cr`} icon={DollarSign} iconBg="bg-amber-50" iconColor="text-amber-500" />
       </motion.div>
 
       <motion.div variants={staggerItem} className="relative">

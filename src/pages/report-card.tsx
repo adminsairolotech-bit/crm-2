@@ -149,20 +149,20 @@ export default function ReportCardPage() {
   const configCount = allFeatures.filter((f) => f.status === "config_needed").length;
 
   const getGrade = (pct: number) => {
-    if (pct >= 95) return { grade: "A+", color: "text-emerald-400", bg: "bg-emerald-500/20" };
-    if (pct >= 90) return { grade: "A", color: "text-emerald-400", bg: "bg-emerald-500/20" };
-    if (pct >= 80) return { grade: "A-", color: "text-blue-400", bg: "bg-blue-500/20" };
-    if (pct >= 70) return { grade: "B+", color: "text-blue-400", bg: "bg-blue-500/20" };
-    if (pct >= 60) return { grade: "B", color: "text-yellow-400", bg: "bg-yellow-500/20" };
-    return { grade: "C", color: "text-red-400", bg: "bg-red-500/20" };
+    if (pct >= 95) return { grade: "A+", color: "text-emerald-600", bg: "bg-emerald-50" };
+    if (pct >= 90) return { grade: "A", color: "text-emerald-600", bg: "bg-emerald-50" };
+    if (pct >= 80) return { grade: "A-", color: "text-blue-600", bg: "bg-blue-50" };
+    if (pct >= 70) return { grade: "B+", color: "text-blue-600", bg: "bg-blue-50" };
+    if (pct >= 60) return { grade: "B", color: "text-amber-600", bg: "bg-amber-50" };
+    return { grade: "C", color: "text-red-600", bg: "bg-red-50" };
   };
 
   const gradeInfo = getGrade(percentage);
 
   const statusIcon = (status: string) => {
     switch (status) {
-      case "live": return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
-      case "config_needed": return <AlertTriangle className="w-4 h-4 text-amber-400" />;
+      case "live": return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
+      case "config_needed": return <AlertTriangle className="w-4 h-4 text-amber-600" />;
       default: return null;
     }
   };
@@ -177,8 +177,8 @@ export default function ReportCardPage() {
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "live": return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
-      case "config_needed": return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+      case "live": return "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+      case "config_needed": return "bg-amber-500/10 text-amber-600 border-amber-500/30";
       default: return "";
     }
   };
@@ -211,8 +211,8 @@ export default function ReportCardPage() {
             />
           </div>
           <div className="mt-4 flex items-center gap-2">
-            <Award className="w-5 h-5 text-amber-400" />
-            <span className="text-sm text-amber-400 font-medium">
+            <Award className="w-5 h-5 text-amber-600" />
+            <span className="text-sm text-amber-600 font-medium">
               {percentage >= 95 ? "Outstanding! 🏆" : percentage >= 85 ? "Excellent Work!" : percentage >= 70 ? "Great Progress!" : "Keep Building!"}
             </span>
           </div>
@@ -220,47 +220,47 @@ export default function ReportCardPage() {
 
         <div className="lg:col-span-2 glass-card rounded-xl p-6">
           <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-            <Star className="w-4 h-4 text-amber-400" /> Platform Summary
+            <Star className="w-4 h-4 text-amber-600" /> Platform Summary
           </h3>
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="text-center p-3 rounded-lg bg-emerald-500/10">
-              <div className="text-2xl font-bold text-emerald-400">{liveCount}</div>
-              <div className="text-xs text-emerald-400/80">Features LIVE</div>
+              <div className="text-2xl font-bold text-emerald-600">{liveCount}</div>
+              <div className="text-xs text-emerald-600/80">Features LIVE</div>
             </div>
             <div className="text-center p-3 rounded-lg bg-amber-500/10">
-              <div className="text-2xl font-bold text-amber-400">{configCount}</div>
-              <div className="text-xs text-amber-400/80">Need Config (User)</div>
+              <div className="text-2xl font-bold text-amber-600">{configCount}</div>
+              <div className="text-xs text-amber-600/80">Need Config (User)</div>
             </div>
           </div>
 
           <div className="space-y-2.5">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Admin CRM Pages</span>
-              <span className="font-medium text-emerald-400">24 pages</span>
+              <span className="font-medium text-emerald-600">24 pages</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">API Endpoints</span>
-              <span className="font-medium text-emerald-400">30+ endpoints</span>
+              <span className="font-medium text-emerald-600">30+ endpoints</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Database Tables</span>
-              <span className="font-medium text-emerald-400">11 tables</span>
+              <span className="font-medium text-emerald-600">11 tables</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Charts & Graphs</span>
-              <span className="font-medium text-emerald-400">10 interactive charts</span>
+              <span className="font-medium text-emerald-600">10 interactive charts</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">AI Provider Support</span>
-              <span className="font-medium text-emerald-400">4 providers (Gemini, Groq, HF, NVIDIA)</span>
+              <span className="font-medium text-emerald-600">4 providers (Gemini, Groq, HF, NVIDIA)</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Mobile APK</span>
-              <span className="font-medium text-emerald-400">Downloaded ✓</span>
+              <span className="font-medium text-emerald-600">Downloaded ✓</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Monthly Budget</span>
-              <span className="font-medium text-emerald-400">₹0/₹2,000 (all FREE tiers)</span>
+              <span className="font-medium text-emerald-600">₹0/₹2,000 (all FREE tiers)</span>
             </div>
           </div>
         </div>
@@ -319,23 +319,23 @@ export default function ReportCardPage() {
         </h3>
         <div className="space-y-3">
           <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-            <span className="text-amber-400 font-bold text-sm mt-0.5">1</span>
+            <span className="text-amber-600 font-bold text-sm mt-0.5">1</span>
             <div>
-              <div className="text-sm font-medium text-amber-400">AI API Keys Add Karo (+8 points)</div>
+              <div className="text-sm font-medium text-amber-600">AI API Keys Add Karo (+8 points)</div>
               <div className="text-xs text-muted-foreground">Gemini, Groq, HuggingFace, Deepgram — sab FREE hai. Env variables mein add karo.</div>
             </div>
           </div>
           <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-            <span className="text-amber-400 font-bold text-sm mt-0.5">2</span>
+            <span className="text-amber-600 font-bold text-sm mt-0.5">2</span>
             <div>
-              <div className="text-sm font-medium text-amber-400">Google Play Upload (+2 points)</div>
+              <div className="text-sm font-medium text-amber-600">Google Play Upload (+2 points)</div>
               <div className="text-xs text-muted-foreground">APK downloaded hai — Play Console pe upload karo testing ke liye.</div>
             </div>
           </div>
           <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-            <span className="text-amber-400 font-bold text-sm mt-0.5">3</span>
+            <span className="text-amber-600 font-bold text-sm mt-0.5">3</span>
             <div>
-              <div className="text-sm font-medium text-amber-400">Firebase + Domain Setup (+2 points)</div>
+              <div className="text-sm font-medium text-amber-600">Firebase + Domain Setup (+2 points)</div>
               <div className="text-xs text-muted-foreground">Firebase project (FREE) for live push notifications + optional custom domain.</div>
             </div>
           </div>

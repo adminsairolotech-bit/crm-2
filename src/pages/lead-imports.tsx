@@ -55,15 +55,15 @@ interface GmailHistoryEntry {
 }
 
 const statusColors: Record<string, string> = {
-  completed: "bg-emerald-500/10 text-emerald-400",
-  partial: "bg-amber-500/10 text-amber-400",
-  failed: "bg-red-500/10 text-red-400",
+  completed: "bg-emerald-50 text-emerald-700",
+  partial: "bg-amber-50 text-amber-700",
+  failed: "bg-red-50 text-red-600",
 };
 
 const sourceColors: Record<string, string> = {
-  IndiaMart: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  JustDial: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  TradeIndia: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  IndiaMart: "bg-blue-50 text-blue-600 border-blue-200",
+  JustDial: "bg-amber-50 text-amber-700 border-amber-200",
+  TradeIndia: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 const csvTemplate = "Client Name,Email,Phone,Company,Machine Interest,Budget,Source\n";
@@ -274,8 +274,8 @@ function GmailTab({ onHistoryRefresh }: GmailTabProps) {
       <motion.div variants={staggerItem} className="glass-card rounded-xl p-5">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+              <Mail className="w-5 h-5 text-emerald-700" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Connected as {status.email}</p>
@@ -291,7 +291,7 @@ function GmailTab({ onHistoryRefresh }: GmailTabProps) {
               {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               {syncing ? "Syncing..." : "Sync Now"}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDisconnect} className="gap-2 text-red-400 hover:text-red-300">
+            <Button variant="outline" size="sm" onClick={handleDisconnect} className="gap-2 text-red-600 hover:text-red-500">
               <Unplug className="w-4 h-4" /> Disconnect
             </Button>
           </div>
@@ -372,7 +372,7 @@ function GmailTab({ onHistoryRefresh }: GmailTabProps) {
           <div className="space-y-1">
             {importedLeads.map((lead) => (
               <div key={lead.id} className="flex items-center gap-3 p-3 rounded-lg border border-border opacity-60">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                 <span className="text-sm text-foreground">{lead.name || "—"}</span>
                 <Badge className={`text-[10px] ${sourceColors[lead.source]}`}>{lead.source}</Badge>
                 {lead.phone && <span className="text-xs text-muted-foreground ml-auto">{lead.phone}</span>}
@@ -462,7 +462,7 @@ export default function LeadImportsPage() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-xs text-emerald-400 flex items-center gap-1">
+                      <p className="text-xs text-emerald-700 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" />{entry.imported} imported
                       </p>
                       {entry.skipped > 0 && (

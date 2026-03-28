@@ -36,17 +36,17 @@ type Report = {
 const STATUS_OPTIONS = ["Open", "In Progress", "Resolved", "Closed"] as const;
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof AlertCircle }> = {
-  Open: { bg: "bg-blue-500/10", text: "text-blue-600", icon: AlertCircle },
-  "In Progress": { bg: "bg-amber-500/10", text: "text-amber-600", icon: Clock },
-  Resolved: { bg: "bg-emerald-500/10", text: "text-emerald-600", icon: CheckCircle2 },
-  Closed: { bg: "bg-gray-500/10", text: "text-gray-500", icon: XCircle },
+  Open: { bg: "bg-blue-50", text: "text-blue-600", icon: AlertCircle },
+  "In Progress": { bg: "bg-amber-50", text: "text-amber-600", icon: Clock },
+  Resolved: { bg: "bg-emerald-50", text: "text-emerald-600", icon: CheckCircle2 },
+  Closed: { bg: "bg-slate-50", text: "text-gray-500", icon: XCircle },
 };
 
 const SEVERITY_STYLES: Record<string, string> = {
-  Low: "bg-green-500/10 text-green-600",
-  Medium: "bg-amber-500/10 text-amber-600",
-  High: "bg-red-500/10 text-red-600",
-  Critical: "bg-purple-500/10 text-purple-600",
+  Low: "bg-emerald-50 text-green-600",
+  Medium: "bg-amber-50 text-amber-600",
+  High: "bg-red-50 text-red-600",
+  Critical: "bg-violet-50 text-purple-600",
 };
 
 export default function FeedbackPage() {
@@ -123,10 +123,10 @@ export default function FeedbackPage() {
 
       <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { label: "Total Reports", value: total, icon: Filter, iconBg: "bg-blue-500/10", iconColor: "text-blue-500" },
-          { label: "Bug Reports", value: bugCount, icon: Bug, iconBg: "bg-red-500/10", iconColor: "text-red-500" },
-          { label: "Feature Requests", value: featureCount, icon: Sparkles, iconBg: "bg-purple-500/10", iconColor: "text-purple-500" },
-          { label: "Open", value: openCount, icon: AlertCircle, iconBg: "bg-amber-500/10", iconColor: "text-amber-500" },
+          { label: "Total Reports", value: total, icon: Filter, iconBg: "bg-blue-50", iconColor: "text-blue-500" },
+          { label: "Bug Reports", value: bugCount, icon: Bug, iconBg: "bg-red-50", iconColor: "text-red-500" },
+          { label: "Feature Requests", value: featureCount, icon: Sparkles, iconBg: "bg-violet-50", iconColor: "text-purple-500" },
+          { label: "Open", value: openCount, icon: AlertCircle, iconBg: "bg-amber-50", iconColor: "text-amber-500" },
         ].map((stat) => (
           <StatsCard
             key={stat.label}
@@ -214,11 +214,11 @@ export default function FeedbackPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                           {report.type === "bug" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-500/10 text-red-600">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-50 text-red-600">
                               <Bug className="w-3 h-3" /> Bug
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-purple-500/10 text-purple-600">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-violet-50 text-purple-600">
                               <Sparkles className="w-3 h-3" /> Feature
                             </span>
                           )}
@@ -233,7 +233,7 @@ export default function FeedbackPage() {
                             </span>
                           )}
                           {report.priority && (
-                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/10 text-blue-600">
+                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-600">
                               Priority: {report.priority}
                             </span>
                           )}

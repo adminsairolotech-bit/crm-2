@@ -21,7 +21,7 @@ interface Sequence {
 }
 
 const channelIcons = { email: Mail, phone: Phone, whatsapp: MessageSquare };
-const channelColors = { email: "text-blue-400", phone: "text-emerald-400", whatsapp: "text-green-400" };
+const channelColors = { email: "text-blue-600", phone: "text-emerald-700", whatsapp: "text-emerald-700" };
 
 const mockSequences: Sequence[] = [
   {
@@ -64,7 +64,7 @@ export default function SalesSequencesPage() {
             headerAction={
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{seq.activeLeads} active</Badge>
-                <Badge className="bg-emerald-500/10 text-emerald-400">{seq.completionRate}% complete</Badge>
+                <Badge className="bg-emerald-50 text-emerald-700">{seq.completionRate}% complete</Badge>
               </div>
             }>
             <p className="text-sm text-muted-foreground mb-4">{seq.description}</p>

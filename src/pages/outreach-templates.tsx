@@ -16,7 +16,7 @@ interface Template {
   variables: string[];
 }
 
-const channelColors = { whatsapp: "bg-green-500/10 text-green-400", email: "bg-blue-500/10 text-blue-400", phone_script: "bg-amber-500/10 text-amber-400" };
+const channelColors = { whatsapp: "bg-emerald-50 text-emerald-700", email: "bg-blue-50 text-blue-600", phone_script: "bg-amber-50 text-amber-700" };
 const channelIcons = { whatsapp: MessageSquare, email: Mail, phone_script: Phone };
 
 const mockTemplates: Template[] = [

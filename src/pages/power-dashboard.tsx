@@ -231,12 +231,12 @@ export default function PowerDashboardPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatsCard label="Health" value={data.system.health.grade} icon={Shield} iconBg="bg-green-500/10" iconColor="text-green-500" />
-        <StatsCard label="AI Providers" value={`${activeProviders}/${configuredProviders}`} icon={Zap} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="Capacity/min" value={data.ai.capacity.perMinute} icon={Gauge} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
+        <StatsCard label="Health" value={data.system.health.grade} icon={Shield} iconBg="bg-emerald-50" iconColor="text-green-500" />
+        <StatsCard label="AI Providers" value={`${activeProviders}/${configuredProviders}`} icon={Zap} iconBg="bg-blue-50" iconColor="text-blue-500" />
+        <StatsCard label="Capacity/min" value={data.ai.capacity.perMinute} icon={Gauge} iconBg="bg-violet-50" iconColor="text-purple-500" />
         <StatsCard label="Max Users/Mo" value={`${(data.ai.capacity.maxUsersPerMonth / 1000).toFixed(0)}K`} icon={Users} iconBg="bg-orange-500/10" iconColor="text-orange-500" />
         <StatsCard label="DB Records" value={totalDbRecords} icon={Database} iconBg="bg-cyan-500/10" iconColor="text-cyan-500" />
-        <StatsCard label="Monthly Cost" value="₹0" icon={IndianRupee} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" />
+        <StatsCard label="Monthly Cost" value="₹0" icon={IndianRupee} iconBg="bg-emerald-50" iconColor="text-emerald-500" />
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -258,7 +258,7 @@ export default function PowerDashboardPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <SectionCard title="System Health">
               <div className="flex items-center justify-between mb-4">
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${data.system.health.score >= 90 ? "bg-green-500/10" : data.system.health.score >= 70 ? "bg-yellow-500/10" : "bg-red-500/10"}`}>
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${data.system.health.score >= 90 ? "bg-emerald-50" : data.system.health.score >= 70 ? "bg-amber-50" : "bg-red-50"}`}>
                   <span className={`text-3xl font-black ${data.system.health.score >= 90 ? "text-green-500" : data.system.health.score >= 70 ? "text-yellow-500" : "text-red-500"}`}>
                     {data.system.health.grade}
                   </span>
@@ -348,11 +348,11 @@ export default function PowerDashboardPage() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-sm">{nameMap[p.name] || p.name}</span>
                   {p.available ? (
-                    <Badge className="bg-green-500/20 text-green-400 text-xs">
+                    <Badge className="bg-emerald-100 text-emerald-700 text-xs">
                       <CheckCircle className="w-3 h-3 mr-1" /> LIVE
                     </Badge>
                   ) : p.configured ? (
-                    <Badge className="bg-yellow-500/20 text-yellow-400 text-xs">
+                    <Badge className="bg-amber-100 text-amber-700 text-xs">
                       <Clock className="w-3 h-3 mr-1" /> Cooldown
                     </Badge>
                   ) : (
@@ -379,10 +379,10 @@ export default function PowerDashboardPage() {
             <SectionCard title="AI Performance">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: "Success Rate", value: data.ai.performance.successRate, bg: "bg-green-500/10", color: "text-green-500" },
-                  { label: "Total Requests", value: data.ai.performance.totalRequests, bg: "bg-blue-500/10", color: "text-blue-500" },
-                  { label: "Successful", value: data.ai.performance.totalSuccess, bg: "bg-emerald-500/10", color: "text-emerald-500" },
-                  { label: "Failed", value: data.ai.performance.totalFailed, bg: "bg-red-500/10", color: "text-red-500" },
+                  { label: "Success Rate", value: data.ai.performance.successRate, bg: "bg-emerald-50", color: "text-green-500" },
+                  { label: "Total Requests", value: data.ai.performance.totalRequests, bg: "bg-blue-50", color: "text-blue-500" },
+                  { label: "Successful", value: data.ai.performance.totalSuccess, bg: "bg-emerald-50", color: "text-emerald-500" },
+                  { label: "Failed", value: data.ai.performance.totalFailed, bg: "bg-red-50", color: "text-red-500" },
                 ].map((item) => (
                   <div key={item.label} className={`text-center p-3 rounded-lg ${item.bg}`}>
                     <div className="text-xs text-muted-foreground">{item.label}</div>
@@ -459,10 +459,10 @@ export default function PowerDashboardPage() {
           >
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "Cached Items", value: data.cache.validEntries, bg: "bg-blue-500/10", color: "text-blue-500" },
-                { label: "Hit Rate", value: data.cache.hitRate, bg: "bg-green-500/10", color: "text-green-500" },
-                { label: "API Calls Saved", value: data.cache.apiCallsSaved, bg: "bg-purple-500/10", color: "text-purple-500" },
-                { label: "Cost Saved", value: data.cache.estimatedCostSaved, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+                { label: "Cached Items", value: data.cache.validEntries, bg: "bg-blue-50", color: "text-blue-500" },
+                { label: "Hit Rate", value: data.cache.hitRate, bg: "bg-emerald-50", color: "text-green-500" },
+                { label: "API Calls Saved", value: data.cache.apiCallsSaved, bg: "bg-violet-50", color: "text-purple-500" },
+                { label: "Cost Saved", value: data.cache.estimatedCostSaved, bg: "bg-emerald-50", color: "text-emerald-500" },
               ].map((item) => (
                 <div key={item.label} className={`text-center p-3 rounded-lg ${item.bg}`}>
                   <div className="text-xs text-muted-foreground">{item.label}</div>
@@ -494,11 +494,11 @@ export default function PowerDashboardPage() {
       {activeTab === "database" && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <StatsCard label="Leads" value={data.database.leads} icon={Users} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-            <StatsCard label="Machines" value={data.database.machines} icon={Cpu} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
-            <StatsCard label="Suppliers" value={data.database.suppliers} icon={TrendingUp} iconBg="bg-green-500/10" iconColor="text-green-500" />
+            <StatsCard label="Leads" value={data.database.leads} icon={Users} iconBg="bg-blue-50" iconColor="text-blue-500" />
+            <StatsCard label="Machines" value={data.database.machines} icon={Cpu} iconBg="bg-violet-50" iconColor="text-purple-500" />
+            <StatsCard label="Suppliers" value={data.database.suppliers} icon={TrendingUp} iconBg="bg-emerald-50" iconColor="text-green-500" />
             <StatsCard label="Quotations" value={data.database.quotations} icon={BarChart3} iconBg="bg-orange-500/10" iconColor="text-orange-500" />
-            <StatsCard label="Tickets" value={data.database.serviceTickets} icon={Activity} iconBg="bg-red-500/10" iconColor="text-red-500" />
+            <StatsCard label="Tickets" value={data.database.serviceTickets} icon={Activity} iconBg="bg-red-50" iconColor="text-red-500" />
           </div>
           <SectionCard>
             <div className="text-center py-4">
@@ -516,11 +516,11 @@ export default function PowerDashboardPage() {
               <div className="text-xs text-muted-foreground">Monthly Budget</div>
               <div className="text-2xl font-bold">{data.costAnalysis.monthlyBudget}</div>
             </div>
-            <div className="p-4 rounded-xl bg-emerald-500/10">
+            <div className="p-4 rounded-xl bg-emerald-50">
               <div className="text-xs text-muted-foreground">Current Cost</div>
               <div className="text-2xl font-bold text-emerald-500">{data.costAnalysis.currentCost}</div>
             </div>
-            <div className="p-4 rounded-xl bg-green-500/10">
+            <div className="p-4 rounded-xl bg-emerald-50">
               <div className="text-xs text-muted-foreground">Savings vs Paid</div>
               <div className="text-2xl font-bold text-green-500">{data.costAnalysis.savingsVsPaid}</div>
             </div>

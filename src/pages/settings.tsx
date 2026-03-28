@@ -62,7 +62,7 @@ export default function SettingsPage() {
                 <p className="text-sm font-medium text-foreground">{key.name}</p>
                 <p className="text-xs text-muted-foreground font-mono mt-0.5">{key.masked}</p>
               </div>
-              <Badge className={key.status === "active" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}>
+              <Badge className={key.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}>
                 {key.status}
               </Badge>
             </motion.div>

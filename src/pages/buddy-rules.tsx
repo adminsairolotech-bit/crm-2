@@ -25,11 +25,11 @@ const initialRules: BuddyRule[] = [
 ];
 
 const categoryColors: Record<string, string> = {
-  greeting: "bg-blue-500/10 text-blue-400",
-  pricing: "bg-emerald-500/10 text-emerald-400",
-  escalation: "bg-amber-500/10 text-amber-400",
-  restriction: "bg-red-500/10 text-red-400",
-  personality: "bg-purple-500/10 text-purple-400",
+  greeting: "bg-blue-50 text-blue-600",
+  pricing: "bg-emerald-50 text-emerald-700",
+  escalation: "bg-amber-50 text-amber-700",
+  restriction: "bg-red-50 text-red-600",
+  personality: "bg-violet-50 text-violet-600",
 };
 
 export default function BuddyRulesPage() {

@@ -40,7 +40,7 @@ export default function MapViewPage() {
               <p className="text-xs text-muted-foreground mb-2">{area.cities.join(", ")}</p>
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{area.suppliers} suppliers</Badge>
-                <Badge className="bg-blue-500/10 text-blue-400">{area.machines} machines</Badge>
+                <Badge className="bg-blue-50 text-blue-600">{area.machines} machines</Badge>
               </div>
             </motion.div>
           ))}

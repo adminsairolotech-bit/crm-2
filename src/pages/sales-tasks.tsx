@@ -17,16 +17,16 @@ interface SalesTask {
 }
 
 const statusConfig: Record<string, { icon: typeof Circle; color: string; label: string }> = {
-  pending: { icon: Circle, color: "text-blue-400", label: "Pending" },
-  in_progress: { icon: Clock, color: "text-amber-400", label: "In Progress" },
-  completed: { icon: CheckCircle2, color: "text-emerald-400", label: "Completed" },
-  overdue: { icon: AlertCircle, color: "text-red-400", label: "Overdue" },
+  pending: { icon: Circle, color: "text-blue-600", label: "Pending" },
+  in_progress: { icon: Clock, color: "text-amber-700", label: "In Progress" },
+  completed: { icon: CheckCircle2, color: "text-emerald-700", label: "Completed" },
+  overdue: { icon: AlertCircle, color: "text-red-600", label: "Overdue" },
 };
 
 const priorityColors: Record<string, string> = {
-  low: "bg-gray-500/10 text-gray-400",
-  medium: "bg-amber-500/10 text-amber-400",
-  high: "bg-red-500/10 text-red-400",
+  low: "bg-slate-50 text-slate-600",
+  medium: "bg-amber-50 text-amber-700",
+  high: "bg-red-50 text-red-600",
 };
 
 export default function SalesTasksPage() {
@@ -61,10 +61,10 @@ export default function SalesTasksPage() {
       <PageHeader title="Sales Tasks" subtitle="Track and manage sales team tasks" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatsCard label="Total Tasks" value={tasks.length} icon={CheckSquare} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="Pending" value={tasks.filter((t) => t.status === "pending").length} icon={Circle} iconBg="bg-blue-500/10" iconColor="text-blue-400" />
-        <StatsCard label="In Progress" value={tasks.filter((t) => t.status === "in_progress").length} icon={Clock} iconBg="bg-amber-500/10" iconColor="text-amber-400" />
-        <StatsCard label="Overdue" value={tasks.filter((t) => t.status === "overdue").length} icon={AlertCircle} iconBg="bg-red-500/10" iconColor="text-red-400" />
+        <StatsCard label="Total Tasks" value={tasks.length} icon={CheckSquare} iconBg="bg-blue-50" iconColor="text-blue-500" />
+        <StatsCard label="Pending" value={tasks.filter((t) => t.status === "pending").length} icon={Circle} iconBg="bg-blue-50" iconColor="text-blue-600" />
+        <StatsCard label="In Progress" value={tasks.filter((t) => t.status === "in_progress").length} icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-700" />
+        <StatsCard label="Overdue" value={tasks.filter((t) => t.status === "overdue").length} icon={AlertCircle} iconBg="bg-red-50" iconColor="text-red-600" />
       </motion.div>
 
       <motion.div variants={staggerItem} className="flex gap-2 flex-wrap">

@@ -18,12 +18,12 @@ interface MiniBuddy {
 }
 
 const miniBuddies: MiniBuddy[] = [
-  { id: 1, name: "Sales Buddy", specialty: "Sales & Quotations", description: "Handles pricing inquiries, generates quotations, and nurtures leads through the sales funnel", icon: Target, isActive: true, conversations: 45, successRate: 82, color: "text-blue-400 bg-blue-500/10" },
-  { id: 2, name: "Tech Buddy", specialty: "Technical Support", description: "Answers technical questions about machine specifications, compatibility, and performance", icon: Wrench, isActive: true, conversations: 38, successRate: 91, color: "text-emerald-400 bg-emerald-500/10" },
-  { id: 3, name: "Service Buddy", specialty: "After-Sales Service", description: "Manages service requests, maintenance scheduling, and spare parts inquiries", icon: Headphones, isActive: true, conversations: 28, successRate: 76, color: "text-purple-400 bg-purple-500/10" },
-  { id: 4, name: "Content Buddy", specialty: "Marketing Content", description: "Generates WhatsApp messages, email campaigns, and promotional content", icon: FileText, isActive: true, conversations: 22, successRate: 88, color: "text-amber-400 bg-amber-500/10" },
-  { id: 5, name: "Scout Buddy", specialty: "Lead Intelligence", description: "Analyzes conversations to identify high-intent buyers and generates lead scores", icon: Target, isActive: false, conversations: 15, successRate: 0, color: "text-pink-400 bg-pink-500/10" },
-  { id: 6, name: "Demo Buddy", specialty: "Demo Scheduling", description: "Coordinates machine demonstrations, sends reminders, and collects feedback", icon: MessageSquare, isActive: true, conversations: 18, successRate: 94, color: "text-cyan-400 bg-cyan-500/10" },
+  { id: 1, name: "Sales Buddy", specialty: "Sales & Quotations", description: "Handles pricing inquiries, generates quotations, and nurtures leads through the sales funnel", icon: Target, isActive: true, conversations: 45, successRate: 82, color: "text-blue-600 bg-blue-50" },
+  { id: 2, name: "Tech Buddy", specialty: "Technical Support", description: "Answers technical questions about machine specifications, compatibility, and performance", icon: Wrench, isActive: true, conversations: 38, successRate: 91, color: "text-emerald-700 bg-emerald-50" },
+  { id: 3, name: "Service Buddy", specialty: "After-Sales Service", description: "Manages service requests, maintenance scheduling, and spare parts inquiries", icon: Headphones, isActive: true, conversations: 28, successRate: 76, color: "text-violet-600 bg-violet-50" },
+  { id: 4, name: "Content Buddy", specialty: "Marketing Content", description: "Generates WhatsApp messages, email campaigns, and promotional content", icon: FileText, isActive: true, conversations: 22, successRate: 88, color: "text-amber-700 bg-amber-50" },
+  { id: 5, name: "Scout Buddy", specialty: "Lead Intelligence", description: "Analyzes conversations to identify high-intent buyers and generates lead scores", icon: Target, isActive: false, conversations: 15, successRate: 0, color: "text-pink-600 bg-pink-50" },
+  { id: 6, name: "Demo Buddy", specialty: "Demo Scheduling", description: "Coordinates machine demonstrations, sends reminders, and collects feedback", icon: MessageSquare, isActive: true, conversations: 18, successRate: 94, color: "text-cyan-700 bg-cyan-50" },
 ];
 
 export default function BuddyParivarPage() {
@@ -32,10 +32,10 @@ export default function BuddyParivarPage() {
       <PageHeader title="Buddy Parivar" subtitle="The AI buddy family — specialized sub-buddies for different tasks" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label="Total Buddies" value={miniBuddies.length} icon={UsersRound} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
-        <StatsCard label="Active" value={miniBuddies.filter((b) => b.isActive).length} icon={Bot} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" />
-        <StatsCard label="Total Sessions" value={miniBuddies.reduce((a, b) => a + b.conversations, 0)} icon={MessageSquare} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="Avg Success" value={`${Math.round(miniBuddies.filter((b) => b.isActive).reduce((a, b) => a + b.successRate, 0) / miniBuddies.filter((b) => b.isActive).length)}%`} icon={Zap} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
+        <StatsCard label="Total Buddies" value={miniBuddies.length} icon={UsersRound} iconBg="bg-violet-50" iconColor="text-purple-500" />
+        <StatsCard label="Active" value={miniBuddies.filter((b) => b.isActive).length} icon={Bot} iconBg="bg-emerald-50" iconColor="text-emerald-500" />
+        <StatsCard label="Total Sessions" value={miniBuddies.reduce((a, b) => a + b.conversations, 0)} icon={MessageSquare} iconBg="bg-blue-50" iconColor="text-blue-500" />
+        <StatsCard label="Avg Success" value={`${Math.round(miniBuddies.filter((b) => b.isActive).reduce((a, b) => a + b.successRate, 0) / miniBuddies.filter((b) => b.isActive).length)}%`} icon={Zap} iconBg="bg-amber-50" iconColor="text-amber-500" />
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -50,7 +50,7 @@ export default function BuddyParivarPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-foreground">{buddy.name}</h3>
-                    <Badge className={buddy.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-gray-500/10 text-gray-400"}>
+                    <Badge className={buddy.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-600"}>
                       {buddy.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>

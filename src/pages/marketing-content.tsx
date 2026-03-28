@@ -16,7 +16,7 @@ interface ContentPiece {
 }
 
 const channelIcons = { whatsapp: MessageSquare, email: Mail, sms: MessageSquare };
-const channelColors = { whatsapp: "bg-green-500/10 text-green-400", email: "bg-blue-500/10 text-blue-400", sms: "bg-purple-500/10 text-purple-400" };
+const channelColors = { whatsapp: "bg-emerald-50 text-emerald-700", email: "bg-blue-50 text-blue-600", sms: "bg-violet-50 text-violet-600" };
 
 const mockContent: ContentPiece[] = [
   { id: 1, title: "CNC Lathe Special Offer", channel: "whatsapp", content: "Namaste! Sai Rolotech is offering special pricing on CNC Lathe Pro 5000. Get up to 15% off this month! Contact us for a demo. Call: 98765-43210", createdAt: "2026-03-15", machine: "CNC Lathe Pro 5000", status: "sent" },
@@ -27,9 +27,9 @@ const mockContent: ContentPiece[] = [
 ];
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-500/10 text-gray-400",
-  sent: "bg-emerald-500/10 text-emerald-400",
-  scheduled: "bg-amber-500/10 text-amber-400",
+  draft: "bg-slate-50 text-slate-600",
+  sent: "bg-emerald-50 text-emerald-700",
+  scheduled: "bg-amber-50 text-amber-700",
 };
 
 export default function MarketingContentPage() {
@@ -38,10 +38,10 @@ export default function MarketingContentPage() {
       <PageHeader title="Marketing Content" subtitle="AI-generated marketing messages and campaigns" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label="Total Content" value={mockContent.length} icon={Megaphone} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
-        <StatsCard label="WhatsApp" value={mockContent.filter((c) => c.channel === "whatsapp").length} icon={MessageSquare} iconBg="bg-green-500/10" iconColor="text-green-400" />
-        <StatsCard label="Emails" value={mockContent.filter((c) => c.channel === "email").length} icon={Mail} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="AI Generated" value={mockContent.length} icon={Bot} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
+        <StatsCard label="Total Content" value={mockContent.length} icon={Megaphone} iconBg="bg-violet-50" iconColor="text-purple-500" />
+        <StatsCard label="WhatsApp" value={mockContent.filter((c) => c.channel === "whatsapp").length} icon={MessageSquare} iconBg="bg-emerald-50" iconColor="text-emerald-700" />
+        <StatsCard label="Emails" value={mockContent.filter((c) => c.channel === "email").length} icon={Mail} iconBg="bg-blue-50" iconColor="text-blue-500" />
+        <StatsCard label="AI Generated" value={mockContent.length} icon={Bot} iconBg="bg-amber-50" iconColor="text-amber-500" />
       </motion.div>
 
       <div className="space-y-4">

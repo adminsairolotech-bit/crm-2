@@ -13,9 +13,9 @@ const recentConversations = [
 ];
 
 const satisfactionColors: Record<string, string> = {
-  high: "bg-emerald-500/10 text-emerald-400",
-  medium: "bg-amber-500/10 text-amber-400",
-  low: "bg-red-500/10 text-red-400",
+  high: "bg-emerald-50 text-emerald-700",
+  medium: "bg-amber-50 text-amber-700",
+  low: "bg-red-50 text-red-600",
 };
 
 const topQueries = [
@@ -33,10 +33,10 @@ export default function BuddyDashboardPage() {
       <PageHeader title="Buddy Dashboard" subtitle="AI assistant performance and conversation analytics" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label="Total Sessions" value={156} icon={MessageSquare} iconBg="bg-blue-500/10" iconColor="text-blue-500" change="+23%" trend="up" />
-        <StatsCard label="Unique Users" value={98} icon={Users} iconBg="bg-purple-500/10" iconColor="text-purple-500" change="+15%" trend="up" />
-        <StatsCard label="Avg Duration" value="6.5 min" icon={Clock} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
-        <StatsCard label="Satisfaction" value="87%" icon={TrendingUp} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" change="+4%" trend="up" />
+        <StatsCard label="Total Sessions" value={156} icon={MessageSquare} iconBg="bg-blue-50" iconColor="text-blue-500" change="+23%" trend="up" />
+        <StatsCard label="Unique Users" value={98} icon={Users} iconBg="bg-violet-50" iconColor="text-purple-500" change="+15%" trend="up" />
+        <StatsCard label="Avg Duration" value="6.5 min" icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-500" />
+        <StatsCard label="Satisfaction" value="87%" icon={TrendingUp} iconBg="bg-emerald-50" iconColor="text-emerald-500" change="+4%" trend="up" />
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
