@@ -16,11 +16,10 @@
         "backgroundColor": "#1a1a2e"
       },
       "package": "com.amazingweb.design.sairolotech",
-      "versionCode": 43
+      "versionCode": 44
     },
     "plugins": [
-      "expo-router",
-      "expo-secure-store"
+      "expo-router"
     ],
     "scheme": "sairolotech",
     "extra": {
