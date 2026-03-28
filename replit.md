@@ -14,15 +14,65 @@ Full-featured CRM web application for SAI RoloTech - an industrial automation co
 
 ## Tech Stack
 - **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS with custom CSS variables (dark theme)
+- **Styling**: Tailwind CSS with custom CSS variables (light theme)
 - **Routing**: Wouter (lightweight router)
 - **Animations**: Framer Motion
 - **Charts**: Recharts
 - **UI Components**: Radix UI primitives + custom shared components
 - **Icons**: Lucide React
 - **Database**: Supabase (PostgreSQL) — all data stored in user's Supabase project
-- **AI**: Gemini (Buddy Chat, AI Quotation Maker, AI Quotation Analyzer), OpenAI (Question Generation)
+- **Lead Store**: `data/leads.json` — JSON file persistence (no MongoDB needed)
+- **AI**: Gemini primary + OpenRouter fallback (Buddy Chat, AI Quotation, AI Machine Guide, etc.)
 - **Email**: Gmail API integration via Google Mail connector
+
+## CRM Backend System (Production)
+Located in `server/` — modular production-ready backend:
+
+### Services (`server/services/`)
+- **aiManager.js** — OpenRouter (primary) → Gemini (fallback) → static message. Predefined quick replies for price/delivery/demo queries. Response caching.
+- **queueService.js** — In-memory job queue with retry logic. Max 5 retries, exponential delays (1m→5m→15m→1h→4h). Survives partial failures.
+- **whatsappService.js** — WhatsApp Business API. Welcome message, follow-ups, admin alerts, DND handling. Mock mode if keys not set.
+- **fcmService.js** — Firebase Cloud Messaging push notifications. Falls back to WhatsApp if no FCM token.
+- **followupService.js** — 4-month follow-up schedule (Day 1,3,7,15, Month 1,2,3,4). Stops on user reply, DND, or meeting booked.
+- **calendarService.js** — Google Calendar free/busy slots, meeting booking with reminders.
+- **reportService.js** — Daily report at 8pm IST via WhatsApp. Auto-scheduled on server start.
+
+### Models (`server/models/`)
+- **leadModel.js** — In-memory lead store + JSON file persistence. CRUD, score calculation, stats.
+
+### Routes (`server/routes/`)
+- **leads.js** — All CRM HTTP endpoints (see API section below)
+
+### CRM API Endpoints
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/new-lead` | Pabbly webhook — capture lead, schedule follow-ups |
+| POST | `/api/track` | App behavior tracking (download, open, feature use) |
+| POST | `/api/wa-webhook` | WhatsApp incoming messages + DND detection |
+| GET | `/api/wa-webhook` | WhatsApp webhook verification |
+| POST | `/api/book-meeting` | Google Calendar meeting booking |
+| GET | `/api/calendar-slots` | Available meeting slots |
+| GET | `/api/leads` | Admin: all leads (requires X-Admin-Token) |
+| GET | `/api/lead-stats` | Lead scoring stats |
+| POST | `/api/report` | Trigger manual daily report |
+| POST | `/api/ai-reply` | Test AI reply generation |
+
+### Lead Scoring
+- **COLD** — No activity (default)
+- **WARM** — App opened
+- **HOT** — Quotation used (triggers admin alert + follow-up message)
+- **VERY_HOT** — Meeting booked
+
+### Required Env Vars for CRM
+- `WHATSAPP_ACCESS_TOKEN` — Meta/WhatsApp Business API token
+- `WHATSAPP_PHONE_ID` — WhatsApp Business Phone ID
+- `WA_VERIFY_TOKEN` — Webhook verification token (default: `sai_rolotech_verify_2025`)
+- `OPENROUTER_API_KEY` — OpenRouter AI (optional, Gemini is fallback)
+- `FCM_SERVER_KEY` — Firebase Cloud Messaging (optional)
+- `ADMIN_PHONE` — Admin WhatsApp number for alerts and reports
+- `ADMIN_API_TOKEN` — Admin API access (default: `sairolotech_admin_2025`)
+- `APP_DOWNLOAD_LINK` — App download URL for welcome messages
+- `GOOGLE_CALENDAR_ID` — Calendar ID for meeting booking (default: primary)
 
 ## Database — Supabase
 All data is stored in the user's Supabase project (NOT Replit's built-in PostgreSQL).

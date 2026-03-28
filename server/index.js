@@ -5,6 +5,16 @@ import { fileURLToPath } from 'url';
 import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 
+/* ── CRM Backend Services ── */
+import { registerHandler } from './services/queueService.js';
+import { getLead } from './models/leadModel.js';
+import { sendWelcomeMessage, sendFollowup, sendAdminAlert, sendQuotationFollowup } from './services/whatsappService.js';
+import { sendPushNotification } from './services/fcmService.js';
+import { generateReply } from './services/aiManager.js';
+import { resumeFollowups } from './services/followupService.js';
+import { startDailyReporter } from './services/reportService.js';
+import leadsRouter from './routes/leads.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -409,6 +419,55 @@ app.post('/api/send-inquiry', async (req, res) => {
   }
 });
 
+/* ── CRM Lead Routes ─────────────────────── */
+app.use('/', leadsRouter);
+
+/* ── Queue Job Handlers ──────────────────── */
+registerHandler('SEND_WELCOME', async ({ phone }) => {
+  const lead = getLead(phone);
+  if (lead) await sendWelcomeMessage(lead);
+});
+
+registerHandler('SEND_FOLLOWUP', async ({ phone, followupIndex }) => {
+  const lead = getLead(phone);
+  if (lead && !lead.dnd && lead.followupIndex < 999) {
+    await sendFollowup(lead, followupIndex);
+  }
+});
+
+registerHandler('SEND_AI_REPLY', async ({ phone, message, leadName }) => {
+  const reply = await generateReply(message, { leadName });
+  if (reply) {
+    // Send AI-generated reply back to user via WhatsApp
+    const lead = getLead(phone);
+    if (lead) {
+      // Re-use followup channel with AI text
+      await sendQuotationFollowup({ ...lead, _aiReply: reply }).catch(() => {});
+    }
+    console.log(`🤖 AI reply to ${phone}: ${reply.slice(0, 80)}`);
+  }
+});
+
+registerHandler('SEND_QUOTATION_FOLLOWUP', async ({ phone }) => {
+  const lead = getLead(phone);
+  if (lead) await sendQuotationFollowup(lead);
+});
+
+registerHandler('ADMIN_ALERT', async ({ phone, event }) => {
+  const lead = getLead(phone);
+  if (lead) await sendAdminAlert(lead, event);
+});
+
+registerHandler('SEND_PUSH', async ({ phone, fcmToken, title, body }) => {
+  if (fcmToken) {
+    await sendPushNotification({ fcmToken, title, body, data: { phone } });
+  } else {
+    // Fallback to WhatsApp
+    const lead = getLead(phone);
+    if (lead) await sendFollowup(lead, 0);
+  }
+});
+
 /* ── Health check ───────────────────────── */
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version: '5.6.0', timestamp: new Date().toISOString(), ai: !!GEMINI_KEY });
@@ -423,5 +482,14 @@ app.get('/{*path}', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ SAI RoloTech CRM v5.6 PRO running on port ${PORT}`);
-  console.log(`   Gemini AI: ${GEMINI_KEY ? '✅ Connected' : '⚠️  Key missing'}`);
+  console.log(`   Gemini AI:   ${GEMINI_KEY ? '✅ Connected' : '⚠️  Key missing'}`);
+  console.log(`   WhatsApp:    ${process.env.WHATSAPP_ACCESS_TOKEN ? '✅ Configured' : '⚠️  Not configured (mock mode)'}`);
+  console.log(`   FCM Push:    ${process.env.FCM_SERVER_KEY ? '✅ Configured' : '⚠️  Not configured (mock mode)'}`);
+  console.log(`   OpenRouter:  ${process.env.OPENROUTER_API_KEY ? '✅ Configured' : '⚠️  Not configured (Gemini fallback)'}`);
+
+  // Resume any missed follow-ups from previous server session
+  resumeFollowups();
+
+  // Start daily report sender (8pm IST every day)
+  startDailyReporter();
 });

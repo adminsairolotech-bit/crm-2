@@ -568,6 +568,95 @@ Return ONLY the JSON array, no other text.`;
           }
         });
 
+        /* ── CRM: New Lead (Pabbly webhook) ──── */
+        server.middlewares.use('/new-lead', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { name, phone, source, email } = JSON.parse(body || '{}');
+            if (!phone) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Phone required' })); return; }
+            const { createLead, scheduleFollowups } = await import('./server/models/leadModel.js').catch(() => ({}));
+            const { enqueue } = await import('./server/services/queueService.js').catch(() => ({}));
+            if (createLead) {
+              const { existing, lead } = createLead({ name, phone, source: source || 'pabbly', email });
+              if (!existing && enqueue) enqueue('SEND_WELCOME', { phone: lead.phone }, { delayMs: 2000 });
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, duplicate: existing, leadId: lead.id }));
+            } else {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, mock: true }));
+            }
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+
+        /* ── CRM: App Tracking ──────────────── */
+        server.middlewares.use('/api/track', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { phone, event, fcmToken } = JSON.parse(body || '{}');
+            if (!phone || !event) { res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'phone and event required' })); return; }
+            const { getLead, updateLead, createLead, recalculateScore } = await import('./server/models/leadModel.js').catch(() => ({}));
+            if (getLead) {
+              let lead = getLead(phone) || createLead({ phone, name: 'App User', source: 'app' }).lead;
+              const updates = {};
+              if (event === 'download') updates.appInstalled = true;
+              if (event === 'app_open') { updates.appOpened = true; if (fcmToken) updates.fcmToken = fcmToken; }
+              if (['quotation', 'maintenance', 'quality'].includes(event)) updates.features = [...new Set([...(lead.features || []), event])];
+              updateLead(phone, updates);
+              const scored = recalculateScore(phone);
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, score: scored?.score }));
+            } else {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, mock: true }));
+            }
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+
+        /* ── CRM: Admin — All Leads ─────────── */
+        server.middlewares.use('/api/leads', async (req, res) => {
+          if (req.method !== 'GET') { res.writeHead(405); res.end(); return; }
+          const token = req.headers['x-admin-token'] || new URL(req.url, 'http://x').searchParams.get('token');
+          const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN || 'sairolotech_admin_2025';
+          if (token !== ADMIN_TOKEN) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Unauthorized' })); return; }
+          try {
+            const { getAllLeads, getStats } = await import('./server/models/leadModel.js').catch(() => ({}));
+            if (getAllLeads) {
+              const leads = getAllLeads();
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, total: leads.length, leads, stats: getStats() }));
+            } else {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, total: 0, leads: [] }));
+            }
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+
+        /* ── CRM: Lead Stats ─────────────────── */
+        server.middlewares.use('/api/lead-stats', async (req, res) => {
+          try {
+            const { getStats } = await import('./server/models/leadModel.js').catch(() => ({}));
+            const stats = getStats ? getStats() : { total: 0 };
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, stats }));
+          } catch (err) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, stats: { total: 0 } }));
+          }
+        });
+
         server.middlewares.use('/api/gmail-leads', async (req, res) => {
           try {
             const gmail = await getGmailClient();
