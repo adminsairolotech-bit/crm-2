@@ -53,14 +53,36 @@ export default function AIQuestions() {
   const [submitted, setSubmitted] = useState(false)
   const [savedSets, setSavedSets] = useState([])
 
-  const generateQuestions = () => {
+  const [loading, setLoading] = useState(false)
+  const [aiMode, setAiMode] = useState(true)
+
+  const generateQuestions = async () => {
+    setAnswers({})
+    setSubmitted(false)
+    setQuizMode(false)
+
+    if (aiMode) {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/generate-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic: topic || 'Industrial Automation, PLC, Electrical, CRM Sales', count, qType })
+        })
+        const data = await res.json()
+        if (data.success && data.questions?.length > 0) {
+          setGenerated(data.questions)
+          setLoading(false)
+          return
+        }
+      } catch {}
+      setLoading(false)
+    }
+
     let pool = topic ? QUESTION_BANK[topic] : Object.values(QUESTION_BANK).flat()
     if (qType !== 'All') pool = pool.filter(q => q.type === qType)
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
     setGenerated(shuffled.slice(0, Math.min(count, shuffled.length)))
-    setAnswers({})
-    setSubmitted(false)
-    setQuizMode(false)
   }
 
   const startQuiz = () => {
@@ -113,7 +135,16 @@ export default function AIQuestions() {
               {[3,5,7,10,15,20].map(n=><option key={n}>{n}</option>)}
             </select>
           </div>
-          <button className={styles.generateBtn} onClick={generateQuestions}>⚡ Generate Questions</button>
+          <div className={styles.controlGroup}>
+            <label>Mode</label>
+            <select value={aiMode ? 'ai' : 'offline'} onChange={e=>setAiMode(e.target.value==='ai')} className={styles.select}>
+              <option value="ai">🤖 AI (Codex)</option>
+              <option value="offline">📦 Offline Bank</option>
+            </select>
+          </div>
+          <button className={styles.generateBtn} onClick={generateQuestions} disabled={loading}>
+            {loading ? '⏳ AI Generating...' : '⚡ Generate Questions'}
+          </button>
         </div>
 
         {generated.length > 0 && (
