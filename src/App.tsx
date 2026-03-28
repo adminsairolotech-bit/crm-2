@@ -48,6 +48,7 @@ const MachineGuidePage = lazy(() => import("@/pages/machine-guide"));
 const MaintenanceGuidePage = lazy(() => import("@/pages/maintenance-guide"));
 const ProjectReportPage = lazy(() => import("@/pages/project-report"));
 const LandingPage = lazy(() => import("@/pages/landing"));
+const SplashPage = lazy(() => import("@/pages/splash"));
 
 function PageLoader() {
   return (
@@ -139,7 +140,7 @@ function AppRoutes() {
   useEffect(() => {
     if (!isLoading && !user) {
       const path = window.location.pathname;
-      const publicPaths = ["/", "/login", "/register", "/forgot-password", "/role-select"];
+      const publicPaths = ["/", "/about", "/login", "/register", "/forgot-password", "/role-select"];
       if (!publicPaths.includes(path)) {
         setLocation("/");
       }
@@ -150,7 +151,8 @@ function AppRoutes() {
 
   return (
     <Switch>
-      <Route path="/">{() => <PublicRoute Component={LandingPage} />}</Route>
+      <Route path="/">{() => <PublicRoute Component={SplashPage} />}</Route>
+      <Route path="/about">{() => <PublicRoute Component={LandingPage} />}</Route>
       <Route path="/login">{() => <PublicRoute Component={LoginPage} />}</Route>
       <Route path="/register">{() => <PublicRoute Component={RegisterPage} />}</Route>
       <Route path="/forgot-password">{() => <PublicRoute Component={ForgotPasswordPage} />}</Route>
