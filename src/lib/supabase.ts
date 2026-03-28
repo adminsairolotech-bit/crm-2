@@ -117,6 +117,7 @@ export interface FeedbackReport {
   status: string;
   priority: string | null;
   admin_notes: string | null;
+  resolved_by: string | null;
   created_at: string;
   updated_at: string;
 }

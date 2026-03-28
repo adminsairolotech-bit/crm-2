@@ -8,7 +8,17 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/apiFetch";
+import { leads as leadsService } from "@/lib/dataService";
+
+const apiFetch = async <T = any>(url: string, opts: any = {}): Promise<T> => {
+  const res = await fetch(`/api${url}`, {
+    method: opts.method || 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    body: opts.body,
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+};
 import { useToast } from "@/hooks/use-toast";
 
 type TabKey = "csv" | "gmail";

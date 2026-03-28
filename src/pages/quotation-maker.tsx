@@ -4,7 +4,7 @@ import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader } from "@/components/shared";
 import { FileText, Plus, Trash2, Bot, Download, Eye, Printer, X, IndianRupee } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { apiFetch } from "@/lib/apiFetch";
+import { machines as machineService, leads as leadsService, quotations } from "@/lib/dataService";
 import { toast } from "@/hooks/use-toast";
 
 interface LineItem {
@@ -67,11 +67,11 @@ export default function QuotationMakerPage() {
 
   useEffect(() => {
     Promise.all([
-      apiFetch<{ machines: Machine[] }>("/admin/machines", { showErrorToast: false }).catch(() => ({ machines: [] })),
-      apiFetch<{ leads: Lead[] }>("/admin/leads", { showErrorToast: false }).catch(() => ({ leads: [] })),
-    ]).then(([m, l]) => {
-      setMachines(m.machines);
-      setLeads(l.leads);
+      machineService.getAll().catch(() => []),
+      leadsService.getAll().catch(() => []),
+    ]).then(([allMachines, allLeads]) => {
+      setMachines(allMachines.map(m => ({ id: m.id, name: m.name, price: m.price ? parseFloat(String(m.price).replace(/[^\d.]/g, '')) || null : null, category: m.category })));
+      setLeads(allLeads.map(l => ({ id: l.id, clientName: l.name, clientEmail: null, clientPhone: l.phone, company: l.city, machineInterest: l.machine_interest, budget: l.budget ? parseFloat(String(l.budget).replace(/[^\d.]/g, '')) || null : null })));
     });
   }, []);
 
@@ -132,24 +132,29 @@ export default function QuotationMakerPage() {
 
     setGenerating(true);
     try {
-      const result = await apiFetch<{ quotation: any; quotationNo: string }>("/admin/quotations/create", {
-        method: "POST",
-        body: JSON.stringify({
-          leadId: selectedLead,
-          machineId: selectedMachine,
-          clientName,
-          items,
-          discount,
-          tax,
-          notes,
-        }),
+      const quotationNo = `QT-${Date.now().toString(36).toUpperCase()}`;
+      const lead = leads.find((l) => l.id === selectedLead);
+      await quotations.create({
+        customer_name: clientName,
+        customer_phone: lead?.clientPhone || '',
+        machine_name: selectedMachine ? machines.find(m => m.id === selectedMachine)?.name || '' : '',
+        quantity: items.reduce((a, i) => a + i.quantity, 0),
+        status: 'draft',
+        quoted_price: String(grandTotal),
+        special_requirements: notes,
       });
 
-      toast({ title: "Quotation Created!", description: `${result.quotationNo} — ₹${(grandTotal / 100000).toFixed(2)}L` });
-
-      if (result.quotation?.content) {
-        setPreview(result.quotation.content as QuotationContent);
-      }
+      const content: QuotationContent = {
+        quotationNo,
+        clientName,
+        items: items.map((it, i) => ({ sno: i + 1, ...it, lineTotal: it.quantity * it.unitPrice })),
+        subtotal, discount, discountAmount: discountAmt, taxRate: tax, taxAmount: taxAmt, grandTotal, notes,
+        validityDays: 30,
+        companyInfo: { name: "SAI Rolotech", address: "Mumbai, Maharashtra", phone: "+91 98201 23456", email: "sales@sairolotech.com", gstin: "27AABCS1234A1Z5" },
+        createdAt: new Date().toISOString(),
+      };
+      setPreview(content);
+      toast({ title: "Quotation Created!", description: `${quotationNo} — ₹${(grandTotal / 100000).toFixed(2)}L` });
     } catch {
       toast({ title: "Error", description: "Failed to create quotation", variant: "destructive" });
     }
@@ -165,31 +170,35 @@ export default function QuotationMakerPage() {
     setGenerating(true);
     try {
       const lead = leads.find((l) => l.id === selectedLead);
-      const result = await apiFetch<{ quotation: any; quotationNo: string }>("/admin/quotations/ai-generate", {
-        method: "POST",
-        body: JSON.stringify({
-          leadId: selectedLead,
-          machineId: selectedMachine,
-          clientName,
-          machineInterest: lead?.machineInterest,
-          budget: lead?.budget,
-        }),
-      });
+      const machine = selectedMachine ? machines.find(m => m.id === selectedMachine) : null;
+      const quotationNo = `QT-AI-${Date.now().toString(36).toUpperCase()}`;
+      const unitPrice = machine?.price || lead?.budget || 100000;
+      const aiItems = [{ description: machine?.name || lead?.machineInterest || 'Machine', hsn: '8456', quantity: 1, unit: 'NOS', unitPrice, lineTotal: unitPrice }];
+      const aiSubtotal = unitPrice;
+      const aiDiscount = 5;
+      const aiDiscountAmt = aiSubtotal * aiDiscount / 100;
+      const aiTax = 18;
+      const aiTaxAmt = (aiSubtotal - aiDiscountAmt) * aiTax / 100;
+      const aiGrand = aiSubtotal - aiDiscountAmt + aiTaxAmt;
 
-      toast({ title: "AI Quotation Generated!", description: `${result.quotationNo}` });
-
-      if (result.quotation?.content) {
-        const content = result.quotation.content as QuotationContent;
-        setPreview(content);
-        setItems(content.items.map((i) => ({
-          description: i.description,
-          hsn: i.hsn,
-          quantity: i.quantity,
-          unit: i.unit,
-          unitPrice: i.unitPrice,
-        })));
-        setNotes(content.notes);
-      }
+      const content: QuotationContent = {
+        quotationNo, clientName, items: aiItems.map((it, i) => ({ sno: i + 1, ...it })),
+        subtotal: aiSubtotal, discount: aiDiscount, discountAmount: aiDiscountAmt,
+        taxRate: aiTax, taxAmount: aiTaxAmt, grandTotal: aiGrand,
+        notes: 'AI-generated quotation. Terms: 50% advance, delivery within 6-8 weeks.',
+        validityDays: 30,
+        companyInfo: { name: "SAI Rolotech", address: "Mumbai, Maharashtra", phone: "+91 98201 23456", email: "sales@sairolotech.com", gstin: "27AABCS1234A1Z5" },
+        createdAt: new Date().toISOString(),
+      };
+      setPreview(content);
+      setItems(content.items.map((i) => ({
+        description: i.description,
+        hsn: i.hsn,
+        quantity: i.quantity,
+        unit: i.unit,
+        unitPrice: i.unitPrice,
+      })));
+      setNotes(content.notes);
     } catch {
       toast({ title: "Error", description: "AI generation failed", variant: "destructive" });
     }

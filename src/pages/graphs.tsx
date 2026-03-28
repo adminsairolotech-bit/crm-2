@@ -7,7 +7,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { apiFetch } from "@/lib/apiFetch";
+import { machines as machineService, leads as leadsService, quotations } from "@/lib/dataService";
 import { BarChart3, PieChart as PieIcon, TrendingUp, Activity } from "lucide-react";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#06b6d4"];
@@ -18,16 +18,24 @@ export default function GraphsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      apiFetch("/admin/dashboard/stats", { showErrorToast: false }).catch(() => null),
-      apiFetch("/admin/quotations/stats", { showErrorToast: false }).catch(() => null),
-      apiFetch("/admin/machines", { showErrorToast: false }).catch(() => ({ machines: [] })),
-      apiFetch("/admin/leads", { showErrorToast: false }).catch(() => ({ leads: [] })),
-    ]).then(([dash, quotes, machinesRes, leadsRes]) => {
-      setDashData({ ...dash, machines: (machinesRes as any)?.machines || [], leads: (leadsRes as any)?.leads || [] });
-      setQuotationStats(quotes);
+    async function loadData() {
+      try {
+        const [allMachines, allLeads, allQuotations] = await Promise.all([
+          machineService.getAll().catch(() => []),
+          leadsService.getAll().catch(() => []),
+          quotations.getAll().catch(() => []),
+        ]);
+        const pipeline: Record<string, number> = {};
+        allLeads.forEach(l => {
+          const stage = l.pipeline_stage || 'new_lead';
+          pipeline[stage] = (pipeline[stage] || 0) + 1;
+        });
+        setDashData({ pipeline, machines: allMachines, leads: allLeads, totalLeads: allLeads.length, totalMachines: allMachines.length });
+        setQuotationStats({ total: allQuotations.length, pending: allQuotations.filter(q => q.status === 'pending').length, sent: allQuotations.filter(q => q.status === 'sent').length });
+      } catch {}
       setLoading(false);
-    });
+    }
+    loadData();
   }, []);
 
   if (loading) {
@@ -40,11 +48,10 @@ export default function GraphsPage() {
 
   const pipeline = dashData?.pipeline || {};
   const pipelineData = [
-    { name: "New", value: pipeline.new || 0, fill: "#6366f1" },
+    { name: "New", value: pipeline.new_lead || 0, fill: "#6366f1" },
     { name: "Contacted", value: pipeline.contacted || 0, fill: "#8b5cf6" },
-    { name: "Interested", value: pipeline.interested || 0, fill: "#a78bfa" },
-    { name: "Demo", value: pipeline.demo_scheduled || 0, fill: "#c084fc" },
     { name: "Quotation", value: pipeline.quotation_sent || 0, fill: "#e879f9" },
+    { name: "Negotiating", value: pipeline.negotiating || 0, fill: "#c084fc" },
     { name: "Won", value: pipeline.won || 0, fill: "#22c55e" },
     { name: "Lost", value: pipeline.lost || 0, fill: "#f87171" },
   ];
@@ -74,9 +81,9 @@ export default function GraphsPage() {
   }));
 
   const leadScoreData = leads.map((l: any) => ({
-    name: l.clientName?.split(" ")[0] || "Lead",
-    score: l.score || 0,
-    budget: Math.round((l.budget || 0) / 100000),
+    name: (l.name || "Lead").split(" ")[0],
+    score: l.lead_score || 0,
+    budget: Math.round((Number(l.budget) || 0) / 100000),
   }));
 
   const monthlyRevData = [

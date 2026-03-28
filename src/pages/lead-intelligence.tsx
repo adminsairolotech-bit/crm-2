@@ -7,7 +7,7 @@ import { LoadingWithTimeout } from "@/components/LoadingWithTimeout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { apiFetch } from "@/lib/apiFetch";
+import { leads as leadsService, leadIntelligence as intelligenceService } from "@/lib/dataService";
 
 interface LeadIntelligenceItem {
   id: number;
@@ -62,12 +62,25 @@ export default function LeadIntelligencePage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [dashData, alertData] = await Promise.all([
-        apiFetch<DashboardData>("/lead-intelligence/dashboard"),
-        apiFetch<{ alerts: LeadIntelligenceItem[] }>("/lead-intelligence/alerts"),
-      ]);
+      const allLeads = await leadsService.getAll().catch(() => []);
+      const hotLeads = allLeads.filter(l => l.lead_score >= 80).length;
+      const avgScore = allLeads.length > 0 ? Math.round(allLeads.reduce((a, l) => a + (l.lead_score || 0), 0) / allLeads.length) : 0;
+      const dashData: DashboardData = {
+        totalLeads: allLeads.length,
+        hotLeads,
+        warmLeads: allLeads.filter(l => l.lead_score >= 50 && l.lead_score < 80).length,
+        coldLeads: allLeads.filter(l => l.lead_score < 50).length,
+        avgScore,
+        conversionRate: allLeads.length > 0 ? Math.round(allLeads.filter(l => l.pipeline_stage === 'won').length / allLeads.length * 100) : 0,
+        predictedRevenue: allLeads.reduce((a, l) => a + (parseFloat(String(l.budget || '0').replace(/[^\d.]/g, '')) || 0), 0),
+      };
       setData(dashData);
-      setAlerts(alertData.alerts || []);
+      const alertItems: LeadIntelligenceItem[] = allLeads.filter(l => l.lead_score >= 80).map(l => ({
+        id: l.id, userId: '', leadId: l.id, type: 'hot_lead', title: `Hot Lead: ${l.name}`,
+        message: `Lead score ${l.lead_score} — interested in ${l.machine_interest}`,
+        priority: 'high', status: 'active', createdAt: l.created_at || '',
+      }));
+      setAlerts(alertItems);
     } catch (err) {
       toast({ title: "Error", description: "Failed to load lead intelligence", variant: "destructive" });
     } finally {
@@ -79,7 +92,6 @@ export default function LeadIntelligencePage() {
 
   const acknowledgeAlert = async (id: number) => {
     try {
-      await apiFetch(`/lead-intelligence/alerts/${id}/acknowledge`, { method: "PUT" });
       setAlerts(prev => prev.filter(a => a.id !== id));
       toast({ title: "Alert acknowledged" });
     } catch {

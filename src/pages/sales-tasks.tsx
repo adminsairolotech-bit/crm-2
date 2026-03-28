@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader, StatsCard, SectionCard } from "@/components/shared";
-import { CheckSquare, Clock, AlertCircle, CheckCircle2, Circle } from "lucide-react";
+import { CheckSquare, Clock, AlertCircle, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { leadTasks } from "@/lib/dataService";
 
 interface SalesTask {
   id: number;
@@ -14,17 +15,6 @@ interface SalesTask {
   priority: "low" | "medium" | "high";
   lead?: string;
 }
-
-const mockTasks: SalesTask[] = [
-  { id: 1, title: "Follow up with Rajesh Kumar on CNC Lathe quote", assignee: "Anil", dueDate: "2026-03-17", status: "pending", priority: "high", lead: "Rajesh Kumar" },
-  { id: 2, title: "Schedule demo for Tata AutoComp", assignee: "Priya", dueDate: "2026-03-18", status: "in_progress", priority: "high", lead: "Tata AutoComp" },
-  { id: 3, title: "Send revised quotation to TVS Motors", assignee: "Anil", dueDate: "2026-03-15", status: "overdue", priority: "medium", lead: "TVS Motors" },
-  { id: 4, title: "Update machine specs for Laser Cutter LCM-500", assignee: "Deepak", dueDate: "2026-03-20", status: "pending", priority: "low" },
-  { id: 5, title: "Collect feedback from Hero MotoCorp demo", assignee: "Priya", dueDate: "2026-03-19", status: "in_progress", priority: "medium", lead: "Hero MotoCorp" },
-  { id: 6, title: "Prepare quotation for Ashok Leyland", assignee: "Anil", dueDate: "2026-03-14", status: "completed", priority: "high", lead: "Ashok Leyland" },
-  { id: 7, title: "Onboard new supplier — SparkTech EDM", assignee: "Deepak", dueDate: "2026-03-21", status: "pending", priority: "medium" },
-  { id: 8, title: "Review pricing for Milling Machine MM-300", assignee: "Anil", dueDate: "2026-03-16", status: "completed", priority: "low" },
-];
 
 const statusConfig: Record<string, { icon: typeof Circle; color: string; label: string }> = {
   pending: { icon: Circle, color: "text-blue-400", label: "Pending" },
@@ -41,18 +31,40 @@ const priorityColors: Record<string, string> = {
 
 export default function SalesTasksPage() {
   const [filter, setFilter] = useState<string>("all");
+  const [tasks, setTasks] = useState<SalesTask[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = filter === "all" ? mockTasks : mockTasks.filter((t) => t.status === filter);
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await leadTasks.getAll();
+        const mapped: SalesTask[] = data.map(t => ({
+          id: t.id,
+          title: t.title,
+          assignee: t.assigned_to || 'Unassigned',
+          dueDate: t.due_date || '',
+          status: (t.status as SalesTask['status']) || 'pending',
+          priority: (t.priority as SalesTask['priority']) || 'medium',
+          lead: t.description || undefined,
+        }));
+        setTasks(mapped);
+      } catch { setTasks([]); }
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const filtered = filter === "all" ? tasks : tasks.filter((t) => t.status === filter);
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
       <PageHeader title="Sales Tasks" subtitle="Track and manage sales team tasks" />
 
       <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatsCard label="Total Tasks" value={mockTasks.length} icon={CheckSquare} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
-        <StatsCard label="Pending" value={mockTasks.filter((t) => t.status === "pending").length} icon={Circle} iconBg="bg-blue-500/10" iconColor="text-blue-400" />
-        <StatsCard label="In Progress" value={mockTasks.filter((t) => t.status === "in_progress").length} icon={Clock} iconBg="bg-amber-500/10" iconColor="text-amber-400" />
-        <StatsCard label="Overdue" value={mockTasks.filter((t) => t.status === "overdue").length} icon={AlertCircle} iconBg="bg-red-500/10" iconColor="text-red-400" />
+        <StatsCard label="Total Tasks" value={tasks.length} icon={CheckSquare} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
+        <StatsCard label="Pending" value={tasks.filter((t) => t.status === "pending").length} icon={Circle} iconBg="bg-blue-500/10" iconColor="text-blue-400" />
+        <StatsCard label="In Progress" value={tasks.filter((t) => t.status === "in_progress").length} icon={Clock} iconBg="bg-amber-500/10" iconColor="text-amber-400" />
+        <StatsCard label="Overdue" value={tasks.filter((t) => t.status === "overdue").length} icon={AlertCircle} iconBg="bg-red-500/10" iconColor="text-red-400" />
       </motion.div>
 
       <motion.div variants={staggerItem} className="flex gap-2 flex-wrap">

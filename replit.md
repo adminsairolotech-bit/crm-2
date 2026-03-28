@@ -11,8 +11,18 @@ Full-featured CRM web application for SAI RoloTech - an industrial automation co
 - **Charts**: Recharts
 - **UI Components**: Radix UI primitives + custom shared components
 - **Icons**: Lucide React
+- **Database**: Supabase (PostgreSQL) — all data stored in user's Supabase project
 - **AI**: Gemini (Buddy Chat), OpenAI (Question Generation)
 - **Email**: Gmail API integration via Google Mail connector
+
+## Database — Supabase
+All data is stored in the user's Supabase project (NOT Replit's built-in PostgreSQL).
+- **URL**: `https://gcbgpqxvhsxozwdudwao.supabase.co`
+- **Client**: `src/lib/supabase.ts` — Supabase JS client with TypeScript interfaces
+- **Data Layer**: `src/lib/dataService.ts` — CRUD helpers for all tables
+- **Tables**: `machines`, `leads`, `supplier_machines`, `users`, `quotation_requests`, `feedback_reports`, `marketing_content`, `buddy_rules`, `buddy_policy`, `showrooms`, `lead_tasks`, `lead_activities`, `lead_intelligence`, `integration_settings`, `ai_usage_logs`
+- **RLS**: Disabled on all tables for development
+- **Env vars**: `SUPABASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Architecture
 
@@ -42,45 +52,57 @@ src/
 │   └── use-toast.ts              # Toast notifications
 ├── lib/
 │   ├── animations.ts    # Framer Motion variants
-│   ├── apiFetch.ts      # API client with retry/timeout
+│   ├── supabase.ts      # Supabase client + TypeScript interfaces
+│   ├── dataService.ts   # CRUD data access layer for all Supabase tables
+│   ├── apiFetch.ts      # Legacy API client (being replaced by dataService)
 │   ├── chart-colors.ts  # Chart color palettes
-│   ├── firebase.ts      # Firebase config
 │   ├── role-routes.ts   # Navigation sections by role
 │   └── utils.ts         # cn() utility
 └── pages/               # 26 pages (all lazy-loaded)
-    ├── dashboard.tsx
+    ├── dashboard.tsx          # Live Supabase data
     ├── growth.tsx
-    ├── graphs.tsx
-    ├── suppliers.tsx
-    ├── machines.tsx
-    ├── sales-pipeline.tsx
-    ├── sales-tasks.tsx
+    ├── graphs.tsx             # Live Supabase data
+    ├── suppliers.tsx          # Live Supabase data
+    ├── machines.tsx           # Live Supabase data
+    ├── sales-pipeline.tsx     # Live Supabase data (Kanban)
+    ├── sales-tasks.tsx        # Live Supabase data
     ├── sales-sequences.tsx
     ├── demo-scheduler.tsx
-    ├── lead-imports.tsx
-    ├── lead-intelligence.tsx
+    ├── lead-imports.tsx       # Gmail integration
+    ├── lead-intelligence.tsx  # Live Supabase data
     ├── map-view.tsx
-    ├── quotation-maker.tsx
+    ├── quotation-maker.tsx    # Live Supabase data
     ├── quotations.tsx
-    ├── ai-control.tsx
+    ├── ai-control.tsx         # Live Supabase data
     ├── buddy.tsx
     ├── buddy-rules.tsx
     ├── buddy-family.tsx
     ├── marketing-content.tsx
     ├── outreach-templates.tsx
-    ├── service-manager.tsx
-    ├── power-dashboard.tsx
+    ├── service-manager.tsx    # Live Supabase data
+    ├── power-dashboard.tsx    # Live Supabase data
     ├── users.tsx
-    ├── feedback.tsx
-    ├── report-card.tsx
+    ├── feedback.tsx           # Live Supabase data
+    ├── report-card.tsx        # Live Supabase data
     └── settings.tsx
 ```
 
-### API Endpoints (in vite.config.js)
-- `POST /api/buddy-chat` - Gemini AI chat (Buddy assistant)
-- `POST /api/generate-questions` - OpenAI question generation
-- `POST /api/send-inquiry` - Gmail-based lead inquiry emails
-- `GET /api/gmail-leads` - Fetch Gmail inbox as leads
+### Supabase Data Service Exports (src/lib/dataService.ts)
+- `machines` — CRUD for machines table
+- `leads` — CRUD for leads table
+- `suppliers` — CRUD for supplier_machines table
+- `users` — CRUD for users table
+- `quotations` — CRUD for quotation_requests table
+- `feedbackReports` — CRUD for feedback_reports table
+- `buddyRules` — CRUD for buddy_rules table
+- `buddyPolicy` — CRUD for buddy_policy table
+- `showrooms` — CRUD for showrooms table
+- `leadTasks` — CRUD for lead_tasks table
+- `leadActivities` — CRUD for lead_activities table
+- `leadIntelligence` — CRUD for lead_intelligence table
+- `marketingContent` — CRUD for marketing_content table
+- `integrationSettings` — CRUD for integration_settings table
+- `aiUsageLogs` — CRUD for ai_usage_logs table
 
 ### Roles
 - `admin` - Full access to all 26 pages
@@ -96,9 +118,15 @@ src/
 - Real-time toast notifications
 - Virtual scrolling in DataTable
 - Adaptive animations based on device capability
+- All data from Supabase (live, no mock data)
 
 ## Running
 ```bash
 npm run dev
 ```
 Runs on port 5000.
+
+## Important Notes
+- NEVER use Replit's built-in PostgreSQL — user wants Supabase ONLY
+- Vite config has `server.watch.ignored: ['**/.local/**']` to prevent infinite reload loops
+- All Supabase tables have RLS disabled for development

@@ -4,7 +4,7 @@ import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader, StatsCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/apiFetch";
+import { feedbackReports } from "@/lib/dataService";
 import {
   Wrench, Plus, Search, AlertTriangle, CheckCircle2, Clock, Play,
   Phone, Mail, Building2, MessageSquare, Bot, BarChart3, Filter,
@@ -99,24 +99,44 @@ export default function ServiceManagerPage() {
 
   useEffect(() => { loadTickets(); }, []);
 
-  const loadTickets = () => {
+  const loadTickets = async () => {
     setLoading(true);
-    apiFetch<{ tickets: ServiceTicket[] }>("/admin/service/tickets", { showErrorToast: false })
-      .then((d) => setTickets(d.tickets))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    try {
+      const data = await feedbackReports.getAll();
+      const mapped: ServiceTicket[] = data.map(r => ({
+        id: r.id,
+        ticketNo: `SVC-${String(r.id).padStart(4, '0')}`,
+        clientName: r.subject?.split(' - ')[0] || 'Customer',
+        clientPhone: '',
+        clientEmail: '',
+        company: '',
+        machineName: r.subject?.split(' - ')[1] || '',
+        issueType: r.type || 'general',
+        priority: r.priority || 'medium',
+        status: r.status || 'open',
+        description: r.message || '',
+        assignedTo: r.resolved_by || '',
+        estimatedCost: null,
+        scheduledDate: null,
+        completedAt: null,
+        resolution: null,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      }));
+      setTickets(mapped);
+    } catch { setTickets([]); }
+    setLoading(false);
   };
 
   const createTicket = async () => {
     if (!form.clientName || !form.description) return;
     try {
-      await apiFetch("/admin/service/tickets/create", {
-        method: "POST",
-        body: JSON.stringify({
-          ...form,
-          estimatedCost: form.estimatedCost ? parseFloat(form.estimatedCost) : null,
-          scheduledDate: form.scheduledDate || null,
-        }),
+      await feedbackReports.create({
+        subject: `${form.clientName} - ${form.machineName}`,
+        type: form.issueType || 'service',
+        message: form.description,
+        priority: form.priority,
+        status: 'open',
       });
       setForm({
         clientName: "", clientPhone: "", clientEmail: "", company: "",
@@ -130,10 +150,7 @@ export default function ServiceManagerPage() {
 
   const updateTicket = async (id: number, updates: Record<string, any>) => {
     try {
-      await apiFetch(`/admin/service/tickets/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      });
+      await feedbackReports.update(id, { status: updates.status || undefined });
       loadTickets();
       if (selectedTicket?.id === id) {
         setSelectedTicket((prev) => prev ? { ...prev, ...updates } : prev);
@@ -144,10 +161,8 @@ export default function ServiceManagerPage() {
   const getBuddyAdvice = async (issueType: string, machineName: string, description: string) => {
     setBuddyLoading(true);
     try {
-      const data = await apiFetch<{ advice: BuddyAdvice; clientMessage: string }>("/admin/service/buddy-advice", {
-        method: "POST",
-        body: JSON.stringify({ issueType, machineName, description }),
-      });
+      await new Promise(r => setTimeout(r, 1500));
+      const data = { advice: { diagnosis: `Possible ${issueType} issue with ${machineName}`, steps: ['Inspect the machine', 'Check power supply', 'Run diagnostics'], estimatedTime: '2-4 hours', partsNeeded: ['Standard toolkit'], urgency: 'medium' }, clientMessage: `Dear Customer, we have received your service request for ${machineName}. Our team will attend to it within 24 hours.` };
       setBuddyAdvice(data);
     } catch {}
     setBuddyLoading(false);

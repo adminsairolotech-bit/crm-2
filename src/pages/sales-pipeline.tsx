@@ -115,7 +115,7 @@ export default function SalesPipelinePage() {
       <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard label="Total Leads" value={totalLeads} icon={Users} iconBg="bg-blue-500/10" iconColor="text-blue-500" />
         <StatsCard label="Pipeline Value" value={totalValue} icon={DollarSign} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" />
-        <StatsCard label="Won This Month" value={leads.order_confirmed.length} icon={Target} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
+        <StatsCard label="Won This Month" value={(leads.won || []).length} icon={Target} iconBg="bg-purple-500/10" iconColor="text-purple-500" />
         <StatsCard label="Conversion" value="32.8%" icon={KanbanSquare} iconBg="bg-amber-500/10" iconColor="text-amber-500" />
       </motion.div>
 

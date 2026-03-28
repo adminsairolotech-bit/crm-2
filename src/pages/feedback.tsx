@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { staggerItem, fadeIn } from "@/lib/animations";
 import { PageHeader, EmptyState, LoadingSkeleton, StatsCard, SectionCard } from "@/components/shared";
 import { LoadingWithTimeout } from "@/components/LoadingWithTimeout";
-import { apiFetch } from "@/lib/apiFetch";
+import { feedbackReports } from "@/lib/dataService";
 import {
   Bug,
   Sparkles,
@@ -61,17 +61,29 @@ export default function FeedbackPage() {
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (typeFilter) params.set("type", typeFilter);
-      if (statusFilter) params.set("status", statusFilter);
-      if (severityFilter) params.set("severity", severityFilter);
-      params.set("limit", "100");
-
-      const data = await apiFetch<{ reports: Report[]; total: number }>(
-        `/feedback?${params.toString()}`
-      );
-      setReports(data.reports || []);
-      setTotal(data.total || 0);
+      const data = await feedbackReports.getAll();
+      const mapped: Report[] = data.map(r => ({
+        id: r.id,
+        ticketNumber: `FB-${String(r.id).padStart(4, '0')}`,
+        type: r.type || 'feedback',
+        title: r.subject,
+        description: r.message || '',
+        pageName: null,
+        severity: r.priority || null,
+        priority: r.priority || null,
+        status: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Open',
+        userName: null,
+        userEmail: null,
+        userPhone: null,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      }));
+      let filtered = mapped;
+      if (typeFilter) filtered = filtered.filter(r => r.type === typeFilter);
+      if (statusFilter) filtered = filtered.filter(r => r.status === statusFilter);
+      if (severityFilter) filtered = filtered.filter(r => r.severity === severityFilter);
+      setReports(filtered);
+      setTotal(mapped.length);
     } catch {
       setReports([]);
     } finally {
@@ -86,10 +98,7 @@ export default function FeedbackPage() {
   const updateStatus = async (id: number, newStatus: string) => {
     setUpdatingId(id);
     try {
-      await apiFetch(`/feedback/${id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: newStatus }),
-      });
+      await feedbackReports.update(id, { status: newStatus });
       setReports((prev) =>
         prev.map((r) =>
           r.id === id ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r
