@@ -18,6 +18,7 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "node": "20.11.0",
       "cache": {
         "disabled": true
       }
