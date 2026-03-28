@@ -869,9 +869,8 @@ Return ONLY the JSON array, no other text.`;
           'vendor-router': ['wouter'],
           'vendor-ui': [
             '@radix-ui/react-dialog',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
             '@radix-ui/react-toast',
+            '@radix-ui/react-toggle',
           ],
         },
       },
