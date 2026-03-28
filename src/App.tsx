@@ -40,6 +40,7 @@ const AdminHealthPage = lazy(() => import("@/pages/admin-health"));
 const TestingLabPage = lazy(() => import("@/pages/testing"));
 const WaBetaTestingPage = lazy(() => import("@/pages/wa-beta-testing"));
 const ProductManagerPage = lazy(() => import("@/pages/product-manager"));
+const AIToolsPage = lazy(() => import("@/pages/ai-tools"));
 
 const LoginPage = lazy(() => import("@/pages/login"));
 const RegisterPage = lazy(() => import("@/pages/register"));
@@ -267,6 +268,7 @@ function AppRoutes() {
                 <Route path="/testing">{() => <RoutePage Component={TestingLabPage} />}</Route>
                 <Route path="/wa-beta">{() => <RoutePage Component={WaBetaTestingPage} />}</Route>
                 <Route path="/product-manager">{() => <RoutePage Component={ProductManagerPage} />}</Route>
+                <Route path="/ai-tools">{() => <RoutePage Component={AIToolsPage} />}</Route>
                 <Route component={NotFoundPage} />
               </Switch>
             </Layout>

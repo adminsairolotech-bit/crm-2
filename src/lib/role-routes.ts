@@ -30,6 +30,7 @@ import {
   FlaskConical,
   Smartphone,
   PackagePlus,
+  BrainCircuit,
   type LucideIcon,
 } from "lucide-react";
 
@@ -85,6 +86,7 @@ export const navSections: NavSection[] = [
     items: [
       { href: "/quotation-maker", label: "Quotation Maker", icon: PenTool, roles: ["admin"] },
       { href: "/quotations", label: "AI Quotation Logs", icon: FileText, roles: ["admin"] },
+      { href: "/ai-tools", label: "AI Tools Hub", icon: BrainCircuit, roles: ["admin"] },
       { href: "/ai-control", label: "AI Control Center", icon: Brain, roles: ["admin"] },
       { href: "/buddy", label: "Buddy Dashboard", icon: Bot, roles: ["admin"] },
       { href: "/buddy-rules", label: "Buddy Rules", icon: Shield, roles: ["admin"] },
