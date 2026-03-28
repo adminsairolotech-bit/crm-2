@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Cpu, MapPin, FileText, MessageSquare, Phone, Mail, Star,
   Shield, ChevronRight, Wrench, Package2, BarChart3, Zap,
-  Factory, Settings, LogOut, User
+  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -132,6 +132,44 @@ export default function HomePage() {
               Products dekhein
             </button>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <button
+            onClick={() => setLocation("/ai-quote")}
+            className="w-full relative overflow-hidden bg-gradient-to-br from-violet-700 via-purple-700 to-blue-700 hover:from-violet-600 hover:via-purple-600 hover:to-blue-600 border border-violet-500/40 rounded-2xl p-6 text-left transition-all duration-300 group shadow-xl shadow-violet-900/40"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-violet-600/20 via-transparent to-blue-600/20" />
+            <div className="absolute top-3 right-4 flex gap-1">
+              {["✨","🤖","📄"].map((e, i) => (
+                <span key={i} className="text-lg opacity-60 group-hover:opacity-100 transition-opacity">{e}</span>
+              ))}
+            </div>
+            <div className="relative flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <Bot className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                  <span className="text-yellow-300 text-xs font-semibold uppercase tracking-wider">New Feature</span>
+                </div>
+                <h3 className="text-white text-xl font-bold leading-tight">AI Quotation Maker</h3>
+                <p className="text-violet-200 text-sm mt-0.5">Apni requirements batayein — AI ek professional quotation banayega with GST, pricing aur terms</p>
+              </div>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-white text-xs font-medium">
+                  <IndianRupee className="w-3 h-3" /> Instant Quote
+                </span>
+                <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all mt-1" />
+              </div>
+            </div>
+          </button>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

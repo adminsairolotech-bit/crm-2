@@ -58,6 +58,93 @@ Rules:
           }
         });
 
+        server.middlewares.use('/api/ai-quotation', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { clientName, clientPhone, clientEmail, clientCompany, products, budget, requirements, catalogData } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+
+            const catalog = catalogData || {};
+            const productList = (catalog.products || []).map(p =>
+              `- ${p.name} (${p.category}): ₹${p.basePrice.toLocaleString('en-IN')}/${p.unit}, HSN: ${p.hsn}, Lead Time: ${p.leadTime}`
+            ).join('\n');
+
+            const systemPrompt = `You are a professional quotation generator for SAI RoloTech, an industrial automation company based in Pune, Maharashtra.
+
+Company Info:
+- Name: ${catalog.company?.name || 'SAI RoloTech'}
+- Address: ${catalog.company?.address || 'MIDC Industrial Area, Pune'}
+- Phone: ${catalog.company?.phone || '+91 98765 43210'}
+- Email: ${catalog.company?.email || 'inquirysairolotech@gmail.com'}
+- GSTIN: ${catalog.company?.gstin || '27AABCS1429B1Z1'}
+
+Available Products & Pricing:
+${productList || 'PLC Panels (₹28,000 - ₹85,000), HMI (₹18,000 - ₹32,000), VFD (₹8,500 - ₹22,000), SCADA (₹85,000), Servo Motors (₹35,000/set)'}
+
+Payment Terms: ${catalog.terms?.payment || '50% advance, 50% before delivery'}
+GST Rate: ${catalog.terms?.gst || 18}%
+Warranty: ${catalog.terms?.warranty || '12 months'}
+Delivery: ${catalog.terms?.delivery || 'Ex-works Pune'}
+
+Generate a professional quotation in JSON format with this EXACT structure:
+{
+  "quotationNo": "SAI-YYYY-NNNN (current year, random 4 digit number)",
+  "date": "current date in DD/MM/YYYY",
+  "validUntil": "date 30 days from now in DD/MM/YYYY",
+  "client": {
+    "name": "client name",
+    "phone": "client phone",
+    "email": "client email or N/A",
+    "company": "client company or individual"
+  },
+  "items": [
+    {
+      "sno": 1,
+      "description": "product name and brief spec",
+      "hsn": "HSN code",
+      "qty": number,
+      "unit": "unit",
+      "unitPrice": number (without GST),
+      "amount": number (qty × unitPrice)
+    }
+  ],
+  "subtotal": number,
+  "discount": number (percentage, 0-15 based on budget/qty),
+  "discountAmount": number,
+  "taxableAmount": number,
+  "gstRate": 18,
+  "gstAmount": number,
+  "grandTotal": number,
+  "paymentTerms": "${catalog.terms?.payment || '50% advance, 50% before delivery'}",
+  "deliveryTerms": "${catalog.terms?.delivery || 'Ex-works Pune, freight extra'}",
+  "warranty": "${catalog.terms?.warranty || '12 months on manufacturing defects'}",
+  "notes": "2-3 lines of professional notes about the quotation",
+  "executiveName": "Technical Sales Team"
+}
+
+Return ONLY valid JSON, no other text. Match products to client requirements intelligently.`;
+
+            const response = await ai.models.generateContent({
+              model: 'gemini-2.0-flash',
+              contents: [{ role: 'user', parts: [{ text: `Generate quotation for:\nClient: ${clientName}\nPhone: ${clientPhone}\nEmail: ${clientEmail || 'N/A'}\nCompany: ${clientCompany || 'Individual'}\nProducts/Requirements: ${products}\nBudget: ${budget || 'Not specified'}\nSpecial Requirements: ${requirements || 'None'}` }] }],
+              config: { systemInstruction: systemPrompt, maxOutputTokens: 2048, temperature: 0.3 }
+            });
+
+            let text = response.text || '{}';
+            text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const quotation = JSON.parse(text);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, quotation }));
+          } catch (err) {
+            console.error('AI Quotation error:', err.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
         server.middlewares.use('/api/generate-questions', async (req, res) => {
           if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
           try {

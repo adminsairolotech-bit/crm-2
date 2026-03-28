@@ -41,6 +41,7 @@ const RegisterPage = lazy(() => import("@/pages/register"));
 const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password"));
 const RoleSelectPage = lazy(() => import("@/pages/role-select"));
 const HomePage = lazy(() => import("@/pages/home"));
+const AIQuotePage = lazy(() => import("@/pages/ai-quote"));
 
 function PageLoader() {
   return (
@@ -157,6 +158,13 @@ function AppRoutes() {
         {() => (
           <AuthGuard>
             <PublicRoute Component={HomePage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/ai-quote">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={AIQuotePage} />
           </AuthGuard>
         )}
       </Route>
