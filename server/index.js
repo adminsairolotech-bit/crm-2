@@ -6,8 +6,8 @@ import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
 
 /* ── CRM Backend Services ── */
-import { registerHandler } from './services/queueService.js';
-import { getLead } from './models/leadModel.js';
+import { registerHandler, getQueueStats } from './services/queueService.js';
+import { getLead, getAllLeads } from './models/leadModel.js';
 import { sendWelcomeMessage, sendFollowup, sendAdminAlert, sendQuotationFollowup } from './services/whatsappService.js';
 import { sendPushNotification } from './services/fcmService.js';
 import { generateReply } from './services/aiManager.js';

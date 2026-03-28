@@ -36,6 +36,7 @@ const ReportCardPage = lazy(() => import("@/pages/report-card"));
 const GraphsPage = lazy(() => import("@/pages/graphs"));
 const ServiceManagerPage = lazy(() => import("@/pages/service-manager"));
 const PowerDashboardPage = lazy(() => import("@/pages/power-dashboard"));
+const AdminHealthPage = lazy(() => import("@/pages/admin-health"));
 
 const LoginPage = lazy(() => import("@/pages/login"));
 const RegisterPage = lazy(() => import("@/pages/register"));
@@ -259,6 +260,7 @@ function AppRoutes() {
                 <Route path="/graphs">{() => <RoutePage Component={GraphsPage} />}</Route>
                 <Route path="/service-manager">{() => <RoutePage Component={ServiceManagerPage} />}</Route>
                 <Route path="/power-dashboard">{() => <RoutePage Component={PowerDashboardPage} />}</Route>
+                <Route path="/admin-health">{() => <RoutePage Component={AdminHealthPage} />}</Route>
                 <Route component={NotFoundPage} />
               </Switch>
             </Layout>

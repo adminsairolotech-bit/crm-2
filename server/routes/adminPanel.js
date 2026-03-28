@@ -105,6 +105,87 @@ router.get('/api/admin/stats', adminAuth, async (req, res) => {
   });
 });
 
+// ─── GET /api/admin/health ───────────────────────────────────────────────────
+router.get('/api/admin/health', adminAuth, async (req, res) => {
+  const checks = [];
+  let overallOk = true;
+
+  // 1. Server
+  checks.push({ id: 'server', label: 'CRM Server', status: 'ok', detail: `Uptime: ${Math.floor(process.uptime() / 60)} min` });
+
+  // 2. WhatsApp
+  const waToken = !!process.env.WHATSAPP_ACCESS_TOKEN;
+  const waPhone = !!process.env.WHATSAPP_PHONE_ID;
+  const waOk = waToken && waPhone;
+  if (!waOk) overallOk = false;
+  checks.push({
+    id: 'whatsapp', label: 'WhatsApp API', status: waOk ? 'ok' : 'error',
+    detail: waOk ? 'Token + PhoneID configured' : (!waToken ? 'WHATSAPP_ACCESS_TOKEN missing' : 'WHATSAPP_PHONE_ID missing'),
+  });
+
+  // 3. Gemini AI
+  const geminiOk = !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+  if (!geminiOk) overallOk = false;
+  checks.push({ id: 'ai', label: 'Gemini AI', status: geminiOk ? 'ok' : 'warn', detail: geminiOk ? 'API key configured' : 'Key missing — AI features limited' });
+
+  // 4. FCM Push
+  const fcmOk = !!process.env.FCM_SERVER_KEY;
+  checks.push({ id: 'fcm', label: 'Push Notifications', status: fcmOk ? 'ok' : 'warn', detail: fcmOk ? 'FCM key configured' : 'FCM_SERVER_KEY missing — no push alerts' });
+
+  // 5. OpenRouter (backup AI)
+  const orOk = !!process.env.OPENROUTER_API_KEY;
+  checks.push({ id: 'openrouter', label: 'OpenRouter AI (backup)', status: orOk ? 'ok' : 'warn', detail: orOk ? 'Key configured' : 'Not configured' });
+
+  // 6. Admin Token
+  const tokenOk = !!process.env.ADMIN_API_TOKEN;
+  if (!tokenOk) overallOk = false;
+  checks.push({ id: 'admintoken', label: 'Admin Auth Token', status: tokenOk ? 'ok' : 'error', detail: tokenOk ? 'Token configured' : 'ADMIN_API_TOKEN missing — admin panel unprotected!' });
+
+  // 7. Lead Database
+  let leadCount = 0; let lastLeadAt = null;
+  try {
+    const { getAllLeads } = await import('../models/leadModel.js');
+    const leads = getAllLeads();
+    leadCount = leads.length;
+    if (leads.length > 0) {
+      const sorted = [...leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      lastLeadAt = sorted[0]?.createdAt || null;
+    }
+  } catch (_) {}
+  checks.push({ id: 'db', label: 'Lead Database', status: 'ok', detail: `${leadCount} leads${lastLeadAt ? ' · Last: ' + new Date(lastLeadAt).toLocaleString('en-IN') : ''}` });
+
+  // 8. Job Queue
+  let queueStats = { queued: 0, processing: 0 };
+  try {
+    const { getQueueStats } = await import('../services/queueService.js');
+    queueStats = getQueueStats();
+  } catch (_) {}
+  checks.push({ id: 'queue', label: 'Follow-up Queue', status: 'ok', detail: `${queueStats.queued} pending · ${queueStats.processing} processing` });
+
+  // 9. Recent Errors
+  const recentErrors = getErrorLogs(5);
+  const errCount = getErrorLogs(200).length;
+  checks.push({
+    id: 'errors', label: 'Error Log',
+    status: errCount === 0 ? 'ok' : errCount < 10 ? 'warn' : 'error',
+    detail: errCount === 0 ? 'No errors recorded' : `${errCount} total errors in log`,
+  });
+
+  const memory = process.memoryUsage();
+  const memMB = Math.round(memory.heapUsed / 1024 / 1024);
+  const memTotalMB = Math.round(memory.heapTotal / 1024 / 1024);
+
+  res.json({
+    overall: overallOk ? 'ok' : 'error',
+    checks,
+    recentErrors,
+    memory: { used: memMB, total: memTotalMB },
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    version: '5.6.0',
+  });
+});
+
 // ─── GET /api/admin/logs ─────────────────────────────────────────────────────
 router.get('/api/admin/logs', adminAuth, (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);

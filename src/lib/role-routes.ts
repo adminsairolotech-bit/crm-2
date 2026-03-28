@@ -26,6 +26,7 @@ import {
   BarChart3,
   Wrench,
   Flame,
+  Activity,
   type LucideIcon,
 } from "lucide-react";
 
@@ -94,6 +95,7 @@ export const navSections: NavSection[] = [
     title: "System",
     items: [
       { href: "/power-dashboard", label: "Power Dashboard", icon: Flame, roles: ["admin"] },
+      { href: "/admin-health", label: "App Health", icon: Activity, roles: ["admin"] },
       { href: "/users", label: "User Management", icon: Users, roles: ["admin"] },
       { href: "/feedback", label: "Feedback", icon: MessageSquare, roles: ["admin"] },
       { href: "/report-card", label: "Report Card", icon: Award, roles: ["admin"] },
