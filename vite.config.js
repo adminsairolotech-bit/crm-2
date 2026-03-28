@@ -745,6 +745,99 @@ Return ONLY the JSON array, no other text.`;
             res.end(JSON.stringify({ success: false, error: err.message, leads: [], labels: [] }));
           }
         });
+
+        // ─── Admin Control Panel API ────────────────────────────────────────
+        // In-memory config + error log store (dev mode)
+        const _cfg = {
+          aiEnabled: true, aiModel: 'gemini-1.5-flash', whatsappEnabled: true,
+          pushEnabled: true, followupEnabled: true, maintenanceMode: false,
+          dailyMessageLimit: 100, alertOnError: true,
+        };
+        const _logs = [];
+        const _stats = { aiCalls: 0, aiErrors: 0, whatsappSent: 0, whatsappFailed: 0, pushSent: 0, totalLeads: 0, followupsSent: 0, startTime: Date.now() };
+
+        function readBody(req) {
+          return new Promise((resolve) => {
+            let b = ''; req.on('data', c => b += c); req.on('end', () => { try { resolve(JSON.parse(b || '{}')); } catch { resolve({}); } });
+          });
+        }
+
+        function adminOk(req, res) {
+          const TOKEN = process.env.ADMIN_API_TOKEN;
+          if (!TOKEN) { res.writeHead(503, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'ADMIN_API_TOKEN not configured' })); return false; }
+          const bearer = (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '') || req.headers['x-admin-token'] || '';
+          if (bearer !== TOKEN) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Unauthorized' })); return false; }
+          return true;
+        }
+
+        function json(res, data, status = 200) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(data)); }
+
+        server.middlewares.use('/api/admin/verify', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          const TOKEN = process.env.ADMIN_API_TOKEN;
+          if (!TOKEN) return json(res, { error: 'ADMIN_API_TOKEN not configured' }, 503);
+          const body = await readBody(req);
+          if (body.token === TOKEN) return json(res, { success: true });
+          return json(res, { error: 'Invalid token' }, 401);
+        });
+
+        server.middlewares.use('/api/admin/config', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          if (req.method === 'GET') return json(res, { ..._cfg });
+          if (req.method === 'PATCH') {
+            const body = await readBody(req);
+            const allowed = ['aiEnabled','aiModel','whatsappEnabled','pushEnabled','followupEnabled','maintenanceMode','dailyMessageLimit','alertOnError'];
+            for (const k of allowed) { if (k in body) _cfg[k] = body[k]; }
+            return json(res, { ..._cfg });
+          }
+          res.writeHead(405); res.end();
+        });
+
+        server.middlewares.use('/api/admin/config/reset', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          if (!adminOk(req, res)) return;
+          Object.assign(_cfg, { aiEnabled: true, aiModel: 'gemini-1.5-flash', whatsappEnabled: true, pushEnabled: true, followupEnabled: true, maintenanceMode: false, dailyMessageLimit: 100, alertOnError: true });
+          return json(res, { ..._cfg });
+        });
+
+        server.middlewares.use('/api/admin/stats', async (req, res) => {
+          if (req.method !== 'GET') { res.writeHead(405); res.end(); return; }
+          if (!adminOk(req, res)) return;
+          json(res, {
+            stats: { ..._stats, uptimeSeconds: Math.floor((Date.now() - _stats.startTime) / 1000), errorCount: _logs.length },
+            config: { ..._cfg },
+            env: {
+              whatsapp: !!process.env.WHATSAPP_ACCESS_TOKEN,
+              fcm: !!process.env.FCM_SERVER_KEY,
+              openrouter: !!process.env.OPENROUTER_API_KEY,
+              gemini: !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+              adminToken: !!process.env.ADMIN_API_TOKEN,
+            },
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+          });
+        });
+
+        server.middlewares.use('/api/admin/logs', async (req, res) => {
+          if (req.method === 'GET') {
+            if (!adminOk(req, res)) return;
+            return json(res, { logs: _logs.slice(0, 50), total: _logs.length });
+          }
+          if (req.method === 'DELETE') {
+            if (!adminOk(req, res)) return;
+            _logs.length = 0;
+            return json(res, { success: true, message: 'Logs cleared' });
+          }
+          res.writeHead(405); res.end();
+        });
+
+        server.middlewares.use('/api/admin/logs/test', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          if (!adminOk(req, res)) return;
+          _logs.unshift({ id: Date.now(), ts: new Date().toISOString(), source: 'AdminPanel', message: 'Test error — manual trigger from Control Panel', details: 'System is working correctly.' });
+          return json(res, { success: true, message: 'Test log entry added' });
+        });
+
       },
     },
   ],
