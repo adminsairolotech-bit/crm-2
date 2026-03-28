@@ -2,17 +2,100 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 
+const PROFILES = [
+  {
+    id: "c-purlin", label: "C-Purlin", x: 40, y: 30,
+    path: "M 70,8 L 8,8 L 8,52 L 70,52",
+    dims: [{ x1: 8, y1: 2, x2: 70, y2: 2, label: "W", lx: 39, ly: 0 }, { x1: 2, y1: 8, x2: 2, y2: 52, label: "H", lx: -4, ly: 30 }],
+  },
+  {
+    id: "z-purlin", label: "Z-Purlin", x: 180, y: 30,
+    path: "M 8,8 L 45,8 L 45,32 L 80,32 L 80,56",
+    dims: [{ x1: 8, y1: 2, x2: 80, y2: 2, label: "W", lx: 44, ly: 0 }],
+  },
+  {
+    id: "u-channel", label: "U-Channel", x: 330, y: 30,
+    path: "M 8,8 L 8,56 L 72,56 L 72,8",
+    dims: [{ x1: 8, y1: 62, x2: 72, y2: 62, label: "W", lx: 40, ly: 68 }],
+  },
+  {
+    id: "hat", label: "Hat Profile", x: 480, y: 30,
+    path: "M 8,52 L 8,28 L 24,8 L 56,8 L 72,28 L 72,52",
+    dims: [{ x1: 8, y1: 58, x2: 72, y2: 58, label: "W", lx: 40, ly: 66 }],
+  },
+  {
+    id: "l-angle", label: "L-Angle", x: 40, y: 155,
+    path: "M 8,8 L 8,60 L 60,60",
+    dims: [{ x1: 2, y1: 8, x2: 2, y2: 60, label: "H", lx: -4, ly: 34 }],
+  },
+  {
+    id: "t-section", label: "T-Section", x: 180, y: 155,
+    path: "M 8,8 L 72,8 M 40,8 L 40,60",
+    dims: [{ x1: 8, y1: 2, x2: 72, y2: 2, label: "W", lx: 40, ly: 0 }],
+  },
+  {
+    id: "omega", label: "Omega", x: 330, y: 155,
+    path: "M 8,52 L 18,52 L 18,24 L 30,8 L 50,8 L 62,24 L 62,52 L 72,52",
+    dims: [{ x1: 8, y1: 58, x2: 72, y2: 58, label: "W", lx: 40, ly: 66 }],
+  },
+  {
+    id: "roof", label: "Roofing Sheet", x: 480, y: 155,
+    path: "M 8,52 L 8,32 L 20,16 L 32,32 L 44,16 L 56,32 L 68,16 L 80,32 L 80,52",
+    dims: [{ x1: 8, y1: 58, x2: 80, y2: 58, label: "W", lx: 44, ly: 66 }],
+  },
+  {
+    id: "floor", label: "Floor Deck", x: 40, y: 275,
+    path: "M 8,52 L 8,32 L 24,8 L 40,32 L 56,8 L 72,32 L 72,52",
+    dims: [],
+  },
+  {
+    id: "track", label: "Track", x: 180, y: 275,
+    path: "M 8,8 L 8,52 L 72,52 L 72,8 M 20,52 L 20,36 M 60,52 L 60,36",
+    dims: [],
+  },
+  {
+    id: "solar", label: "Solar Frame", x: 330, y: 275,
+    path: "M 8,8 L 72,8 L 72,56 L 8,56 L 8,8 M 8,32 L 72,32 M 40,8 L 40,32",
+    dims: [],
+  },
+  {
+    id: "cable", label: "Cable Tray", x: 480, y: 275,
+    path: "M 8,16 L 8,52 L 72,52 L 72,16 M 20,16 L 8,8 M 60,16 L 72,8 M 8,52 L 20,60 M 72,52 L 60,60",
+    dims: [],
+  },
+];
+
+const GRID_SIZE = 20;
+
+function DrawingGrid({ w, h }: { w: number; h: number }) {
+  const cols = Math.floor(w / GRID_SIZE);
+  const rows = Math.floor(h / GRID_SIZE);
+  return (
+    <g opacity="0.18">
+      {Array.from({ length: cols + 1 }).map((_, i) => (
+        <line key={`v${i}`} x1={i * GRID_SIZE} y1={0} x2={i * GRID_SIZE} y2={h} stroke="#2563eb" strokeWidth="0.4" />
+      ))}
+      {Array.from({ length: rows + 1 }).map((_, i) => (
+        <line key={`h${i}`} x1={0} y1={i * GRID_SIZE} x2={w} y2={i * GRID_SIZE} stroke="#2563eb" strokeWidth="0.4" />
+      ))}
+    </g>
+  );
+}
+
 export default function SplashPage() {
   const [, setLocation] = useLocation();
-  const [phase, setPhase] = useState<"logo" | "profile" | "text" | "out">("logo");
+  const [phase, setPhase] = useState<"grid" | "profiles" | "labels" | "brand" | "out">("grid");
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase("profile"), 700);
-    const t2 = setTimeout(() => setPhase("text"), 2000);
-    const t3 = setTimeout(() => setPhase("out"), 3200);
-    const t4 = setTimeout(() => setLocation("/login"), 3700);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    const t1 = setTimeout(() => setPhase("profiles"), 400);
+    const t2 = setTimeout(() => setPhase("labels"), 1800);
+    const t3 = setTimeout(() => setPhase("brand"), 2600);
+    const t4 = setTimeout(() => setPhase("out"), 4000);
+    const t5 = setTimeout(() => setLocation("/login"), 4500);
+    return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
   }, [setLocation]);
+
+  const W = 700, H = 420;
 
   return (
     <AnimatePresence>
@@ -20,170 +103,195 @@ export default function SplashPage() {
         <motion.div
           key="splash"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.04 }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 40%, #f5f0ff 100%)" }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden"
+          style={{ background: "linear-gradient(160deg, #f8faff 0%, #eef4ff 50%, #f3f0ff 100%)" }}
         >
-          {/* Background rings */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            {[1, 2, 3].map((i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full border border-blue-200/50"
-                initial={{ width: 80, height: 80, opacity: 0 }}
-                animate={{ width: 80 + i * 160, height: 80 + i * 160, opacity: [0, 0.4, 0] }}
-                transition={{ duration: 2.5, delay: i * 0.3, repeat: Infinity, ease: "easeOut" }}
-              />
-            ))}
-          </div>
-
-          <div className="relative flex flex-col items-center gap-8">
-            {/* Logo badge */}
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
-              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-400/30"
-              style={{ background: "linear-gradient(135deg, #2563eb, #4f46e5)" }}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="relative rounded-2xl overflow-hidden shadow-2xl shadow-blue-200/60 border border-blue-100"
+            style={{ background: "#fafcff", width: W, maxWidth: "96vw" }}
+          >
+            <svg
+              width={W} height={H}
+              viewBox={`0 0 ${W} ${H}`}
+              style={{ display: "block" }}
             >
-              <span className="text-white text-xl font-extrabold tracking-tight">SR</span>
-            </motion.div>
+              {/* Grid */}
+              <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+                <DrawingGrid w={W} h={H} />
+              </motion.g>
 
-            {/* C-Profile SVG Animation */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: phase === "logo" ? 0 : 1, y: phase === "logo" ? 10 : 0 }}
-              transition={{ duration: 0.4 }}
-              className="relative flex items-center justify-center"
-            >
-              <svg width="220" height="160" viewBox="0 0 220 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Shadow/glow */}
-                <ellipse cx="110" cy="145" rx="60" ry="6" fill="url(#shadowGrad)" opacity="0.3" />
+              {/* Border frame — technical drawing border */}
+              <rect x="10" y="10" width={W - 20} height={H - 20} fill="none" stroke="#2563eb" strokeWidth="1.5" opacity="0.5" />
+              <rect x="14" y="14" width={W - 28} height={H - 28} fill="none" stroke="#2563eb" strokeWidth="0.5" opacity="0.3" />
 
-                {/* C-Profile shape — the formed metal */}
-                <motion.path
-                  d="M 155,28 L 65,28 L 65,132 L 155,132"
-                  stroke="url(#profileGrad)"
-                  strokeWidth="14"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{
-                    pathLength: phase === "logo" ? 0 : 1,
-                    opacity: phase === "logo" ? 0 : 1
-                  }}
-                  transition={{ duration: 1.1, ease: "easeInOut", delay: 0.1 }}
-                />
+              {/* Section dividers */}
+              <line x1="14" y1={H - 56} x2={W - 14} y2={H - 56} stroke="#2563eb" strokeWidth="0.7" opacity="0.4" />
+              <line x1="14" y1={H - 80} x2={W - 14} y2={H - 80} stroke="#2563eb" strokeWidth="0.4" opacity="0.25" />
+              <line x1="160" y1={H - 56} x2="160" y2={H - 10} stroke="#2563eb" strokeWidth="0.7" opacity="0.4" />
+              <line x1="360" y1={H - 56} x2="360" y2={H - 10} stroke="#2563eb" strokeWidth="0.7" opacity="0.4" />
 
-                {/* Inner highlight line on profile */}
-                <motion.path
-                  d="M 155,28 L 65,28 L 65,132 L 155,132"
-                  stroke="white"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                  strokeOpacity="0.5"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{
-                    pathLength: phase === "logo" ? 0 : 1,
-                    opacity: phase === "logo" ? 0 : 0.5
-                  }}
-                  transition={{ duration: 1.1, ease: "easeInOut", delay: 0.2 }}
-                />
+              {/* Title block text — bottom */}
+              <motion.g initial={{ opacity: 0 }} animate={{ opacity: phase === "brand" || phase === "out" ? 1 : 0 }} transition={{ duration: 0.5 }}>
+                <text x="24" y={H - 62} fontFamily="monospace" fontSize="8" fill="#1d4ed8" opacity="0.6" fontWeight="bold">TITLE</text>
+                <text x="24" y={H - 38} fontFamily="monospace" fontSize="11" fill="#1e3a8a" fontWeight="bold">SAI ROLOTECH DESIGN ENGINE</text>
+                <text x="24" y={H - 24} fontFamily="monospace" fontSize="8" fill="#2563eb" opacity="0.7">ROLL FORMING PROFILE LIBRARY — STANDARD CROSS-SECTIONS</text>
 
-                {/* Dimension lines */}
-                <motion.g
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: phase === "text" ? 1 : 0 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <line x1="60" y1="20" x2="60" y2="140" stroke="#93c5fd" strokeWidth="0.8" strokeDasharray="4 3" />
-                  <line x1="160" y1="20" x2="160" y2="140" stroke="#93c5fd" strokeWidth="0.8" strokeDasharray="4 3" />
-                  <line x1="50" y1="24" x2="170" y2="24" stroke="#93c5fd" strokeWidth="0.8" />
-                  <polygon points="55,21 62,24 55,27" fill="#93c5fd" />
-                  <polygon points="165,21 158,24 165,27" fill="#93c5fd" />
-                  <text x="110" y="18" textAnchor="middle" fontSize="9" fill="#3b82f6" fontFamily="monospace">W</text>
+                <text x="172" y={H - 62} fontFamily="monospace" fontSize="8" fill="#1d4ed8" opacity="0.6">DRAWN BY</text>
+                <text x="172" y={H - 46} fontFamily="monospace" fontSize="9" fill="#1e3a8a">AI DESIGN ENGINE</text>
+                <text x="172" y={H - 62 + 30} fontFamily="monospace" fontSize="8" fill="#1d4ed8" opacity="0.6">DATE</text>
+                <text x="172" y={H - 62 + 42} fontFamily="monospace" fontSize="9" fill="#1e3a8a">{new Date().toLocaleDateString("en-IN")}</text>
 
-                  <line x1="58" y1="26" x2="58" y2="134" stroke="#93c5fd" strokeWidth="0.8" />
-                  <polygon points="55,31 58,24 61,31" fill="#93c5fd" />
-                  <polygon points="55,129 58,136 61,129" fill="#93c5fd" />
-                  <text x="48" y="82" textAnchor="middle" fontSize="9" fill="#3b82f6" fontFamily="monospace">H</text>
-                </motion.g>
+                <text x="372" y={H - 62} fontFamily="monospace" fontSize="8" fill="#1d4ed8" opacity="0.6">SCALE</text>
+                <text x="372" y={H - 46} fontFamily="monospace" fontSize="9" fill="#1e3a8a">1:10</text>
+                <text x="450" y={H - 62} fontFamily="monospace" fontSize="8" fill="#1d4ed8" opacity="0.6">SHEET</text>
+                <text x="450" y={H - 46} fontFamily="monospace" fontSize="9" fill="#1e3a8a">01 OF 01</text>
+                <text x="530" y={H - 62} fontFamily="monospace" fontSize="8" fill="#1d4ed8" opacity="0.6">DWG NO.</text>
+                <text x="530" y={H - 46} fontFamily="monospace" fontSize="9" fill="#1e3a8a">SRT-2025-001</text>
+              </motion.g>
 
-                {/* Moving spark along path */}
-                <motion.circle
-                  r="5"
-                  fill="white"
-                  filter="url(#sparkGlow)"
-                  initial={{ opacity: 0 }}
-                  animate={phase !== "logo" ? {
-                    opacity: [0, 1, 1, 0],
-                    offsetDistance: ["0%", "100%"],
-                  } : { opacity: 0 }}
-                  style={{ offsetPath: "path('M 155,28 L 65,28 L 65,132 L 155,132')" } as React.CSSProperties}
-                  transition={{ duration: 1.1, ease: "easeInOut", delay: 0.1 }}
-                />
+              {/* Profiles */}
+              {PROFILES.map((p, i) => (
+                <g key={p.id} transform={`translate(${p.x}, ${p.y})`}>
+                  {/* Profile box */}
+                  <rect x="0" y="0" width="100" height="82" fill="none" stroke="#93c5fd" strokeWidth="0.4" opacity="0.4" />
 
-                <defs>
-                  <linearGradient id="profileGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="50%" stopColor="#4f46e5" />
-                    <stop offset="100%" stopColor="#7c3aed" />
-                  </linearGradient>
-                  <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                  </radialGradient>
-                  <filter id="sparkGlow" x="-100%" y="-100%" width="300%" height="300%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                  </filter>
-                </defs>
-              </svg>
+                  {/* The drawing path */}
+                  <motion.path
+                    d={p.path}
+                    stroke="#1d4ed8"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{
+                      pathLength: phase === "grid" ? 0 : 1,
+                      opacity: phase === "grid" ? 0 : 1,
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      ease: "easeInOut",
+                      delay: phase !== "grid" ? i * 0.08 : 0,
+                    }}
+                  />
 
-              {/* Particles */}
-              {phase !== "logo" && [
-                { x: 158, y: 28, delay: 0.3 }, { x: 65, y: 50, delay: 0.6 },
-                { x: 65, y: 110, delay: 0.9 }, { x: 140, y: 132, delay: 1.05 },
-              ].map((p, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-1.5 h-1.5 rounded-full bg-blue-400"
-                  style={{ left: p.x - 5, top: p.y - 80 }}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0], y: [-4, -14] }}
-                  transition={{ duration: 0.5, delay: p.delay }}
-                />
-              ))}
-            </motion.div>
+                  {/* Center cross-hatch fill */}
+                  <motion.path
+                    d={p.path}
+                    stroke="#3b82f6"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeOpacity="0.08"
+                    fill="none"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{
+                      pathLength: phase === "grid" ? 0 : 1,
+                      opacity: phase === "grid" ? 0 : 1,
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      ease: "easeInOut",
+                      delay: phase !== "grid" ? i * 0.08 : 0,
+                    }}
+                  />
 
-            {/* Text content */}
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: phase === "text" || phase === "out" ? 1 : 0, y: phase === "text" || phase === "out" ? 0 : 8 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">SAI RoloTech</h1>
-              <p className="text-blue-600 text-sm font-bold uppercase tracking-widest mt-0.5">Design Engine</p>
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <div className="flex gap-1">
-                  {[0, 1, 2].map(i => (
-                    <motion.div
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-blue-500"
-                      animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
-                      transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.25 }}
-                    />
+                  {/* Dimension lines */}
+                  {p.dims.map((d, di) => (
+                    <motion.g key={di}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: phase === "labels" || phase === "brand" ? 1 : 0 }}
+                      transition={{ duration: 0.3, delay: di * 0.1 }}
+                    >
+                      <line x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} stroke="#60a5fa" strokeWidth="0.6" />
+                      <polygon points={`${d.x1 - 2},${d.y1} ${d.x1 + 4},${d.y1 - 2} ${d.x1 + 4},${d.y1 + 2}`} fill="#60a5fa" transform={`rotate(${d.y1 === d.y2 ? 0 : 90}, ${d.x1}, ${d.y1})`} />
+                      <polygon points={`${d.x2 + 2},${d.y2} ${d.x2 - 4},${d.y2 - 2} ${d.x2 - 4},${d.y2 + 2}`} fill="#60a5fa" transform={`rotate(${d.y1 === d.y2 ? 0 : 90}, ${d.x2}, ${d.y2})`} />
+                      <text x={d.lx} y={d.ly + 4} fontFamily="monospace" fontSize="7" fill="#2563eb" textAnchor="middle">{d.label}</text>
+                    </motion.g>
                   ))}
-                </div>
-                <span className="text-gray-400 text-xs">Loading...</span>
-              </div>
-            </motion.div>
-          </div>
+
+                  {/* Profile label */}
+                  <motion.text
+                    x="50" y="88"
+                    textAnchor="middle"
+                    fontFamily="monospace"
+                    fontSize="7.5"
+                    fontWeight="bold"
+                    fill="#1e40af"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: phase === "labels" || phase === "brand" ? 1 : 0 }}
+                    transition={{ duration: 0.3, delay: i * 0.05 }}
+                  >
+                    {p.label}
+                  </motion.text>
+
+                  {/* Profile number */}
+                  <motion.text
+                    x="96" y="8"
+                    textAnchor="end"
+                    fontFamily="monospace"
+                    fontSize="6"
+                    fill="#93c5fd"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: phase === "labels" || phase === "brand" ? 0.7 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {(i + 1).toString().padStart(2, "0")}
+                  </motion.text>
+                </g>
+              ))}
+
+              {/* Center brand overlay */}
+              <motion.g
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{
+                  opacity: phase === "brand" ? 1 : 0,
+                  scale: phase === "brand" ? 1 : 0.8,
+                }}
+                transition={{ duration: 0.5, type: "spring" }}
+                style={{ transformOrigin: `${W / 2}px ${H / 2 - 60}px` }}
+              >
+                <rect
+                  x={W / 2 - 130} y={H / 2 - 110}
+                  width="260" height="80"
+                  rx="12"
+                  fill="white" fillOpacity="0.92"
+                  stroke="#3b82f6" strokeWidth="1"
+                  style={{ filter: "drop-shadow(0 4px 24px rgba(59,130,246,0.2))" }}
+                />
+                <text x={W / 2} y={H / 2 - 72} textAnchor="middle" fontFamily="sans-serif" fontSize="18" fontWeight="bold" fill="#1e3a8a">SAI RoloTech</text>
+                <text x={W / 2} y={H / 2 - 50} textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#3b82f6" fontWeight="bold">DESIGN ENGINE · 92% ACCURACY · 500+ PROFILES</text>
+              </motion.g>
+
+              {/* Animated drawing cursor/pen dot */}
+              {phase === "profiles" && (
+                <motion.g
+                  initial={{ x: 40, y: 60 }}
+                  animate={{ x: [40, 200, 380, 540, 40, 200, 380, 540], y: [60, 60, 60, 60, 220, 220, 220, 220] }}
+                  transition={{ duration: 1.4, ease: "linear" }}
+                >
+                  <circle r="4" fill="#3b82f6" opacity="0.7" />
+                  <circle r="8" fill="#3b82f6" opacity="0.2" />
+                </motion.g>
+              )}
+            </svg>
+
+            {/* Loading bar at bottom */}
+            <div className="h-1 bg-blue-50">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "linear-gradient(90deg, #3b82f6, #6366f1, #8b5cf6)" }}
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 4.2, ease: "linear" }}
+              />
+            </div>
+          </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>
