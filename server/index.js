@@ -7,7 +7,7 @@ import { GoogleGenAI } from '@google/genai';
 
 /* ── CRM Backend Services ── */
 import { registerHandler, getQueueStats } from './services/queueService.js';
-import { getLead, getAllLeads } from './models/leadModel.js';
+import { getLead, getAllLeads, getStats, getSourceAnalytics, getLocationAnalytics, getPriorityLeads } from './models/leadModel.js';
 import { sendWelcomeMessage, sendFollowup, sendAdminAlert, sendQuotationFollowup } from './services/whatsappService.js';
 import { sendPushNotification } from './services/fcmService.js';
 import { generateReply } from './services/aiManager.js';
@@ -380,6 +380,157 @@ async function getGmailClient() {
   oauth2Client.setCredentials({ access_token: accessToken });
   return google.gmail({ version: 'v1', auth: oauth2Client });
 }
+
+/* ── Lead Analytics (Bug #1 Fix) ─────────── */
+/* lead-intelligence.tsx calls this endpoint */
+app.get('/api/lead-analytics', async (req, res) => {
+  try {
+    const token = req.headers['x-admin-token'] || req.headers['authorization']?.replace('Bearer ', '');
+    const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN;
+    if (ADMIN_TOKEN && token !== ADMIN_TOKEN) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    const stats         = getStats();
+    const sources       = getSourceAnalytics();
+    const locations     = getLocationAnalytics();
+    const priorityLeads = getPriorityLeads(10);
+    res.json({ success: true, stats, sources, locations, priorityLeads });
+  } catch (err) {
+    console.error('[lead-analytics]', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ── Integration Status Check ─────────────── */
+app.get('/api/integration-status', (req, res) => {
+  res.json({
+    whatsapp:  !!process.env.WHATSAPP_ACCESS_TOKEN,
+    fcm:       !!process.env.FCM_SERVER_KEY,
+    gmail:     !!process.env.GOOGLE_ACCESS_TOKEN,
+    adminPhone:!!process.env.ADMIN_PHONE,
+    gemini:    !!GEMINI_KEY,
+    adminToken:!!process.env.ADMIN_API_TOKEN,
+  });
+});
+
+/* ── AI: Message Quality Analyzer ─────────── */
+/* POST /api/message-quality  body: { message, leadContext? } */
+app.post('/api/message-quality', async (req, res) => {
+  try {
+    const ip = req.ip;
+    if (rateLimit(`msgq-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    const { message, leadContext = '' } = req.body;
+    if (!message?.trim()) return res.status(400).json({ success: false, error: 'Message required' });
+
+    const prompt = `You are a WhatsApp sales message quality checker for SAI RoloTech (Roll Forming Machine manufacturer, New Delhi).
+
+Analyze this follow-up message:
+"${message}"
+
+Lead context: ${leadContext || 'Industrial machinery buyer'}
+
+Return a JSON object (no markdown) with:
+{
+  "score": <0-100 number>,
+  "grade": <"Excellent"|"Good"|"Average"|"Weak"|"Poor">,
+  "issues": [<list of problems, max 3>],
+  "improved": "<rewritten improved version in Hinglish, max 3 lines>",
+  "tips": [<2 quick tips>]
+}`;
+
+    const raw = await gemini([{ role: 'user', parts: [{ text: prompt }] }], '', { maxTokens: 512, temp: 0.4 });
+    const json = raw.match(/\{[\s\S]*\}/)?.[0];
+    const result = json ? JSON.parse(json) : { score: 50, grade: 'Average', issues: [], improved: message, tips: [] };
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[message-quality]', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ── AI: A/B Message Variants ──────────────── */
+/* POST /api/ab-variants  body: { goal, leadName, locationZone, source } */
+app.post('/api/ab-variants', async (req, res) => {
+  try {
+    const ip = req.ip;
+    if (rateLimit(`ab-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    const { goal = 'meeting', leadName = 'Customer', locationZone = 'HIGH', source = 'indiamart' } = req.body;
+
+    const zones = { HIGH: 'Delhi/NCR (nearby — same day visit possible)', MEDIUM: 'North India (video call preferred)', LOW: 'South India (app self-service)', UNKNOWN: 'Unknown location' };
+    const zoneDesc = zones[locationZone] || zones.UNKNOWN;
+
+    const prompt = `You are a WhatsApp sales copywriter for SAI RoloTech (Roll Forming Machine manufacturer, New Delhi).
+
+Generate exactly 2 A/B test variants for a follow-up WhatsApp message.
+Lead name: ${leadName}
+Goal: ${goal} (meeting/quotation/demo)
+Location: ${zoneDesc}
+Source: ${source}
+
+Return ONLY a JSON object (no markdown):
+{
+  "variantA": {
+    "label": "Short & Direct",
+    "message": "<message in Hinglish, 2-3 lines>",
+    "tone": "<tone description>",
+    "bestFor": "<when to use>"
+  },
+  "variantB": {
+    "label": "Value-First",
+    "message": "<message in Hinglish, 2-3 lines>",
+    "tone": "<tone description>",
+    "bestFor": "<when to use>"
+  }
+}`;
+
+    const raw = await gemini([{ role: 'user', parts: [{ text: prompt }] }], '', { maxTokens: 600, temp: 0.8 });
+    const json = raw.match(/\{[\s\S]*\}/)?.[0];
+    if (!json) throw new Error('AI response parse failed');
+    const result = JSON.parse(json);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[ab-variants]', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ── AI: Smart Follow-up Timing ─────────────── */
+/* POST /api/smart-timing  body: { score, locationZone, source, daysSinceCreation, repliesCount } */
+app.post('/api/smart-timing', async (req, res) => {
+  try {
+    const ip = req.ip;
+    if (rateLimit(`timing-${ip}`, 15)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    const { score = 'WARM', locationZone = 'UNKNOWN', source = 'unknown', daysSinceCreation = 0, repliesCount = 0 } = req.body;
+
+    const prompt = `You are a sales timing advisor for SAI RoloTech (industrial machinery CRM).
+
+Lead profile:
+- Score: ${score} (COLD/WARM/HOT/VERY_HOT)
+- Location zone: ${locationZone} (HIGH=Delhi/NCR, MEDIUM=North India, LOW=South India)
+- Lead source: ${source}
+- Days since first contact: ${daysSinceCreation}
+- Number of replies received: ${repliesCount}
+
+Advise the BEST time to send the next follow-up message.
+
+Return ONLY a JSON object (no markdown):
+{
+  "waitDays": <number: how many days to wait before next message>,
+  "bestTime": "<e.g. '10am-12pm IST'>",
+  "urgency": "<'Immediate'|'Today'|'This Week'|'Next Week'|'Monthly'>",
+  "reason": "<1 line explanation in Hinglish>",
+  "action": "<what to say/do next>"
+}`;
+
+    const raw = await gemini([{ role: 'user', parts: [{ text: prompt }] }], '', { maxTokens: 300, temp: 0.3 });
+    const json = raw.match(/\{[\s\S]*\}/)?.[0];
+    if (!json) throw new Error('AI response parse failed');
+    res.json({ success: true, ...JSON.parse(json) });
+  } catch (err) {
+    console.error('[smart-timing]', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /* ── Gmail: Leads ───────────────────────── */
 app.get('/api/gmail-leads', async (req, res) => {

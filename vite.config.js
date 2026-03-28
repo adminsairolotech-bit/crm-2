@@ -841,6 +841,139 @@ Return ONLY the JSON array, no other text.`;
           return json(res, { success: true, message: 'Test log entry added' });
         });
 
+        /* ── AI: Lead Analytics ─────────────────── */
+        server.middlewares.use('/api/lead-analytics', async (req, res) => {
+          try {
+            const { getStats, getSourceAnalytics, getLocationAnalytics, getPriorityLeads } = await import('./server/models/leadModel.js').catch(() => ({}));
+            if (!getStats) {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, stats: { total: 0, hot: 0, warm: 0, cold: 0, converted: 0, dropped: 0 }, sources: [], locations: [], priorityLeads: [] }));
+              return;
+            }
+            const stats = getStats();
+            const sources = getSourceAnalytics ? getSourceAnalytics() : [];
+            const locations = getLocationAnalytics ? getLocationAnalytics() : [];
+            const priorityLeads = getPriorityLeads ? getPriorityLeads(10) : [];
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, stats, sources, locations, priorityLeads }));
+          } catch (err) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, stats: { total: 0 }, sources: [], locations: [], priorityLeads: [] }));
+          }
+        });
+
+        /* ── AI: Integration Status ──────────────── */
+        server.middlewares.use('/api/integration-status', async (req, res) => {
+          const statuses = {
+            whatsapp: { connected: !!(process.env.WHATSAPP_ACCESS_TOKEN), label: 'WhatsApp Business API', note: process.env.WHATSAPP_ACCESS_TOKEN ? 'Live' : 'Token not set — mock mode' },
+            fcm: { connected: !!(process.env.FCM_SERVER_KEY), label: 'Firebase Cloud Messaging', note: process.env.FCM_SERVER_KEY ? 'Live' : 'FCM_SERVER_KEY not set — no push' },
+            gmail: { connected: true, label: 'Gmail OAuth', note: 'Via Replit connector' },
+            gemini: { connected: !!(process.env.AI_INTEGRATIONS_GEMINI_API_KEY), label: 'Gemini AI', note: process.env.AI_INTEGRATIONS_GEMINI_API_KEY ? 'Active' : 'API key missing' },
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, statuses }));
+        });
+
+        /* ── AI: Message Quality Checker ─────────── */
+        server.middlewares.use('/api/message-quality', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { message, leadContext } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+            const prompt = `You are a WhatsApp sales message expert for SAI RoloTech (Roll Forming Machine manufacturer, Delhi).
+Analyze this message and return ONLY valid JSON:
+{
+  "score": <number 0-100>,
+  "grade": "<Excellent|Good|Average|Weak|Poor>",
+  "issues": ["<issue1>", "<issue2>"],
+  "improved": "<improved version of message in Hinglish>",
+  "tips": ["<tip1>", "<tip2>"]
+}
+
+Message to analyze: "${message}"
+Lead Context: "${leadContext || 'General lead'}"
+
+Score based on: clarity, urgency, personalization, call-to-action, length, Hinglish tone.`;
+            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: prompt }] }], config: { maxOutputTokens: 800, temperature: 0.3 } });
+            let text = (response.text || '{}').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const result = JSON.parse(text);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, ...result }));
+          } catch (err) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
+        /* ── AI: A/B Message Variants ────────────── */
+        server.middlewares.use('/api/ab-variants', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { goal, leadName, locationZone, source } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+            const prompt = `You are a WhatsApp sales expert for SAI RoloTech (Roll Forming Machines, Delhi).
+Generate 2 A/B test message variants. Return ONLY valid JSON:
+{
+  "variantA": { "label": "<short label>", "message": "<WhatsApp message in Hinglish>", "tone": "<Formal/Friendly/Urgent>", "bestFor": "<when to use>" },
+  "variantB": { "label": "<short label>", "message": "<WhatsApp message in Hinglish, different approach>", "tone": "<Formal/Friendly/Urgent>", "bestFor": "<when to use>" }
+}
+
+Goal: ${goal}
+Lead Name: ${leadName || 'Customer'}
+Location Zone: ${locationZone || 'HIGH'}
+Source: ${source || 'indiamart'}`;
+            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: prompt }] }], config: { maxOutputTokens: 800, temperature: 0.7 } });
+            let text = (response.text || '{}').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const result = JSON.parse(text);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, ...result }));
+          } catch (err) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
+        /* ── AI: Smart Timing Advisor ────────────── */
+        server.middlewares.use('/api/smart-timing', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { score, locationZone, source, daysSinceCreation, repliesCount } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+            const prompt = `You are a sales timing expert for SAI RoloTech CRM (Roll Forming Machines, Delhi).
+Based on lead profile, recommend follow-up timing. Return ONLY valid JSON:
+{
+  "waitDays": <number 0-30>,
+  "bestTime": "<e.g. 10:00 AM - 12:00 PM>",
+  "urgency": "<Immediate|Today|This Week|Next Week|Monthly>",
+  "reason": "<1-2 lines why this timing>",
+  "action": "<specific action to take>"
+}
+
+Lead Score: ${score}
+Location Zone: ${locationZone}
+Source: ${source}
+Days Since Creation: ${daysSinceCreation}
+Replies Given: ${repliesCount}`;
+            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: prompt }] }], config: { maxOutputTokens: 400, temperature: 0.3 } });
+            let text = (response.text || '{}').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const result = JSON.parse(text);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, ...result }));
+          } catch (err) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
       },
     },
   ],
