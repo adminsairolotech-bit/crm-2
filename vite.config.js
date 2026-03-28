@@ -644,8 +644,15 @@ Return ONLY the JSON array, no other text.`;
           }
         });
 
-        /* ── CRM: Lead Stats ─────────────────── */
+        /* ── CRM: Lead Stats (admin protected) ── */
         server.middlewares.use('/api/lead-stats', async (req, res) => {
+          const token = req.headers['x-admin-token'] || new URL(req.url, 'http://x').searchParams.get('token');
+          const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN;
+          if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+          }
           try {
             const { getStats } = await import('./server/models/leadModel.js').catch(() => ({}));
             const stats = getStats ? getStats() : { total: 0 };

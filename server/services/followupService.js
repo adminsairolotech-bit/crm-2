@@ -34,6 +34,10 @@ export function scheduleFollowups(lead) {
     }, { delayMs });
   });
 
+  // Set nextFollowup so resume can pick up missed jobs after server restart
+  const firstRunAt = createdAt + FOLLOWUP_SCHEDULE[0][0] * DAY_MS;
+  updateLead(lead.phone, { nextFollowup: new Date(firstRunAt).toISOString() });
+
   console.log(`📅 Scheduled ${FOLLOWUP_SCHEDULE.length} follow-ups for ${lead.phone}`);
 }
 
