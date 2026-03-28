@@ -49,9 +49,11 @@ interface AdminData {
 }
 
 const MODELS = [
-  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Fast, Free)" },
-  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Smart)" },
-  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Latest)" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash ⚡ (Fastest · Recommended)" },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro 🧠 (Most Capable)" },
+  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Previous Gen)" },
+  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Legacy)" },
+  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Legacy)" },
   { value: "mistral-7b", label: "Mistral 7B via OpenRouter" },
 ];
 

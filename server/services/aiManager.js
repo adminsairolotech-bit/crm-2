@@ -75,17 +75,19 @@ async function tryOpenRouter(prompt) {
   return data.choices?.[0]?.message?.content || '';
 }
 
-async function tryGemini(prompt, model = 'gemini-1.5-flash') {
+async function tryGemini(prompt, model = 'gemini-2.5-flash') {
   if (!GEMINI_KEY) throw new Error('No Gemini key');
   const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
   // Map control panel model names to Gemini API model IDs
   const modelMap = {
+    'gemini-2.5-flash': 'gemini-2.5-flash',
+    'gemini-2.5-pro': 'gemini-2.5-pro',
+    'gemini-2.0-flash': 'gemini-2.0-flash',
     'gemini-1.5-flash': 'gemini-1.5-flash',
     'gemini-1.5-pro': 'gemini-1.5-pro',
-    'gemini-2.0-flash': 'gemini-2.0-flash',
-    'mistral-7b': 'gemini-1.5-flash', // fallback to gemini if OpenRouter used for mistral
+    'mistral-7b': 'gemini-2.5-flash', // fallback to gemini-2.5 if OpenRouter not available
   };
-  const resolvedModel = modelMap[model] || 'gemini-1.5-flash';
+  const resolvedModel = modelMap[model] || 'gemini-2.5-flash';
   const response = await ai.models.generateContent({
     model: resolvedModel,
     contents: prompt,

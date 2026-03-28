@@ -45,7 +45,7 @@ function getAI() {
 async function gemini(contents, systemInstruction, opts = {}) {
   const ai = getAI();
   const response = await ai.models.generateContent({
-    model: opts.model || 'gemini-2.0-flash',
+    model: opts.model || 'gemini-2.5-flash',
     contents,
     config: { systemInstruction, maxOutputTokens: opts.maxTokens || 1024, temperature: opts.temp ?? 0.7 }
   });

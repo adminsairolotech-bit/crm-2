@@ -11,7 +11,7 @@ const CONFIG_FILE = path.join(__dirname, '../../data/system-config.json');
 
 const DEFAULT_CONFIG = {
   aiEnabled: true,
-  aiModel: 'gemini-1.5-flash',
+  aiModel: 'gemini-2.5-flash',
   whatsappEnabled: true,
   pushEnabled: true,
   followupEnabled: true,

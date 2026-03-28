@@ -44,7 +44,7 @@ Rules:
             contents.push({ role: 'user', parts: [{ text: message }] });
 
             const response = await ai.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               contents,
               config: { systemInstruction: systemPrompt, maxOutputTokens: 1024, temperature: 0.7 }
             });
@@ -128,7 +128,7 @@ Generate a professional quotation in JSON format with this EXACT structure:
 Return ONLY valid JSON, no other text. Match products to client requirements intelligently.`;
 
             const response = await ai.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               contents: [{ role: 'user', parts: [{ text: `Generate quotation for:\nClient: ${clientName}\nPhone: ${clientPhone}\nEmail: ${clientEmail || 'N/A'}\nCompany: ${clientCompany || 'Individual'}\nProducts/Requirements: ${products}\nBudget: ${budget || 'Not specified'}\nSpecial Requirements: ${requirements || 'None'}` }] }],
               config: { systemInstruction: systemPrompt, maxOutputTokens: 2048, temperature: 0.3 }
             });
@@ -245,7 +245,7 @@ REPLY RULES:
             contents.push({ role: 'user', parts: [{ text: message }] });
 
             const response = await ai.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               contents,
               config: { systemInstruction: systemPrompt, maxOutputTokens: 1500, temperature: 0.5 }
             });
@@ -341,7 +341,7 @@ Write a detailed project report with these sections (use proper formatting with 
 Be thorough, professional and bank-ready. Include realistic numbers. Keep total report ~1200-1500 words.`;
 
             const response = await ai.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
               config: { maxOutputTokens: 4096, temperature: 0.3 }
             });
@@ -390,7 +390,7 @@ Give a 5-8 line technical estimate covering:
 Keep it concise, practical and professional.`;
 
             const response = await ai.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
               config: { maxOutputTokens: 512, temperature: 0.3 }
             });
@@ -450,7 +450,7 @@ Analyze the given quotation and return ONLY a valid JSON object with this EXACT 
 Be honest, specific, and helpful. If the text is not a quotation, still analyze what you can see.`;
 
             const response = await ai.models.generateContent({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               contents: [{ role: 'user', parts: [{ text: `Analyze this quotation:\n\n${quotationText}` }] }],
               config: { systemInstruction: systemPrompt, maxOutputTokens: 2048, temperature: 0.4 }
             });
@@ -749,7 +749,7 @@ Return ONLY the JSON array, no other text.`;
         // ─── Admin Control Panel API ────────────────────────────────────────
         // In-memory config + error log store (dev mode)
         const _cfg = {
-          aiEnabled: true, aiModel: 'gemini-1.5-flash', whatsappEnabled: true,
+          aiEnabled: true, aiModel: 'gemini-2.5-flash', whatsappEnabled: true,
           pushEnabled: true, followupEnabled: true, maintenanceMode: false,
           dailyMessageLimit: 100, alertOnError: true,
         };
@@ -799,7 +799,7 @@ Return ONLY the JSON array, no other text.`;
         server.middlewares.use('/api/admin/config/reset', async (req, res) => {
           if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
           if (!adminOk(req, res)) return;
-          Object.assign(_cfg, { aiEnabled: true, aiModel: 'gemini-1.5-flash', whatsappEnabled: true, pushEnabled: true, followupEnabled: true, maintenanceMode: false, dailyMessageLimit: 100, alertOnError: true });
+          Object.assign(_cfg, { aiEnabled: true, aiModel: 'gemini-2.5-flash', whatsappEnabled: true, pushEnabled: true, followupEnabled: true, maintenanceMode: false, dailyMessageLimit: 100, alertOnError: true });
           return json(res, { ..._cfg });
         });
 
