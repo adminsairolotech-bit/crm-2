@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Cpu, MapPin, FileText, MessageSquare, Phone, Mail, Star,
   Shield, ChevronRight, Wrench, Package2, BarChart3, Zap,
-  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown, Upload
+  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown, Upload, Settings2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -195,31 +195,54 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="mb-6"
+          className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4"
         >
           <button
+            onClick={() => setLocation("/machine-guide")}
+            className="relative overflow-hidden bg-gradient-to-br from-orange-800 via-red-800 to-rose-800 hover:from-orange-700 hover:via-red-700 hover:to-rose-700 border border-orange-500/40 rounded-2xl p-5 text-left transition-all duration-300 group shadow-xl shadow-orange-900/40"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-orange-600/20 via-transparent to-red-600/20" />
+            <div className="absolute top-2 right-3 text-base opacity-50 group-hover:opacity-100 transition-opacity">🔧⚙️🤖</div>
+            <div className="relative">
+              <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                <Settings2 className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-3 h-3 text-orange-300" />
+                <span className="text-orange-300 text-xs font-semibold uppercase tracking-wider">AI Master</span>
+              </div>
+              <h3 className="text-white text-base font-bold leading-tight">Machine Troubleshooter</h3>
+              <p className="text-orange-100 text-xs mt-1">Strip left/right/upar? Wave? Twist? — AI Master step-by-step fix batayega</p>
+              <div className="flex items-center justify-between mt-3">
+                <span className="flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1 text-white text-xs">
+                  🔧 Instant Fix Guide
+                </span>
+                <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </div>
+            </div>
+          </button>
+
+          <button
             onClick={() => setLocation("/custom-profile")}
-            className="w-full relative overflow-hidden bg-gradient-to-br from-green-800 via-emerald-800 to-teal-800 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 border border-green-500/40 rounded-2xl p-5 text-left transition-all duration-300 group shadow-xl shadow-green-900/40"
+            className="relative overflow-hidden bg-gradient-to-br from-green-800 via-emerald-800 to-teal-800 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 border border-green-500/40 rounded-2xl p-5 text-left transition-all duration-300 group shadow-xl shadow-green-900/40"
           >
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-green-600/20 via-transparent to-teal-600/20" />
             <div className="absolute top-2 right-3 text-base opacity-50 group-hover:opacity-100 transition-opacity">🏭📐📄</div>
-            <div className="relative flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+            <div className="relative">
+              <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                 <Factory className="w-6 h-6 text-white" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Upload className="w-3 h-3 text-green-300" />
-                  <span className="text-green-300 text-xs font-semibold uppercase tracking-wider">Roll Forming Machine</span>
-                </div>
-                <h3 className="text-white text-base font-bold leading-tight">Custom Profile Inquiry</h3>
-                <p className="text-green-200 text-xs mt-0.5">DXF / DWG / PDF upload karein · Thickness, Width, Punching options specify karein · AI machine specs generate karega</p>
+              <div className="flex items-center gap-2 mb-1">
+                <Upload className="w-3 h-3 text-green-300" />
+                <span className="text-green-300 text-xs font-semibold uppercase tracking-wider">Roll Forming</span>
               </div>
-              <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <span className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-white text-xs font-medium whitespace-nowrap">
-                  <Upload className="w-3 h-3" /> Upload Profile
+              <h3 className="text-white text-base font-bold leading-tight">Custom Profile Inquiry</h3>
+              <p className="text-green-100 text-xs mt-1">DXF/DWG/PDF upload · Thickness, Width, Punching select karein</p>
+              <div className="flex items-center justify-between mt-3">
+                <span className="flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1 text-white text-xs">
+                  📐 Upload Profile
                 </span>
-                <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all mt-1" />
+                <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </button>
