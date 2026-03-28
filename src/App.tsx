@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout/Layout";
 import { ModeSelector } from "@/components/ModeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/Toaster";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { lazy, Suspense, useEffect, type LazyExoticComponent, type ComponentType } from "react";
 import { toast } from "@/hooks/use-toast";
 
@@ -272,6 +273,7 @@ export default function App() {
         </RoleProvider>
       </AuthProvider>
       <Toaster />
+      <PWAInstallPrompt />
     </ErrorBoundary>
   );
 }

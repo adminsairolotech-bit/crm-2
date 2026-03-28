@@ -3,6 +3,15 @@
 ## Overview
 Full-featured CRM web application for SAI RoloTech - an industrial automation company. Dark-themed admin dashboard with 26 pages, role-based access, AI integrations, and comprehensive business management features.
 
+## Mobile / PWA Support
+- **PWA** (Progressive Web App): `public/manifest.json` + `public/sw.js` service worker → installable from Chrome/Safari
+- **Capacitor**: `capacitor.config.json` + `@capacitor/android` + `@capacitor/ios` → native Android/iOS app
+- **App ID**: `com.sairolotech.designengine`
+- **Safe area insets**: CSS variables `--sat/--sab/--sal/--sar` via `env(safe-area-inset-*)` for notched phones
+- **Install prompt**: `src/components/PWAInstallPrompt.tsx` — shows "Add to Home Screen" banner
+- **Build scripts**: `npm run cap:android` (Android Studio), `npm run cap:ios` (Xcode)
+- **Build guide**: `MOBILE_BUILD.md` — step-by-step Play Store + App Store submission guide
+
 ## Tech Stack
 - **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS with custom CSS variables (dark theme)

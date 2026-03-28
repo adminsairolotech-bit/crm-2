@@ -24,6 +24,12 @@
   --input: 217.2 32.6% 17.5%;
   --ring: 217.2 91.2% 59.8%;
   --radius: 0.5rem;
+
+  /* Safe area insets for notched phones (iPhone X+, Android notch) */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 * {
@@ -34,15 +40,80 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Mobile: prevent rubber-band overscroll */
+  overscroll-behavior: none;
+  /* Remove blue tap highlight on Android */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent callout menu on long-press on iOS */
+  -webkit-touch-callout: none;
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height — accounts for mobile browser bars */
 }
 
+/* ──────────────────────────────────────────
+   MOBILE TOUCH OPTIMIZATIONS
+────────────────────────────────────────── */
+
+/* All buttons/links: faster tap response on mobile */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* Smooth scrolling with momentum on iOS */
+.scroll-optimized,
+.overflow-y-auto,
+.overflow-y-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ──────────────────────────────────────────
+   SAFE AREA UTILITIES (Notch / Home Bar)
+────────────────────────────────────────── */
+.pt-safe { padding-top: var(--sat); }
+.pb-safe { padding-bottom: var(--sab); }
+.pl-safe { padding-left: var(--sal); }
+.pr-safe { padding-right: var(--sar); }
+.px-safe { padding-left: var(--sal); padding-right: var(--sar); }
+.py-safe { padding-top: var(--sat); padding-bottom: var(--sab); }
+
+/* Fixed bottom nav safe area */
+.bottom-nav-safe {
+  padding-bottom: calc(var(--sab) + 0.5rem);
+}
+
+/* ──────────────────────────────────────────
+   iOS STANDALONE (Home Screen PWA) FIXES
+────────────────────────────────────────── */
+html.ios-standalone body {
+  /* Prevent overscroll */
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+}
+
+html.ios-standalone #root {
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ──────────────────────────────────────────
+   GLASS / CARD UTILITIES
+────────────────────────────────────────── */
 .glass-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid hsl(var(--border));
@@ -60,12 +131,84 @@ body {
   border: 1px solid hsl(var(--border));
 }
 
-.scroll-optimized {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+/* ──────────────────────────────────────────
+   MOBILE-FIRST RESPONSIVE UTILITIES
+────────────────────────────────────────── */
+
+/* Better tap targets on mobile (min 44px) */
+@media (max-width: 768px) {
+  button, a[role="button"], .btn, [role="tab"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Larger input fields for touch */
+  input, textarea, select {
+    font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+    min-height: 44px;
+  }
+
+  /* Tighter padding on small screens */
+  .container { padding-left: 1rem; padding-right: 1rem; }
+
+  /* Full-width cards on mobile */
+  .mobile-full { width: 100% !important; }
+
+  /* Stack grid to single column on mobile */
+  .mobile-stack {
+    grid-template-columns: 1fr !important;
+    flex-direction: column !important;
+  }
+
+  /* Hide sidebar labels, show only icons on mobile */
+  .sidebar-label { display: none !important; }
+  .mobile-hide { display: none !important; }
+
+  /* Larger font for readability on small screens */
+  .mobile-text-base { font-size: 1rem !important; }
 }
 
+/* Tablet tweaks */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet-stack { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ──────────────────────────────────────────
+   PWA INSTALL PROMPT
+────────────────────────────────────────── */
+.pwa-install-banner {
+  position: fixed;
+  bottom: calc(var(--sab) + 1rem);
+  left: 1rem;
+  right: 1rem;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.4);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ──────────────────────────────────────────
+   MISC
+────────────────────────────────────────── */
 .font-display {
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+/* Capacitor: Hide scrollbar on mobile webview */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
 }
