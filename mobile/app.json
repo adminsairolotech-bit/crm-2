@@ -16,7 +16,7 @@
         "backgroundColor": "#1a1a2e"
       },
       "package": "com.amazingweb.design.sairolotech",
-      "versionCode": 42
+      "versionCode": 43
     },
     "plugins": [
       "expo-router",
