@@ -50,6 +50,9 @@ const MaintenanceGuidePage = lazy(() => import("@/pages/maintenance-guide"));
 const ProjectReportPage = lazy(() => import("@/pages/project-report"));
 const LandingPage = lazy(() => import("@/pages/landing"));
 const SplashPage = lazy(() => import("@/pages/splash"));
+const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
+const TermsPage = lazy(() => import("@/pages/terms"));
+const SupportPage = lazy(() => import("@/pages/support"));
 
 function PageLoader() {
   return (
@@ -157,6 +160,9 @@ function AppRoutes() {
       <Route path="/login">{() => <PublicRoute Component={LoginPage} />}</Route>
       <Route path="/register">{() => <PublicRoute Component={RegisterPage} />}</Route>
       <Route path="/forgot-password">{() => <PublicRoute Component={ForgotPasswordPage} />}</Route>
+      <Route path="/privacy-policy">{() => <PublicRoute Component={PrivacyPolicyPage} />}</Route>
+      <Route path="/terms">{() => <PublicRoute Component={TermsPage} />}</Route>
+      <Route path="/support">{() => <PublicRoute Component={SupportPage} />}</Route>
       <Route path="/role-select">
         {() => (
           <AuthGuard>

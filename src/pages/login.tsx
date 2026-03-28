@@ -177,8 +177,15 @@ export default function LoginPage() {
           <span>AI Powered · PWA Ready · 39 Features</span>
         </div>
 
-        <p className="text-center text-slate-400 text-xs mt-3">
-          © 2025 SAI RoloTech · Industrial Automation Solutions · Pune
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <a href="/privacy-policy" className="text-slate-400 text-xs hover:text-blue-600 transition-colors hover:underline">Privacy Policy</a>
+          <span className="text-slate-300 text-xs">·</span>
+          <a href="/terms" className="text-slate-400 text-xs hover:text-blue-600 transition-colors hover:underline">Terms</a>
+          <span className="text-slate-300 text-xs">·</span>
+          <a href="/support" className="text-slate-400 text-xs hover:text-blue-600 transition-colors hover:underline">Support</a>
+        </div>
+        <p className="text-center text-slate-400 text-xs mt-2">
+          © 2025 SAI RoloTech · New Delhi · India
         </p>
       </motion.div>
     </div>
