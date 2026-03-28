@@ -34,11 +34,11 @@ export default function LoginPage() {
       } else if (user?.userType === "machine_user" || user?.userType === "operator") {
         setLocation("/");
       } else if (user?.userType === "supplier") {
-        setLocation("/");
+        setLocation("/map-view");
       } else {
         setLocation("/home");
       }
-      toast({ title: "Welcome back!", description: `Namaste, ${user?.name}` });
+      toast({ title: "Welcome!", description: `Namaste, ${user?.name}` });
     } else {
       toast({ title: "Login Failed", description: result.error, variant: "destructive" });
     }
@@ -79,6 +79,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="aapka@email.com"
+                autoComplete="email"
                 className="w-full bg-slate-900/70 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors"
               />
             </div>
@@ -91,6 +92,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   className="w-full bg-slate-900/70 border border-slate-600 rounded-xl px-4 py-3 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors"
                 />
                 <button
@@ -141,23 +143,11 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="mt-4">
-            <button
-              onClick={async () => {
-                setLoading(true);
-                const result = await login("admin@sairolotech.com", "admin123");
-                setLoading(false);
-                if (result.success) {
-                  setLocation("/select-mode");
-                  toast({ title: "Admin Access", description: "CRM mein aapka swagat hai!" });
-                }
-              }}
-              disabled={loading}
-              className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-medium rounded-xl py-2.5 transition-all duration-200 flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-            >
-              <Shield className="w-4 h-4" />
-              Admin CRM Access
-            </button>
+          <div className="mt-4 flex items-center gap-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-2.5">
+            <Shield className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <p className="text-amber-400/80 text-xs">
+              Admin ke liye: apna registered admin email aur password use karein
+            </p>
           </div>
         </div>
 

@@ -4,13 +4,15 @@ import { SearchProvider, useSearch } from "./SearchContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { getAdaptiveAnimations } from "@/lib/animations";
-import { Bell, Search, Menu, Eye, LayoutDashboard } from "lucide-react";
+import { Bell, Search, Menu, Eye, LayoutDashboard, LogOut } from "lucide-react";
 import { useRole, type UserRole } from "@/contexts/RoleContext";
 import { useAdminMode } from "@/contexts/AdminModeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useDeviceCapability } from "@/hooks/use-device-capability";
 import { useSwipeNavigation } from "@/hooks/use-swipe-navigation";
 import { BuddyToggleButton, BuddyPanel } from "@/components/BuddyPanel";
 import { AIProviderBadge } from "@/components/AIProviderBadge";
+import { toast } from "@/hooks/use-toast";
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: "Super Admin",
@@ -69,6 +71,14 @@ function Header({
   const { query, setQuery } = useSearch();
   const { role } = useRole();
   const { isEditor } = useAdminMode();
+  const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    setLocation("/login");
+    toast({ title: "Logged out", description: "Aap successfully logout ho gaye." });
+  };
 
   return (
     <header className="h-14 md:h-16 glass-header flex items-center px-4 md:px-6 lg:px-8 sticky top-0 z-20 gap-3">
@@ -109,16 +119,25 @@ function Header({
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[hsl(var(--accent))]" />
         </button>
         <div className="h-8 w-px bg-border hidden sm:block" />
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs bg-[hsl(var(--primary))]">
-            {ROLE_INITIALS[role]}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs bg-[hsl(var(--primary))]">
+              {user?.name ? user.name.charAt(0).toUpperCase() : ROLE_INITIALS[role]}
+            </div>
+            <div className="hidden md:block">
+              <p className="text-sm font-semibold text-foreground leading-tight">
+                {user?.name || ROLE_LABELS[role]}
+              </p>
+              <p className="text-[11px] text-muted-foreground">{ROLE_LABELS[role]}</p>
+            </div>
           </div>
-          <div className="hidden md:block">
-            <p className="text-sm font-semibold text-foreground leading-tight">
-              {ROLE_LABELS[role]}
-            </p>
-            <p className="text-[11px] text-muted-foreground">{role === "admin" ? "Full Access" : "Limited Access"}</p>
-          </div>
+          <button
+            onClick={handleLogout}
+            title="Logout"
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors ml-1"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>
