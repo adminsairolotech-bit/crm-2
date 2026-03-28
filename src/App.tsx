@@ -45,6 +45,7 @@ const AIQuotePage = lazy(() => import("@/pages/ai-quote"));
 const QuoteAnalyzerPage = lazy(() => import("@/pages/quote-analyzer"));
 const CustomProfilePage = lazy(() => import("@/pages/custom-profile"));
 const MachineGuidePage = lazy(() => import("@/pages/machine-guide"));
+const MaintenanceGuidePage = lazy(() => import("@/pages/maintenance-guide"));
 
 function PageLoader() {
   return (
@@ -189,6 +190,13 @@ function AppRoutes() {
         {() => (
           <AuthGuard>
             <PublicRoute Component={MachineGuidePage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/maintenance-guide">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={MaintenanceGuidePage} />
           </AuthGuard>
         )}
       </Route>

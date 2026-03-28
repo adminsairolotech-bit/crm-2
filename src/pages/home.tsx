@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Cpu, MapPin, FileText, MessageSquare, Phone, Mail, Star,
   Shield, ChevronRight, Wrench, Package2, BarChart3, Zap,
-  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown, Upload, Settings2
+  Factory, Settings, LogOut, User, Bot, Sparkles, IndianRupee, Search, ThumbsUp, ThumbsDown, Upload, Settings2, ClipboardList
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -195,7 +195,7 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4"
+          className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4"
         >
           <button
             onClick={() => setLocation("/machine-guide")}
@@ -241,6 +241,31 @@ export default function HomePage() {
               <div className="flex items-center justify-between mt-3">
                 <span className="flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1 text-white text-xs">
                   📐 Upload Profile
+                </span>
+                <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setLocation("/maintenance-guide")}
+            className="relative overflow-hidden bg-gradient-to-br from-yellow-800 via-amber-800 to-orange-800 hover:from-yellow-700 hover:via-amber-700 hover:to-orange-700 border border-yellow-500/40 rounded-2xl p-5 text-left transition-all duration-300 group shadow-xl shadow-yellow-900/40"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-yellow-600/20 via-transparent to-amber-600/20" />
+            <div className="absolute top-2 right-3 text-base opacity-50 group-hover:opacity-100 transition-opacity">🔩📋✅</div>
+            <div className="relative">
+              <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                <ClipboardList className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex items-center gap-2 mb-1">
+                <Wrench className="w-3 h-3 text-yellow-300" />
+                <span className="text-yellow-300 text-xs font-semibold uppercase tracking-wider">Maintenance</span>
+              </div>
+              <h3 className="text-white text-base font-bold leading-tight">Machine Maintenance Guide</h3>
+              <p className="text-yellow-100 text-xs mt-1">Daily, Weekly, Monthly schedule · Checklist · Spare parts guide</p>
+              <div className="flex items-center justify-between mt-3">
+                <span className="flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1 text-white text-xs">
+                  📋 Full Schedule
                 </span>
                 <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </div>
