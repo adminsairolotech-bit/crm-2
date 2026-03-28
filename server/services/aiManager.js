@@ -3,6 +3,7 @@
  * No lead ever gets lost due to AI failure
  */
 import { GoogleGenAI } from '@google/genai';
+import { isEnabled, increment, logError, getConfig } from './configService.js';
 
 const GEMINI_KEY = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
@@ -74,11 +75,19 @@ async function tryOpenRouter(prompt) {
   return data.choices?.[0]?.message?.content || '';
 }
 
-async function tryGemini(prompt) {
+async function tryGemini(prompt, model = 'gemini-1.5-flash') {
   if (!GEMINI_KEY) throw new Error('No Gemini key');
   const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
+  // Map control panel model names to Gemini API model IDs
+  const modelMap = {
+    'gemini-1.5-flash': 'gemini-1.5-flash',
+    'gemini-1.5-pro': 'gemini-1.5-pro',
+    'gemini-2.0-flash': 'gemini-2.0-flash',
+    'mistral-7b': 'gemini-1.5-flash', // fallback to gemini if OpenRouter used for mistral
+  };
+  const resolvedModel = modelMap[model] || 'gemini-1.5-flash';
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
+    model: resolvedModel,
     contents: prompt,
     config: { systemInstruction: SYSTEM_PROMPT, maxOutputTokens: 150, temperature: 0.7 },
   });
@@ -86,6 +95,11 @@ async function tryGemini(prompt) {
 }
 
 export async function generateReply(userMessage, context = {}) {
+  // 0. Check if AI is enabled via Control Panel
+  if (!isEnabled('aiEnabled')) {
+    return 'Hamari team jaldi aapse contact karegi. Dhanyawad! 🙏';
+  }
+
   // 1. Check for predefined quick reply (fastest, no API cost)
   const quick = detectQuickReply(userMessage);
   if (quick) return quick;
@@ -97,11 +111,14 @@ export async function generateReply(userMessage, context = {}) {
     return cached.reply;
   }
 
+  // Use model from Control Panel config
+  const cfg = getConfig();
   const prompt = context.leadName
     ? `Customer: ${context.leadName}\nMessage: ${userMessage}`
     : userMessage;
 
   let reply = '';
+  increment('aiCalls');
 
   // 3. Try OpenRouter
   try {
@@ -109,13 +126,16 @@ export async function generateReply(userMessage, context = {}) {
     console.log('🤖 AI via OpenRouter');
   } catch (e1) {
     console.warn('OpenRouter failed:', e1.message, '— trying Gemini...');
+    logError('OpenRouter', e1.message, `Prompt: ${prompt.slice(0, 100)}`);
 
     // 4. Try Gemini
     try {
-      reply = await tryGemini(prompt);
-      console.log('🤖 AI via Gemini');
+      reply = await tryGemini(prompt, cfg.aiModel);
+      console.log('🤖 AI via Gemini (' + cfg.aiModel + ')');
     } catch (e2) {
       console.warn('Gemini failed:', e2.message, '— using fallback');
+      logError('Gemini', e2.message, `Model: ${cfg.aiModel}`);
+      increment('aiErrors');
 
       // 5. Static fallback
       reply = FALLBACK_MESSAGES[Math.floor(Math.random() * FALLBACK_MESSAGES.length)];

@@ -421,6 +421,7 @@ app.post('/api/send-inquiry', async (req, res) => {
 
 /* ── CRM Lead Routes ─────────────────────── */
 app.use('/', leadsRouter);
+app.use('/', (await import('./routes/adminPanel.js')).default);
 
 /* ── Queue Job Handlers ──────────────────── */
 registerHandler('SEND_WELCOME', async ({ phone }) => {
