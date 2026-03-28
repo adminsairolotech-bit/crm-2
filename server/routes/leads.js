@@ -22,7 +22,8 @@ const router = express.Router();
 /* ── Simple admin token check ── */
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
-  const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN || 'sairolotech_admin_2025';
+  const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN;
+  if (!ADMIN_TOKEN) return res.status(503).json({ error: 'ADMIN_API_TOKEN env var not configured' });
   if (token !== ADMIN_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
   next();
 }
@@ -130,8 +131,8 @@ router.get('/api/wa-webhook', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  const VERIFY_TOKEN = process.env.WA_VERIFY_TOKEN || 'sai_rolotech_verify_2025';
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+  const VERIFY_TOKEN = process.env.WA_VERIFY_TOKEN;
+  if (VERIFY_TOKEN && mode === 'subscribe' && token === VERIFY_TOKEN) {
     return res.send(challenge);
   }
   res.sendStatus(403);

@@ -626,8 +626,8 @@ Return ONLY the JSON array, no other text.`;
         server.middlewares.use('/api/leads', async (req, res) => {
           if (req.method !== 'GET') { res.writeHead(405); res.end(); return; }
           const token = req.headers['x-admin-token'] || new URL(req.url, 'http://x').searchParams.get('token');
-          const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN || 'sairolotech_admin_2025';
-          if (token !== ADMIN_TOKEN) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Unauthorized' })); return; }
+          const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN;
+          if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'Unauthorized' })); return; }
           try {
             const { getAllLeads, getStats } = await import('./server/models/leadModel.js').catch(() => ({}));
             if (getAllLeads) {
