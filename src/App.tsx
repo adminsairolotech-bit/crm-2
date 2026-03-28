@@ -1,6 +1,7 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AdminModeProvider } from "@/contexts/AdminModeContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { ModeSelector } from "@/components/ModeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -35,10 +36,16 @@ const GraphsPage = lazy(() => import("@/pages/graphs"));
 const ServiceManagerPage = lazy(() => import("@/pages/service-manager"));
 const PowerDashboardPage = lazy(() => import("@/pages/power-dashboard"));
 
+const LoginPage = lazy(() => import("@/pages/login"));
+const RegisterPage = lazy(() => import("@/pages/register"));
+const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password"));
+const RoleSelectPage = lazy(() => import("@/pages/role-select"));
+const HomePage = lazy(() => import("@/pages/home"));
+
 function PageLoader() {
   return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
@@ -59,6 +66,14 @@ function RoutePage({ Component }: { Component: LazyExoticComponent<ComponentType
         <Component />
       </Suspense>
     </ErrorBoundary>
+  );
+}
+
+function PublicRoute({ Component }: { Component: LazyExoticComponent<ComponentType> }) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
   );
 }
 
@@ -94,50 +109,116 @@ function GlobalErrorHandlers() {
   return null;
 }
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/login");
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) return <PageLoader />;
+  if (!user) return <PageLoader />;
+
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      const path = window.location.pathname;
+      const publicPaths = ["/login", "/register", "/forgot-password", "/role-select"];
+      if (!publicPaths.includes(path)) {
+        setLocation("/login");
+      }
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) return <PageLoader />;
+
+  return (
+    <Switch>
+      <Route path="/login">{() => <PublicRoute Component={LoginPage} />}</Route>
+      <Route path="/register">{() => <PublicRoute Component={RegisterPage} />}</Route>
+      <Route path="/forgot-password">{() => <PublicRoute Component={ForgotPasswordPage} />}</Route>
+      <Route path="/role-select">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={RoleSelectPage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/home">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={HomePage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/select-mode">
+        {() => (
+          <AuthGuard>
+            <ModeSelector />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route>
+        {() => (
+          <AuthGuard>
+            <Layout>
+              <Switch>
+                <Route path="/">{() => <RoutePage Component={DashboardPage} />}</Route>
+                <Route path="/growth">{() => <RoutePage Component={GrowthAnalyticsPage} />}</Route>
+                <Route path="/machines">{() => <RoutePage Component={MachineCatalogPage} />}</Route>
+                <Route path="/suppliers">{() => <RoutePage Component={SupplierManagementPage} />}</Route>
+                <Route path="/sales-pipeline">{() => <RoutePage Component={SalesPipelinePage} />}</Route>
+                <Route path="/sales-tasks">{() => <RoutePage Component={SalesTasksPage} />}</Route>
+                <Route path="/sales-sequences">{() => <RoutePage Component={SalesSequencesPage} />}</Route>
+                <Route path="/demo-scheduler">{() => <RoutePage Component={DemoSchedulerPage} />}</Route>
+                <Route path="/lead-imports">{() => <RoutePage Component={LeadImportsPage} />}</Route>
+                <Route path="/map-view">{() => <RoutePage Component={MapViewPage} />}</Route>
+                <Route path="/quotations">{() => <RoutePage Component={QuotationLogsPage} />}</Route>
+                <Route path="/quotation-maker">{() => <RoutePage Component={QuotationMakerPage} />}</Route>
+                <Route path="/ai-control">{() => <RoutePage Component={AIControlCenterPage} />}</Route>
+                <Route path="/buddy">{() => <RoutePage Component={BuddyDashboardPage} />}</Route>
+                <Route path="/buddy-rules">{() => <RoutePage Component={BuddyRulesPage} />}</Route>
+                <Route path="/marketing-content">{() => <RoutePage Component={MarketingContentPage} />}</Route>
+                <Route path="/lead-intelligence">{() => <RoutePage Component={LeadIntelligencePage} />}</Route>
+                <Route path="/outreach-templates">{() => <RoutePage Component={OutreachTemplatesPage} />}</Route>
+                <Route path="/buddy-family">{() => <RoutePage Component={BuddyParivarPage} />}</Route>
+                <Route path="/users">{() => <RoutePage Component={UserManagementPage} />}</Route>
+                <Route path="/feedback">{() => <RoutePage Component={FeedbackPage} />}</Route>
+                <Route path="/settings">{() => <RoutePage Component={SettingsPage} />}</Route>
+                <Route path="/report-card">{() => <RoutePage Component={ReportCardPage} />}</Route>
+                <Route path="/graphs">{() => <RoutePage Component={GraphsPage} />}</Route>
+                <Route path="/service-manager">{() => <RoutePage Component={ServiceManagerPage} />}</Route>
+                <Route path="/power-dashboard">{() => <RoutePage Component={PowerDashboardPage} />}</Route>
+                <Route component={NotFoundPage} />
+              </Switch>
+            </Layout>
+          </AuthGuard>
+        )}
+      </Route>
+    </Switch>
+  );
+}
+
 export default function App() {
   return (
-    <ErrorBoundary fallbackMessage="The admin dashboard encountered a critical error. Please refresh the page.">
+    <ErrorBoundary fallbackMessage="The application encountered a critical error. Please refresh the page.">
       <GlobalErrorHandlers />
-      <RoleProvider>
-        <AdminModeProvider>
-          <Switch>
-            <Route path="/select-mode" component={ModeSelector} />
-            <Route>
-              <Layout>
-                <Switch>
-                  <Route path="/">{() => <RoutePage Component={DashboardPage} />}</Route>
-                  <Route path="/growth">{() => <RoutePage Component={GrowthAnalyticsPage} />}</Route>
-                  <Route path="/machines">{() => <RoutePage Component={MachineCatalogPage} />}</Route>
-                  <Route path="/suppliers">{() => <RoutePage Component={SupplierManagementPage} />}</Route>
-                  <Route path="/sales-pipeline">{() => <RoutePage Component={SalesPipelinePage} />}</Route>
-                  <Route path="/sales-tasks">{() => <RoutePage Component={SalesTasksPage} />}</Route>
-                  <Route path="/sales-sequences">{() => <RoutePage Component={SalesSequencesPage} />}</Route>
-                  <Route path="/demo-scheduler">{() => <RoutePage Component={DemoSchedulerPage} />}</Route>
-                  <Route path="/lead-imports">{() => <RoutePage Component={LeadImportsPage} />}</Route>
-                  <Route path="/map-view">{() => <RoutePage Component={MapViewPage} />}</Route>
-                  <Route path="/quotations">{() => <RoutePage Component={QuotationLogsPage} />}</Route>
-                  <Route path="/quotation-maker">{() => <RoutePage Component={QuotationMakerPage} />}</Route>
-                  <Route path="/ai-control">{() => <RoutePage Component={AIControlCenterPage} />}</Route>
-                  <Route path="/buddy">{() => <RoutePage Component={BuddyDashboardPage} />}</Route>
-                  <Route path="/buddy-rules">{() => <RoutePage Component={BuddyRulesPage} />}</Route>
-                  <Route path="/marketing-content">{() => <RoutePage Component={MarketingContentPage} />}</Route>
-                  <Route path="/lead-intelligence">{() => <RoutePage Component={LeadIntelligencePage} />}</Route>
-                  <Route path="/outreach-templates">{() => <RoutePage Component={OutreachTemplatesPage} />}</Route>
-                  <Route path="/buddy-family">{() => <RoutePage Component={BuddyParivarPage} />}</Route>
-                  <Route path="/users">{() => <RoutePage Component={UserManagementPage} />}</Route>
-                  <Route path="/feedback">{() => <RoutePage Component={FeedbackPage} />}</Route>
-                  <Route path="/settings">{() => <RoutePage Component={SettingsPage} />}</Route>
-                  <Route path="/report-card">{() => <RoutePage Component={ReportCardPage} />}</Route>
-                  <Route path="/graphs">{() => <RoutePage Component={GraphsPage} />}</Route>
-                  <Route path="/service-manager">{() => <RoutePage Component={ServiceManagerPage} />}</Route>
-                  <Route path="/power-dashboard">{() => <RoutePage Component={PowerDashboardPage} />}</Route>
-                  <Route component={NotFoundPage} />
-                </Switch>
-              </Layout>
-            </Route>
-          </Switch>
-        </AdminModeProvider>
-      </RoleProvider>
+      <AuthProvider>
+        <RoleProvider>
+          <AdminModeProvider>
+            <AppRoutes />
+          </AdminModeProvider>
+        </RoleProvider>
+      </AuthProvider>
       <Toaster />
     </ErrorBoundary>
   );

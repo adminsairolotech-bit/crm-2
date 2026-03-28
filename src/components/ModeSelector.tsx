@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { Eye, LayoutDashboard, ArrowRight, Shield, Sparkles } from "lucide-react";
 import { useAdminMode } from "@/contexts/AdminModeContext";
+import { useLocation } from "wouter";
 
 export function ModeSelector() {
   const { setMode } = useAdminMode();
+  const [, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -33,7 +35,7 @@ export function ModeSelector() {
             transition={{ duration: 0.5, delay: 0.2 }}
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setMode("visitor")}
+            onClick={() => { setMode("visitor"); setLocation("/"); }}
             className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 text-left transition-all hover:border-blue-500/40 hover:shadow-xl hover:shadow-blue-500/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -61,7 +63,7 @@ export function ModeSelector() {
             transition={{ duration: 0.5, delay: 0.3 }}
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setMode("editor")}
+            onClick={() => { setMode("editor"); setLocation("/"); }}
             className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 text-left transition-all hover:border-orange-500/40 hover:shadow-xl hover:shadow-orange-500/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />

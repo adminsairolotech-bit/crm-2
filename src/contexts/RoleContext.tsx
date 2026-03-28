@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 export type UserRole = "admin" | "supplier" | "machine_user";
 
@@ -9,8 +9,29 @@ interface RoleContextValue {
 
 const RoleContext = createContext<RoleContextValue | null>(null);
 
+function resolveRoleFromAuth(): UserRole {
+  try {
+    const stored = localStorage.getItem("sai_crm_auth_user");
+    if (stored) {
+      const user = JSON.parse(stored);
+      if (user.userType === "admin") return "admin";
+      if (user.userType === "supplier") return "supplier";
+      if (user.userType === "machine_user" || user.userType === "operator") return "machine_user";
+    }
+  } catch {
+    // ignore
+  }
+  return "admin";
+}
+
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<UserRole>("admin");
+  const [role, setRole] = useState<UserRole>(resolveRoleFromAuth);
+
+  useEffect(() => {
+    const resolved = resolveRoleFromAuth();
+    setRole(resolved);
+  }, []);
+
   return (
     <RoleContext.Provider value={{ role, setRole }}>
       {children}

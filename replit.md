@@ -120,6 +120,27 @@ src/
 - Adaptive animations based on device capability
 - All data from Supabase (live, no mock data)
 
+## Auth Flow (NEW)
+The app now has a proper login/registration flow as the entry point:
+- `/login` — Login page (first page for unauthenticated users)
+- `/register` — New user registration
+- `/forgot-password` — Password reset page
+- `/role-select` — Shown after registration to select user type
+- `/home` — SAI RoloTech customer home page (for new_user & operator types)
+- `/select-mode` — Admin mode selector (admin only)
+
+### Auth Context (`src/contexts/AuthContext.tsx`)
+- Stores auth state in `localStorage` (key: `sai_crm_auth_user`)
+- Demo admin: `admin@sairolotech.com` / `admin123`
+- User types: `admin`, `machine_user`, `supplier`, `new_user`, `operator`
+
+### User Type → Destination Mapping
+- `admin` → `/select-mode` → CRM
+- `machine_user` → `/` (CRM dashboard, machine_user role)
+- `supplier` → `/map-view` (CRM, supplier role)
+- `new_user` → `/home` (customer home page)
+- `operator` → `/home` (customer home page)
+
 ## Running
 ```bash
 npm run dev
