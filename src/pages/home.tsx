@@ -135,6 +135,79 @@ export default function HomePage() {
         </motion.div>
 
         <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.12, duration: 0.5 }}
+          className="mb-5 relative overflow-hidden rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-900/30"
+          style={{ background: "linear-gradient(135deg, #0c1a2e 0%, #0a2540 40%, #061a30 70%, #0d1f38 100%)" }}
+        >
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full bg-cyan-500/10 blur-2xl" />
+            <div className="absolute -bottom-10 -left-10 w-52 h-52 rounded-full bg-blue-600/10 blur-2xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-32 rounded-full bg-teal-500/5 blur-3xl" />
+            {[...Array(6)].map((_, i) => (
+              <motion.div key={i} className="absolute w-0.5 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent rounded-full"
+                style={{ left: `${12 + i * 16}%`, height: "120%", top: "-10%" }}
+                animate={{ opacity: [0.3, 0.8, 0.3], scaleY: [0.8, 1.2, 0.8] }}
+                transition={{ duration: 2.5 + i * 0.4, repeat: Infinity, delay: i * 0.3 }} />
+            ))}
+          </div>
+          <div className="relative px-5 py-5 sm:px-7 sm:py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-shrink-0">
+                <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                  <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute inset-1 rounded-lg border border-cyan-300/20" />
+                  <Settings2 className="w-7 h-7 text-white relative z-10" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                  <span className="text-cyan-300 text-xs font-bold uppercase tracking-widest">SAI RoloTech</span>
+                  <span className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-semibold">
+                    <Zap className="w-3 h-3" /> Powered by AI
+                  </span>
+                </div>
+                <h3 className="text-white text-lg sm:text-xl font-extrabold leading-tight tracking-tight">
+                  Custom Design Engine —&nbsp;
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400">Koi Bhi Profile</span>, Asaani Se!
+                </h3>
+                <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+                  Hamare advanced design engine se aap kisi bhi tarah ka profile — C, Z, U, T, Omega, Custom — minutes mein design kar sakte hain bina kisi engineering degree ke.
+                </p>
+                <div className="flex flex-wrap items-center gap-3 mt-3">
+                  <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/25 rounded-full px-3 py-1">
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    <span className="text-green-300 text-xs font-bold">92% Accuracy</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/25 rounded-full px-3 py-1">
+                    <BarChart3 className="w-3 h-3 text-blue-400" />
+                    <span className="text-blue-300 text-xs font-bold">500+ Profiles Tested</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/25 rounded-full px-3 py-1">
+                    <Star className="w-3 h-3 text-violet-400" />
+                    <span className="text-violet-300 text-xs font-bold">Industry Proven</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-shrink-0 self-center sm:self-auto">
+                <button
+                  onClick={() => setLocation("/custom-profile")}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-cyan-500/30 whitespace-nowrap group"
+                >
+                  Try Karein
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-4 text-xs text-slate-500">
+              {["C-Purlin", "Z-Purlin", "Roofing Sheet", "Cable Tray", "Floor Deck", "Door Frame", "Solar Frame", "Custom Profile"].map((p) => (
+                <span key={p} className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-cyan-600 inline-block" />{p}</span>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14 }}
