@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "SVjpprpGJjo8YMg_Xo_9R"
+uri = "file://sairolotech-build.tar.gz"
+type = "unspecified"
+title = "SAI Rolotech CRM - Production Build"
