@@ -22,13 +22,41 @@ function adminAuth(req, res, next) {
   next();
 }
 
+// ─── Simple in-memory rate limiter (5 attempts / 10 min per IP) ──────────────
+const _failMap = new Map(); // ip → { count, blockedUntil }
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = _failMap.get(ip) || { count: 0, blockedUntil: 0 };
+  if (entry.blockedUntil > now) return false; // still blocked
+  return true;
+}
+function recordFailure(ip) {
+  const now = Date.now();
+  const entry = _failMap.get(ip) || { count: 0, blockedUntil: 0 };
+  entry.count += 1;
+  if (entry.count >= 5) {
+    entry.blockedUntil = now + 10 * 60 * 1000; // 10 minutes
+    entry.count = 0;
+  }
+  _failMap.set(ip, entry);
+}
+function recordSuccess(ip) { _failMap.delete(ip); }
+
 // ─── POST /api/admin/verify ──────────────────────────────────────────────────
 router.post('/api/admin/verify', express.json(), (req, res) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'Too many attempts — try again after 10 minutes' });
+  }
   const TOKEN = process.env.ADMIN_API_TOKEN;
   if (!TOKEN) return res.status(503).json({ error: 'ADMIN_API_TOKEN not configured' });
   const { token } = req.body || {};
   if (!token) return res.status(400).json({ error: 'Token required' });
-  if (token === TOKEN) return res.json({ success: true });
+  if (token === TOKEN) {
+    recordSuccess(ip);
+    return res.json({ success: true });
+  }
+  recordFailure(ip);
   return res.status(401).json({ error: 'Invalid token' });
 });
 
