@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, UserPlus, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, UserPlus, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -9,147 +9,184 @@ export default function RegisterPage() {
   const [, setLocation] = useLocation();
   const { register } = useAuth();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [name, setName]                   = useState("");
+  const [email, setEmail]                 = useState("");
+  const [password, setPassword]           = useState("");
+  const [confirmPw, setConfirmPw]         = useState("");
+  const [showPw, setShowPw]               = useState(false);
+  const [loading, setLoading]             = useState(false);
+
+  const pwStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
+  const pwMatch = confirmPw && password === confirmPw;
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password.trim()) {
-      toast({ title: "Sabhi fields bharen", description: "Naam, email aur password zaroori hai.", variant: "destructive" });
-      return;
+      toast({ title: "Sabhi fields bharen", description: "Naam, email aur password zaroori hai.", variant: "destructive" }); return;
     }
     if (password.length < 6) {
-      toast({ title: "Password chhota hai", description: "Password kam se kam 6 characters ka hona chahiye.", variant: "destructive" });
-      return;
+      toast({ title: "Password chhota hai", description: "Password kam se kam 6 characters ka hona chahiye.", variant: "destructive" }); return;
     }
-    if (password !== confirmPassword) {
-      toast({ title: "Password match nahi hua", description: "Dono password ek jaise hone chahiye.", variant: "destructive" });
-      return;
+    if (password !== confirmPw) {
+      toast({ title: "Password match nahi hua", description: "Dono password ek jaise hone chahiye.", variant: "destructive" }); return;
     }
-
     setLoading(true);
     const result = await register(name.trim(), email.trim(), password);
     setLoading(false);
-
     if (result.success) {
-      toast({ title: "Account ban gaya!", description: `Welcome, ${name.trim()}! Ab apna role chunein.` });
+      toast({ title: "Account ban gaya! 🎉", description: `Welcome, ${name.trim()}! Ab apna role chunein.` });
       setLocation("/role-select");
     } else {
       toast({ title: "Registration Failed", description: result.error, variant: "destructive" });
     }
   };
 
+  const strengthColors = ["", "bg-red-400", "bg-yellow-400", "bg-emerald-500"];
+  const strengthLabels = ["", "Weak", "Medium", "Strong"];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-green-600/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-emerald-300/10 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-blue-300/10 blur-3xl" />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="relative w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-blue-600 mb-4 shadow-lg shadow-green-500/30">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 mb-4 shadow-lg shadow-emerald-500/25">
             <span className="text-white text-2xl font-bold">SR</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">SAI RoloTech</h1>
-          <p className="text-slate-400 mt-1 text-sm">Naya account banayein</p>
+          <h1 className="text-3xl font-bold text-slate-800">SAI RoloTech</h1>
+          <p className="text-slate-500 mt-1 text-sm">Naya account banayein — bilkul free</p>
         </div>
 
-        <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-green-400" />
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xl shadow-slate-200/60">
+          <h2 className="text-xl font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-emerald-500" aria-hidden="true" />
             Register karein
           </h2>
 
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4" noValidate>
+            {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Aapka Naam</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-slate-700 mb-1.5">Aapka Naam</label>
               <input
+                id="reg-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jaise: Rahul Kumar"
-                className="w-full bg-slate-900/70 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                autoComplete="name"
+                aria-label="Full name"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-[16px]"
               />
             </div>
 
+            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Email Address</label>
+              <label htmlFor="reg-email" className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
               <input
+                id="reg-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="aapka@email.com"
-                className="w-full bg-slate-900/70 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                autoComplete="email"
+                aria-label="Email address"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-[16px]"
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
+              <label htmlFor="reg-password" className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
               <div className="relative">
                 <input
-                  type={showPassword ? "text" : "password"}
+                  id="reg-password"
+                  type={showPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 6 characters"
-                  className="w-full bg-slate-900/70 border border-slate-600 rounded-xl px-4 py-3 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+                  autoComplete="new-password"
+                  aria-label="Password"
+                  aria-describedby="pw-strength"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 pr-12 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-[16px]"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                  onClick={() => setShowPw(!showPw)}
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {/* Password strength bar */}
+              {password && (
+                <div id="pw-strength" className="mt-2 flex items-center gap-2" aria-live="polite">
+                  <div className="flex gap-1 flex-1">
+                    {[1,2,3].map(i => (
+                      <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i <= pwStrength ? strengthColors[pwStrength] : "bg-slate-200"}`} />
+                    ))}
+                  </div>
+                  <span className="text-xs text-slate-500">{strengthLabels[pwStrength]}</span>
+                </div>
+              )}
             </div>
 
+            {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Password Confirm karein</label>
-              <input
-                type={showPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Wahi password dobara likhein"
-                className="w-full bg-slate-900/70 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
-              />
+              <label htmlFor="reg-confirm" className="block text-sm font-medium text-slate-700 mb-1.5">Password Confirm karein</label>
+              <div className="relative">
+                <input
+                  id="reg-confirm"
+                  type={showPw ? "text" : "password"}
+                  value={confirmPw}
+                  onChange={(e) => setConfirmPw(e.target.value)}
+                  placeholder="Wahi password dobara likhein"
+                  autoComplete="new-password"
+                  aria-label="Confirm password"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 pr-12 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-[16px]"
+                />
+                {pwMatch && (
+                  <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" aria-label="Passwords match" />
+                )}
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-green-500/25 mt-2"
+              aria-label="Create account"
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 mt-2 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" /><span>Account ban raha hai...</span></>
               ) : (
-                <>
-                  <UserPlus className="w-5 h-5" />
-                  Account Banayein
-                </>
+                <><UserPlus className="w-5 h-5" aria-hidden="true" /><span>Account Banayein</span></>
               )}
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-slate-700/50">
+          <div className="mt-6 pt-6 border-t border-slate-100">
             <button
               onClick={() => setLocation("/login")}
-              className="w-full bg-slate-700/50 hover:bg-slate-700 border border-slate-600 text-slate-200 font-medium rounded-xl py-3 transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium rounded-xl py-3.5 transition-all duration-200 flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-400" />
+              <ArrowLeft className="w-5 h-5 text-slate-400" aria-hidden="true" />
               Already account hai? Login karein
             </button>
           </div>
         </div>
+
+        <p className="text-center text-slate-400 text-xs mt-6">
+          © 2025 SAI RoloTech · Industrial Automation Solutions · Pune
+        </p>
       </motion.div>
     </div>
   );

@@ -13,9 +13,10 @@ const roles = [
     title: "New SAI RoloTech User",
     hindiTitle: "Naya SAI RoloTech User",
     description: "Hum SAI RoloTech ke baare mein jaanna chahte hain – machines, products aur services explore karein.",
-    color: "from-violet-600 to-purple-600",
-    borderColor: "border-violet-500/50",
-    bgColor: "bg-violet-500/10",
+    gradient: "from-violet-500 to-purple-600",
+    selectedBg: "bg-violet-50 border-violet-400",
+    iconBg: "bg-violet-100",
+    iconText: "text-violet-600",
     destination: "/home",
   },
   {
@@ -25,9 +26,10 @@ const roles = [
     title: "SAI RoloTech Machine User",
     hindiTitle: "Machine Operator / Employee",
     description: "Main SAI RoloTech mein kaam karta hoon ya humare machines use karta hoon.",
-    color: "from-blue-600 to-cyan-600",
-    borderColor: "border-blue-500/50",
-    bgColor: "bg-blue-500/10",
+    gradient: "from-blue-500 to-cyan-600",
+    selectedBg: "bg-blue-50 border-blue-400",
+    iconBg: "bg-blue-100",
+    iconText: "text-blue-600",
     destination: "/",
   },
   {
@@ -37,9 +39,10 @@ const roles = [
     title: "G.P Raw Material Supplier",
     hindiTitle: "Kaccha Maal Supplier",
     description: "Main SAI RoloTech ko raw material supply karta hoon – Gauge Plates, Steel, etc.",
-    color: "from-green-600 to-emerald-600",
-    borderColor: "border-green-500/50",
-    bgColor: "bg-green-500/10",
+    gradient: "from-emerald-500 to-teal-600",
+    selectedBg: "bg-emerald-50 border-emerald-400",
+    iconBg: "bg-emerald-100",
+    iconText: "text-emerald-600",
     destination: "/map-view",
   },
   {
@@ -49,9 +52,10 @@ const roles = [
     title: "Roll Forming Machine Operator",
     hindiTitle: "Roll Forming Operator",
     description: "Main Roll Forming Machine operate karta hoon aur operations manage karta hoon.",
-    color: "from-orange-600 to-amber-600",
-    borderColor: "border-orange-500/50",
-    bgColor: "bg-orange-500/10",
+    gradient: "from-orange-500 to-amber-600",
+    selectedBg: "bg-orange-50 border-orange-400",
+    iconBg: "bg-orange-100",
+    iconText: "text-orange-600",
     destination: "/home",
   },
 ];
@@ -72,37 +76,39 @@ export default function RoleSelectPage() {
     await new Promise((r) => setTimeout(r, 400));
     const role = roles.find((r) => r.id === selected);
     setLoading(false);
-    toast({ title: "Profile set ho gaya!", description: `Welcome ${user?.name}! Aapka account ready hai.` });
+    toast({ title: "Profile set ho gaya! 🎉", description: `Welcome ${user?.name}! Aapka account ready hai.` });
     setLocation(role?.destination || "/home");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-violet-600/10 blur-3xl" />
-        <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" />
-        <div className="absolute -bottom-40 right-1/3 w-96 h-96 rounded-full bg-green-600/10 blur-3xl" />
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-violet-200/20 blur-3xl" />
+        <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-200/20 blur-3xl" />
+        <div className="absolute -bottom-40 right-1/3 w-96 h-96 rounded-full bg-emerald-200/15 blur-3xl" />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="relative w-full max-w-2xl"
       >
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 mb-4 shadow-lg shadow-violet-500/30">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mb-4 shadow-lg shadow-blue-500/25">
             <span className="text-white text-2xl font-bold">SR</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-3xl font-bold text-slate-800">
             Namaste, {user?.name?.split(" ")[0] || "User"}! 👋
           </h1>
-          <p className="text-slate-400 mt-2">
+          <p className="text-slate-500 mt-2 text-base">
             Aap kaun hain? Apna role chunein taki hum aapko sahi experience de sakein.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {/* Role Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" role="radiogroup" aria-label="Select your role">
           {roles.map((role, index) => {
             const Icon = role.icon;
             const isSelected = selected === role.id;
@@ -111,47 +117,53 @@ export default function RoleSelectPage() {
                 key={role.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.08 }}
                 onClick={() => setSelected(role.id)}
-                className={`relative text-left p-5 rounded-2xl border-2 transition-all duration-200 ${
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={role.title}
+                className={`relative text-left p-5 rounded-2xl border-2 transition-all duration-200 shadow-sm focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                   isSelected
-                    ? `${role.borderColor} ${role.bgColor} shadow-lg`
-                    : "border-slate-700/50 bg-slate-800/40 hover:border-slate-600 hover:bg-slate-800/60"
+                    ? `${role.selectedBg} shadow-md`
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
                 }`}
               >
                 {isSelected && (
                   <div className="absolute top-3 right-3">
-                    <CheckCircle2 className="w-5 h-5 text-white" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" aria-hidden="true" />
                   </div>
                 )}
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${role.color} mb-3 shadow-md`}>
-                  <span className="text-xl">{role.emoji}</span>
+                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${role.iconBg} mb-3`}>
+                  <span className="text-2xl" aria-hidden="true">{role.emoji}</span>
                 </div>
-                <h3 className="text-white font-semibold text-base mb-0.5">{role.title}</h3>
-                <p className="text-slate-400 text-xs mb-2">{role.hindiTitle}</p>
-                <p className="text-slate-400 text-sm leading-relaxed">{role.description}</p>
+                <h3 className="text-slate-800 font-semibold text-base mb-0.5">{role.title}</h3>
+                <p className={`text-xs mb-2 font-medium ${role.iconText}`}>{role.hindiTitle}</p>
+                <p className="text-slate-500 text-sm leading-relaxed">{role.description}</p>
               </motion.button>
             );
           })}
         </div>
 
+        {/* Continue Button */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
           onClick={handleContinue}
           disabled={!selected || loading}
-          className="w-full bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-4 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25 text-lg"
+          aria-label="Continue with selected role"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-4 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-200 text-lg focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
           {loading ? (
-            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <><div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" /><span>Setting up...</span></>
           ) : (
-            <>
-              Aage Badhein
-              <ArrowRight className="w-5 h-5" />
-            </>
+            <>Aage Badhein <ArrowRight className="w-5 h-5" aria-hidden="true" /></>
           )}
         </motion.button>
+
+        <p className="text-center text-slate-400 text-xs mt-6">
+          © 2025 SAI RoloTech · Industrial Automation Solutions
+        </p>
       </motion.div>
     </div>
   );

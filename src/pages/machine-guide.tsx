@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Send, Loader2, Settings2, AlertTriangle,
-  ChevronRight, RefreshCw, Bot, Mic, Volume2
+  ArrowLeft, Send, Loader2, Settings2,
+  ChevronRight, RefreshCw
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -36,19 +36,17 @@ function MessageBubble({ msg }: { msg: Message }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
     >
-      <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${isUser ? "bg-violet-600" : "bg-gradient-to-br from-orange-500 to-red-600"}`}>
-        {isUser ? <span className="text-white text-xs font-bold">YOU</span> : <Settings2 className="w-4 h-4 text-white" />}
+      <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${isUser ? "bg-blue-600" : "bg-gradient-to-br from-orange-500 to-amber-600"}`}>
+        {isUser
+          ? <span className="text-white text-[10px] font-bold">YOU</span>
+          : <Settings2 className="w-4 h-4 text-white" aria-hidden="true" />}
       </div>
-      <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${isUser
-        ? "bg-violet-600/30 border border-violet-500/40 text-white"
-        : "bg-slate-800/80 border border-slate-700/50 text-slate-100"
+      <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${isUser
+        ? "bg-blue-600 text-white"
+        : "bg-white border border-slate-200 text-slate-800"
       }`}>
-        {msg.role === "master" ? (
-          <div className="whitespace-pre-wrap leading-relaxed">{msg.text}</div>
-        ) : (
-          <p className="leading-relaxed">{msg.text}</p>
-        )}
-        <p className={`text-xs mt-1.5 ${isUser ? "text-violet-300/60" : "text-slate-500"}`}>
+        <div className="whitespace-pre-wrap leading-relaxed">{msg.text}</div>
+        <p className={`text-xs mt-1.5 ${isUser ? "text-blue-200" : "text-slate-400"}`}>
           {new Date(msg.ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
         </p>
       </div>
@@ -61,11 +59,7 @@ export default function MachineGuidePage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "master",
-      text: `🔧 Namaste! Main hoon MASTER — SAI RoloTech ka Roll Forming Machine Expert AI.
-
-20+ saal ka experience hai mujhe roll forming machines mein. Aap koi bhi machine problem batayein, main step-by-step guide karunga.
-
-Aap ya toh neeche se apni problem select karein, ya seedha type karein! ⚙️`,
+      text: `🔧 Namaste! Main hoon MASTER — SAI RoloTech ka Roll Forming Machine Expert AI.\n\n20+ saal ka experience hai mujhe roll forming machines mein. Aap koi bhi machine problem batayein, main step-by-step guide karunga.\n\nAap ya toh neeche se apni problem select karein, ya seedha type karein! ⚙️`,
       ts: Date.now(),
     },
   ]);
@@ -116,54 +110,71 @@ Aap ya toh neeche se apni problem select karein, ya seedha type karein! ⚙️`,
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex flex-col">
-      <header className="border-b border-slate-700/50 bg-slate-900/90 backdrop-blur-sm z-10 flex-shrink-0">
+    <div className="h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex flex-col">
+      {/* Header */}
+      <header className="border-b border-orange-100 bg-white/90 backdrop-blur-sm z-10 flex-shrink-0 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setLocation("/home")} className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+          <button
+            onClick={() => setLocation("/home")}
+            aria-label="Go back"
+            className="p-2 rounded-lg hover:bg-orange-50 text-slate-500 hover:text-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-orange-400"
+          >
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           </button>
           <div className="relative">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <Settings2 className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-md shadow-orange-200">
+              <Settings2 className="w-5 h-5 text-white" aria-hidden="true" />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
           </div>
           <div className="flex-1">
-            <h1 className="text-white font-bold text-sm">MASTER — AI Machine Expert</h1>
-            <p className="text-green-400 text-xs">Online · Roll Forming Troubleshooter</p>
+            <h1 className="text-slate-800 font-bold text-sm">MASTER — AI Machine Expert</h1>
+            <p className="text-emerald-600 text-xs font-medium">Online · Roll Forming Troubleshooter</p>
           </div>
-          <button onClick={handleReset} className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors" title="Naya conversation">
-            <RefreshCw className="w-4 h-4" />
+          <button
+            onClick={handleReset}
+            aria-label="Start new conversation"
+            title="Naya conversation"
+            className="p-2 rounded-lg hover:bg-orange-50 text-slate-400 hover:text-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-orange-400"
+          >
+            <RefreshCw className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto" role="log" aria-live="polite" aria-label="Conversation">
         <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
           {messages.map((msg, i) => <MessageBubble key={i} msg={msg} />)}
 
           {showQuick && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-3">
-              <p className="text-slate-500 text-xs text-center">— Apni problem select karein —</p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-3"
+            >
+              <p className="text-slate-400 text-xs text-center font-medium">— Apni problem select karein —</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {QUICK_PROBLEMS.map((p) => (
                   <button
                     key={p.label}
                     onClick={() => sendMessage(p.query)}
-                    className="flex items-center gap-3 p-3 bg-slate-800/60 border border-slate-700/50 hover:border-orange-500/40 hover:bg-slate-700/60 rounded-xl text-left transition-all group"
+                    aria-label={p.label}
+                    className="flex items-center gap-3 p-3 bg-white border border-orange-100 hover:border-orange-300 hover:bg-orange-50 rounded-xl text-left transition-all group shadow-sm focus-visible:ring-2 focus-visible:ring-orange-400"
                   >
-                    <span className="text-2xl flex-shrink-0">{p.emoji}</span>
+                    <span className="text-2xl flex-shrink-0" aria-hidden="true">{p.emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium">{p.label}</p>
-                      <p className="text-slate-500 text-xs truncate">{p.desc}</p>
+                      <p className="text-slate-800 text-sm font-medium">{p.label}</p>
+                      <p className="text-slate-400 text-xs truncate">{p.desc}</p>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-orange-400 flex-shrink-0 transition-colors" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-orange-500 flex-shrink-0 transition-colors" aria-hidden="true" />
                   </button>
                 ))}
               </div>
               <button
                 onClick={() => setShowQuick(false)}
-                className="w-full text-center text-slate-500 hover:text-slate-300 text-xs py-2 transition-colors"
+                className="w-full text-center text-slate-400 hover:text-slate-600 text-xs py-2 transition-colors"
               >
                 Ya neeche type karein apni problem ↓
               </button>
@@ -171,14 +182,14 @@ Aap ya toh neeche se apni problem select karein, ya seedha type karein! ⚙️`,
           )}
 
           {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                <Settings2 className="w-4 h-4 text-white" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3" aria-label="MASTER is thinking">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center flex-shrink-0">
+                <Settings2 className="w-4 h-4 text-white" aria-hidden="true" />
               </div>
-              <div className="bg-slate-800/80 border border-slate-700/50 rounded-2xl px-4 py-3">
+              <div className="bg-white border border-orange-100 rounded-2xl px-4 py-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
-                  <span className="text-slate-400 text-sm">MASTER analyze kar raha hai...</span>
+                  <Loader2 className="w-4 h-4 text-orange-500 animate-spin" aria-hidden="true" />
+                  <span className="text-slate-500 text-sm">MASTER analyze kar raha hai...</span>
                 </div>
               </div>
             </motion.div>
@@ -187,17 +198,19 @@ Aap ya toh neeche se apni problem select karein, ya seedha type karein! ⚙️`,
         </div>
       </div>
 
+      {/* Quick Pills */}
       {!showQuick && messages.length > 1 && (
-        <div className="border-t border-slate-700/30 flex-shrink-0 bg-slate-900/50">
+        <div className="border-t border-orange-100 flex-shrink-0 bg-orange-50/60">
           <div className="max-w-3xl mx-auto px-3 py-2">
-            <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
               {QUICK_PROBLEMS.slice(0, 6).map(p => (
                 <button
                   key={p.label}
                   onClick={() => sendMessage(p.query)}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-orange-500/40 rounded-full text-xs text-slate-300 transition-all whitespace-nowrap"
+                  aria-label={p.label}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-orange-50 border border-orange-200 hover:border-orange-400 rounded-full text-xs text-slate-700 transition-all whitespace-nowrap shadow-sm"
                 >
-                  {p.emoji} {p.label}
+                  <span aria-hidden="true">{p.emoji}</span> {p.label}
                 </button>
               ))}
             </div>
@@ -205,30 +218,35 @@ Aap ya toh neeche se apni problem select karein, ya seedha type karein! ⚙️`,
         </div>
       )}
 
-      <div className="border-t border-slate-700/50 bg-slate-900/80 backdrop-blur-sm flex-shrink-0">
+      {/* Input Bar */}
+      <div className="border-t border-slate-200 bg-white/95 backdrop-blur-sm flex-shrink-0 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex gap-2 items-end">
-            <div className="flex-1 bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 focus-within:border-orange-500/60 transition-colors">
+            <label htmlFor="machine-chat-input" className="sr-only">Machine problem batayein</label>
+            <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-100 transition-all">
               <input
+                id="machine-chat-input"
                 ref={inputRef}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
                 placeholder="Machine problem batayein... (Jaise: Strip left ja rahi hai)"
-                className="w-full bg-transparent text-white text-sm placeholder-slate-500 focus:outline-none"
+                className="w-full bg-transparent text-slate-800 text-sm placeholder-slate-400 focus:outline-none"
                 disabled={loading}
+                aria-label="Message input"
               />
             </div>
             <button
               onClick={() => sendMessage(input)}
               disabled={!input.trim() || loading}
-              className="w-11 h-11 flex items-center justify-center bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-all flex-shrink-0 shadow-lg shadow-orange-500/30"
+              aria-label="Send message"
+              className="w-11 h-11 flex items-center justify-center bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-all flex-shrink-0 shadow-md shadow-orange-200 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Send className="w-4 h-4" aria-hidden="true" />}
             </button>
           </div>
-          <p className="text-slate-600 text-xs text-center mt-2">
-            MASTER · SAI RoloTech Roll Forming AI Expert · 20+ Years Experience
+          <p className="text-slate-400 text-xs text-center mt-2">
+            MASTER · SAI RoloTech Roll Forming AI · 20+ Years Experience
           </p>
         </div>
       </div>

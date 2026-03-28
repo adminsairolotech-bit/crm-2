@@ -206,7 +206,7 @@ export default function MaintenanceGuidePage() {
   const { total, done, pct } = getProgress(activeSchedule);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
       <style>{`
         @media print {
           header, .no-print { display: none !important; }
@@ -215,37 +215,37 @@ export default function MaintenanceGuidePage() {
         }
       `}</style>
 
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-yellow-600/8 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-96 h-96 rounded-full bg-orange-600/8 blur-3xl" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-amber-200/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 w-96 h-96 rounded-full bg-orange-200/15 blur-3xl" />
       </div>
 
-      <header className="relative border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="relative border-b border-amber-100 bg-white/90 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setLocation("/home")} className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+          <button onClick={() => setLocation("/home")} aria-label="Go back" className="p-2 rounded-lg hover:bg-amber-50 text-slate-500 hover:text-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-amber-400">
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           </button>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
-            <Wrench className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-sm">
+            <Wrench className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
           <div className="flex-1">
-            <h1 className="text-white font-semibold text-sm">Machine Maintenance Guide</h1>
-            <p className="text-slate-500 text-xs">SAI RoloTech Roll Forming Machine · Dekh-Rekh Schedule</p>
+            <h1 className="text-slate-800 font-semibold text-sm">Machine Maintenance Guide</h1>
+            <p className="text-slate-400 text-xs">SAI RoloTech Roll Forming Machine · Dekh-Rekh Schedule</p>
           </div>
-          <button onClick={handlePrint} className="no-print flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 rounded-lg text-xs transition-colors">
-            <Printer className="w-3.5 h-3.5" /> Print
+          <button onClick={handlePrint} aria-label="Print maintenance guide" className="no-print flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-amber-50 border border-amber-200 text-slate-700 rounded-lg text-xs transition-colors shadow-sm">
+            <Printer className="w-3.5 h-3.5" aria-hidden="true" /> Print
           </button>
         </div>
       </header>
 
       <main className="relative max-w-5xl mx-auto px-4 py-6 space-y-6">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-full px-4 py-1.5 mb-3">
-            <Wrench className="w-3.5 h-3.5 text-yellow-400" />
-            <span className="text-yellow-300 text-sm">SAI RoloTech — Machine Dekh-Rekh Guide</span>
+          <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5 mb-3">
+            <Wrench className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+            <span className="text-amber-700 text-sm font-medium">SAI RoloTech — Machine Dekh-Rekh Guide</span>
           </div>
-          <h2 className="text-2xl font-bold text-white">Roll Forming Machine Maintenance</h2>
-          <p className="text-slate-400 text-sm mt-1">Sahi maintenance se machine ki life 2x hoti hai aur production quality behtarin rehti hai</p>
+          <h2 className="text-2xl font-bold text-slate-800">Roll Forming Machine Maintenance</h2>
+          <p className="text-slate-500 text-sm mt-1">Sahi maintenance se machine ki life 2x hoti hai aur production quality behtarin rehti hai</p>
         </div>
 
         <div className="no-print grid grid-cols-5 gap-2">
@@ -257,48 +257,48 @@ export default function MaintenanceGuidePage() {
               <button
                 key={s.id}
                 onClick={() => setActiveTab(s.id)}
-                className={`relative p-3 rounded-xl border transition-all text-center ${isActive
-                  ? `${s.borderColor} bg-slate-800/80`
-                  : "border-slate-700/40 bg-slate-800/30 hover:bg-slate-800/60"
+                className={`relative p-3 rounded-xl border transition-all text-center focus-visible:ring-2 focus-visible:ring-amber-400 ${isActive
+                  ? `${s.borderColor} bg-white shadow-sm`
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                 }`}
               >
-                <Icon className={`w-5 h-5 mx-auto mb-1 ${isActive ? s.color : "text-slate-500"}`} />
+                <Icon className={`w-5 h-5 mx-auto mb-1 ${isActive ? s.color : "text-slate-400"}`} aria-hidden="true" />
                 <p className={`text-xs font-semibold ${isActive ? s.color : "text-slate-500"}`}>{s.period}</p>
-                <div className="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
+                <div className="mt-2 h-1 bg-slate-200 rounded-full overflow-hidden">
                   <div className={`h-full ${s.bgColor} rounded-full transition-all`} style={{ width: `${pct}%` }} />
                 </div>
-                <p className="text-slate-500 text-xs mt-0.5">{done}/{total}</p>
+                <p className="text-slate-400 text-xs mt-0.5">{done}/{total}</p>
               </button>
             );
           })}
         </div>
 
-        <div className={`border ${activeSchedule.borderColor} rounded-2xl overflow-hidden bg-slate-800/40`}>
+        <div className={`border ${activeSchedule.borderColor} rounded-2xl overflow-hidden bg-white shadow-sm`}>
           <div className={`p-4 flex items-center justify-between`}>
             <div>
               <h3 className={`text-base font-bold ${activeSchedule.color}`}>{activeSchedule.label}</h3>
-              <p className="text-slate-400 text-sm mt-0.5">{done} / {total} tasks complete · {pct}%</p>
+              <p className="text-slate-500 text-sm mt-0.5">{done} / {total} tasks complete · {pct}%</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
                 <motion.div className={`h-full ${activeSchedule.bgColor} rounded-full`} initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} />
               </div>
-              <button onClick={() => handleReset(activeTab)} className="no-print p-1.5 rounded-lg hover:bg-slate-700 text-slate-500 hover:text-slate-300 transition-colors">
-                <RefreshCw className="w-3.5 h-3.5" />
+              <button onClick={() => handleReset(activeTab)} aria-label="Reset checklist" className="no-print p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
+                <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </div>
           </div>
 
           <button
             onClick={() => setExpandedTip(expandedTip === activeTab ? null : activeTab)}
-            className={`w-full flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border-t border-amber-500/20 text-left transition-colors hover:bg-amber-500/15`}
+            className={`w-full flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-left transition-colors hover:bg-amber-100`}
           >
-            <Info className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <span className="text-amber-300 text-xs flex-1">{activeSchedule.tip}</span>
-            {expandedTip === activeTab ? <ChevronUp className="w-3.5 h-3.5 text-amber-400" /> : <ChevronDown className="w-3.5 h-3.5 text-amber-400" />}
+            <Info className="w-4 h-4 text-amber-600 flex-shrink-0" aria-hidden="true" />
+            <span className="text-amber-700 text-xs flex-1">{activeSchedule.tip}</span>
+            {expandedTip === activeTab ? <ChevronUp className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />}
           </button>
 
-          <div className="divide-y divide-slate-700/30">
+          <div className="divide-y divide-slate-100">
             {activeSchedule.items.map((item, idx) => {
               const isChecked = !!checked[item.id];
               const catInfo = CATEGORY_ICONS[item.category];
@@ -309,29 +309,33 @@ export default function MaintenanceGuidePage() {
                   initial={{ opacity: 0, x: -5 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.04 }}
-                  className={`flex gap-3 p-4 transition-all cursor-pointer group ${isChecked ? "bg-green-500/5" : "hover:bg-slate-700/20"}`}
+                  className={`flex gap-3 p-4 transition-all cursor-pointer group ${isChecked ? "bg-emerald-50" : "hover:bg-slate-50"}`}
                   onClick={() => toggleCheck(item.id)}
+                  role="checkbox"
+                  aria-checked={isChecked}
+                  tabIndex={0}
+                  onKeyDown={e => e.key === "Enter" && toggleCheck(item.id)}
                 >
                   <div className="flex-shrink-0 mt-0.5">
                     {isChecked
-                      ? <CheckSquare className="w-5 h-5 text-green-400" />
-                      : <Square className={`w-5 h-5 ${item.priority === "critical" ? "text-red-400" : item.priority === "high" ? "text-yellow-400" : "text-slate-500"} group-hover:text-slate-300 transition-colors`} />
+                      ? <CheckSquare className="w-5 h-5 text-emerald-500" aria-hidden="true" />
+                      : <Square className={`w-5 h-5 ${item.priority === "critical" ? "text-red-500" : item.priority === "high" ? "text-amber-500" : "text-slate-400"} group-hover:text-slate-600 transition-colors`} aria-hidden="true" />
                     }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 flex-wrap">
-                      <p className={`text-sm font-semibold ${isChecked ? "text-slate-400 line-through" : "text-white"}`}>
+                      <p className={`text-sm font-semibold ${isChecked ? "text-slate-400 line-through" : "text-slate-800"}`}>
                         {idx + 1}. {item.task}
                       </p>
                       {item.priority === "critical" && !isChecked && (
-                        <span className="flex items-center gap-0.5 bg-red-500/20 border border-red-500/30 text-red-300 text-xs px-1.5 py-0.5 rounded font-medium">
-                          <AlertTriangle className="w-2.5 h-2.5" /> Critical
+                        <span className="flex items-center gap-0.5 bg-red-50 border border-red-200 text-red-700 text-xs px-1.5 py-0.5 rounded font-medium">
+                          <AlertTriangle className="w-2.5 h-2.5" aria-hidden="true" /> Critical
                         </span>
                       )}
                     </div>
-                    <p className={`text-xs mt-1 leading-relaxed ${isChecked ? "text-slate-600" : "text-slate-400"}`}>{item.detail}</p>
+                    <p className={`text-xs mt-1 leading-relaxed ${isChecked ? "text-slate-400" : "text-slate-500"}`}>{item.detail}</p>
                     <div className="flex items-center gap-1 mt-1.5">
-                      <CatIcon className={`w-3 h-3 ${catInfo.color}`} />
+                      <CatIcon className={`w-3 h-3 ${catInfo.color}`} aria-hidden="true" />
                       <span className={`text-xs ${catInfo.color}`}>{catInfo.label}</span>
                     </div>
                   </div>
@@ -349,27 +353,27 @@ export default function MaintenanceGuidePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-5">
-            <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-yellow-400" /> Zaroor Rakhein — Spare Parts
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <h4 className="text-slate-800 font-semibold mb-4 flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-amber-500" aria-hidden="true" /> Zaroor Rakhein — Spare Parts
             </h4>
             <div className="space-y-2">
               {SPARE_PARTS.map((sp, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-700/30 last:border-0">
+                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                   <div>
-                    <p className="text-slate-200 text-sm font-medium">{sp.item}</p>
-                    <p className="text-slate-500 text-xs">{sp.qty}</p>
+                    <p className="text-slate-800 text-sm font-medium">{sp.item}</p>
+                    <p className="text-slate-400 text-xs">{sp.qty}</p>
                   </div>
-                  <span className="bg-slate-700/60 border border-slate-600/40 text-slate-300 text-xs px-2 py-1 rounded-lg">{sp.frequency}</span>
+                  <span className="bg-slate-100 border border-slate-200 text-slate-600 text-xs px-2 py-1 rounded-lg">{sp.frequency}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-5">
-              <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400" /> Kabhi Mat Karein
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+              <h4 className="text-red-700 font-semibold mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" aria-hidden="true" /> Kabhi Mat Karein
               </h4>
               <div className="space-y-2">
                 {[
@@ -381,21 +385,21 @@ export default function MaintenanceGuidePage() {
                   "PLC battery replace karna bina backup",
                 ].map((don, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span className="text-red-400 text-lg leading-none mt-0.5">✗</span>
-                    <p className="text-slate-300 text-sm">{don}</p>
+                    <span className="text-red-500 text-lg leading-none mt-0.5" aria-hidden="true">✗</span>
+                    <p className="text-red-800 text-sm">{don}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-violet-600/10 to-blue-600/10 border border-violet-500/30 rounded-2xl p-4">
-              <h4 className="text-violet-300 font-semibold mb-2 flex items-center gap-2">
-                <Shield className="w-4 h-4" /> SAI RoloTech AMC Service
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4">
+              <h4 className="text-blue-800 font-semibold mb-2 flex items-center gap-2">
+                <Shield className="w-4 h-4" aria-hidden="true" /> SAI RoloTech AMC Service
               </h4>
-              <p className="text-slate-300 text-sm">Hamare Annual Maintenance Contract (AMC) mein quarterly visits, emergency support, aur genuine spare parts included hain.</p>
+              <p className="text-slate-600 text-sm">Hamare Annual Maintenance Contract (AMC) mein quarterly visits, emergency support, aur genuine spare parts included hain.</p>
               <button
                 onClick={() => setLocation("/ai-quote")}
-                className="mt-3 flex items-center gap-1.5 text-violet-400 hover:text-violet-300 text-sm font-medium transition-colors"
+                className="mt-3 flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors focus-visible:underline"
               >
                 AMC Quote Mangwayein →
               </button>
@@ -403,31 +407,31 @@ export default function MaintenanceGuidePage() {
           </div>
         </div>
 
-        <div className="bg-slate-800/40 border border-slate-700/30 rounded-2xl p-5">
-          <h4 className="text-white font-semibold mb-4 text-center">📋 Maintenance Summary Schedule</h4>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <h4 className="text-slate-800 font-semibold mb-4 text-center">📋 Maintenance Summary Schedule</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-700/40">
-                  <th className="text-left p-2.5 text-slate-300 font-semibold rounded-l">Frequency</th>
-                  <th className="text-center p-2.5 text-slate-300 font-semibold">Tasks</th>
-                  <th className="text-center p-2.5 text-slate-300 font-semibold">Time Needed</th>
-                  <th className="text-left p-2.5 text-slate-300 font-semibold rounded-r">Key Focus</th>
+                <tr className="bg-slate-100">
+                  <th className="text-left p-2.5 text-slate-600 font-semibold rounded-l">Frequency</th>
+                  <th className="text-center p-2.5 text-slate-600 font-semibold">Tasks</th>
+                  <th className="text-center p-2.5 text-slate-600 font-semibold">Time Needed</th>
+                  <th className="text-left p-2.5 text-slate-600 font-semibold rounded-r">Key Focus</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/30">
+              <tbody className="divide-y divide-slate-100">
                 {[
-                  { freq: "Daily (Roz)", tasks: "10", time: "15-20 min", focus: "Lubrication, Safety, Cleaning", color: "text-blue-300" },
-                  { freq: "Weekly (Hafta)", tasks: "10", time: "1-2 ghante", focus: "Chain/Belt, Bearings, Electrical", color: "text-green-300" },
-                  { freq: "Monthly (Mahina)", tasks: "12", time: "3-4 ghante", focus: "Full Lubrication, Alignment, PLC Backup", color: "text-yellow-300" },
-                  { freq: "Quarterly (3 Mahine)", tasks: "10", time: "1 poora din", focus: "Oil Change, Bearings, Tooling", color: "text-orange-300" },
-                  { freq: "Yearly (Annual)", tasks: "10", time: "3-5 din", focus: "Complete Overhaul, Motor, Gearbox", color: "text-red-300" },
+                  { freq: "Daily (Roz)", tasks: "10", time: "15-20 min", focus: "Lubrication, Safety, Cleaning", color: "text-blue-600" },
+                  { freq: "Weekly (Hafta)", tasks: "10", time: "1-2 ghante", focus: "Chain/Belt, Bearings, Electrical", color: "text-emerald-600" },
+                  { freq: "Monthly (Mahina)", tasks: "12", time: "3-4 ghante", focus: "Full Lubrication, Alignment, PLC Backup", color: "text-amber-600" },
+                  { freq: "Quarterly (3 Mahine)", tasks: "10", time: "1 poora din", focus: "Oil Change, Bearings, Tooling", color: "text-orange-600" },
+                  { freq: "Yearly (Annual)", tasks: "10", time: "3-5 din", focus: "Complete Overhaul, Motor, Gearbox", color: "text-red-600" },
                 ].map((row) => (
-                  <tr key={row.freq} className="hover:bg-slate-700/20 transition-colors">
+                  <tr key={row.freq} className="hover:bg-slate-50 transition-colors">
                     <td className={`p-2.5 font-semibold ${row.color}`}>{row.freq}</td>
-                    <td className="p-2.5 text-center text-white">{row.tasks}</td>
-                    <td className="p-2.5 text-center text-slate-300">{row.time}</td>
-                    <td className="p-2.5 text-slate-400 text-xs">{row.focus}</td>
+                    <td className="p-2.5 text-center text-slate-800 font-medium">{row.tasks}</td>
+                    <td className="p-2.5 text-center text-slate-600">{row.time}</td>
+                    <td className="p-2.5 text-slate-500 text-xs">{row.focus}</td>
                   </tr>
                 ))}
               </tbody>
@@ -435,7 +439,7 @@ export default function MaintenanceGuidePage() {
           </div>
         </div>
 
-        <div className="text-center py-3 text-slate-600 text-xs">
+        <div className="text-center py-3 text-slate-400 text-xs">
           SAI RoloTech · Machine Maintenance Guide · Pune, Maharashtra · +91 98765 43210
         </div>
       </main>

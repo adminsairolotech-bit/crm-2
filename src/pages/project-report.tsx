@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, FileText, Loader2, Printer,
   User, Building2, Factory, IndianRupee, BarChart3,
-  CheckCircle2, RefreshCw, ChevronRight, Sparkles, Download
+  CheckCircle2, RefreshCw, ChevronRight, Sparkles, Download, Save, RotateCcw
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+
+const AUTOSAVE_KEY = "sai_project_report_draft";
 
 interface FormData {
   // Step 1 - Applicant
@@ -83,13 +85,13 @@ const STEPS = [
 ];
 
 function inp(extra = "") {
-  return `w-full bg-slate-900/70 border border-slate-600 rounded-xl px-3 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors ${extra}`;
+  return `w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-[16px] ${extra}`;
 }
 function sel(extra = "") {
-  return `w-full bg-slate-900/70 border border-slate-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors ${extra}`;
+  return `w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-[16px] ${extra}`;
 }
 function Lbl({ children, req }: { children: React.ReactNode; req?: boolean }) {
-  return <label className="block text-xs font-medium text-slate-400 mb-1.5">{children}{req && <span className="text-red-400 ml-0.5">*</span>}</label>;
+  return <label className="block text-xs font-medium text-slate-600 mb-1.5">{children}{req && <span className="text-red-500 ml-0.5">*</span>}</label>;
 }
 function Row({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>;
@@ -98,7 +100,7 @@ function Row3({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{children}</div>;
 }
 function Section({ title }: { title: string }) {
-  return <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-700/40 mt-1">{title}</p>;
+  return <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-200 mt-1">{title}</p>;
 }
 
 function ReportView({ report, onNew }: { report: string; onNew: () => void }) {
@@ -134,7 +136,59 @@ export default function ProjectReportPage() {
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState<"form" | "loading" | "done">("form");
   const [report, setReport] = useState("");
-  const [f, setF] = useState<FormData>({ ...EMPTY, applicantName: user?.name || "", phone: "", email: user?.email || "" });
+  const [hasDraft, setHasDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+
+  // Load initial form data (restore draft if exists)
+  const [f, setF] = useState<FormData>(() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...EMPTY, ...parsed.data };
+      }
+    } catch { /* ignore */ }
+    return { ...EMPTY, applicantName: user?.name || "", phone: "", email: user?.email || "" };
+  });
+
+  // Check for draft on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.data?.applicantName) {
+          setHasDraft(true);
+          setLastSaved(parsed.savedAt || null);
+          toast({
+            title: "📝 Draft Restore hua!",
+            description: `Aapka pichla draft restore ho gaya hai. ${parsed.savedAt ? `Last saved: ${new Date(parsed.savedAt).toLocaleTimeString('en-IN')}` : ''}`,
+          });
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Autosave on every change (debounced 1.5s)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const draft = { data: f, savedAt: new Date().toISOString(), step };
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
+        setLastSaved(new Date().toLocaleTimeString('en-IN'));
+      } catch { /* ignore */ }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [f, step]);
+
+  const clearDraft = useCallback(() => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setHasDraft(false);
+    setLastSaved(null);
+    setF({ ...EMPTY, applicantName: user?.name || "", phone: "", email: user?.email || "" });
+    setStep(1);
+    toast({ title: "Draft Clear hua", description: "Naya form start karo." });
+  }, [user]);
 
   const upd = (k: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF(prev => ({ ...prev, [k]: e.target.value }));
@@ -172,43 +226,62 @@ export default function ProjectReportPage() {
     }
   };
 
+  const handleNew = () => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setStatus("form"); setStep(1); setReport(""); setHasDraft(false); setLastSaved(null);
+    setF({ ...EMPTY, applicantName: user?.name || "", phone: "", email: user?.email || "" });
+  };
+
   if (status === "done") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         <style>{`@media print { body * { visibility: hidden; } #project-report-print, #project-report-print * { visibility: visible; } #project-report-print { position: fixed; left: 0; top: 0; width: 100%; background: white; } }`}</style>
-        <header className="border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
+        <header className="border-b border-slate-200 bg-white/90 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-            <button onClick={() => setLocation("/home")} className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"><ArrowLeft className="w-4 h-4" /></button>
-            <FileText className="w-5 h-5 text-violet-400" />
-            <span className="text-white font-semibold text-sm">Project Report Generator</span>
+            <button onClick={() => setLocation("/home")} aria-label="Go back" className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"><ArrowLeft className="w-4 h-4" /></button>
+            <FileText className="w-5 h-5 text-blue-600" aria-hidden="true" />
+            <span className="text-slate-800 font-semibold text-sm">Project Report Generator</span>
           </div>
         </header>
         <main className="max-w-4xl mx-auto px-4 py-8">
-          <ReportView report={report} onNew={() => { setStatus("form"); setStep(1); setReport(""); setF({ ...EMPTY }); }} />
+          <ReportView report={report} onNew={handleNew} />
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-violet-600/8 blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/8 blur-3xl" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-violet-300/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-blue-300/10 blur-3xl" />
       </div>
 
-      <header className="relative border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="relative border-b border-slate-200 bg-white/90 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setLocation("/home")} className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+          <button onClick={() => setLocation("/home")} aria-label="Go back" className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center">
-            <FileText className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <FileText className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
-          <div>
-            <h1 className="text-white font-semibold text-sm">AI Project Report Generator</h1>
-            <p className="text-slate-500 text-xs">PMEGP / MSME / Bank Loan · Roll Forming Machine</p>
+          <div className="flex-1">
+            <h1 className="text-slate-800 font-semibold text-sm">AI Project Report Generator</h1>
+            <p className="text-slate-400 text-xs">PMEGP / MSME / Bank Loan · Roll Forming Machine</p>
           </div>
+          {/* Autosave indicator */}
+          {lastSaved && (
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1" aria-live="polite">
+              <Save className="w-3 h-3" aria-hidden="true" />
+              Saved {lastSaved}
+            </div>
+          )}
+          {hasDraft && (
+            <button onClick={clearDraft} title="Clear draft and start fresh" aria-label="Clear draft" className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1 transition-colors">
+              <RotateCcw className="w-3 h-3" aria-hidden="true" />
+              <span className="hidden sm:inline">Clear</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -224,10 +297,10 @@ export default function ProjectReportPage() {
               </div>
             </div>
             <div className="text-center">
-              <h3 className="text-white text-xl font-bold">AI Project Report Bana Raha Hai...</h3>
-              <p className="text-slate-400 mt-1">Bank-ready professional report taiyar ho rahi hai</p>
+              <h3 className="text-slate-800 text-xl font-bold">AI Project Report Bana Raha Hai...</h3>
+              <p className="text-slate-500 mt-1">Bank-ready professional report taiyar ho rahi hai</p>
             </div>
-            <div className="flex flex-col gap-2 text-sm text-slate-500 text-center">
+            <div className="flex flex-col gap-2 text-sm text-slate-400 text-center">
               {["Applicant aur business details process ho rahi hain...", "Financial projections calculate ho rahi hain...", "Market analysis likhaa ja raha hai...", "Bank-ready format mein taiyar ho raha hai..."].map((msg, i) => (
                 <motion.p key={msg} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.7 }}>{msg}</motion.p>
               ))}
@@ -236,28 +309,29 @@ export default function ProjectReportPage() {
         ) : (
           <>
             <div className="text-center">
-              <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-3">
-                <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-                <span className="text-violet-300 text-sm">PMEGP / MSME Loan Project Report</span>
+              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5 mb-3">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" />
+                <span className="text-emerald-700 text-sm font-medium">PMEGP / MSME Loan Project Report</span>
               </div>
-              <h2 className="text-2xl font-bold text-white">Bank Loan Project Report Banayein</h2>
-              <p className="text-slate-400 text-sm mt-1">4 steps mein details bharen — AI poori professional report banayega</p>
+              <h2 className="text-2xl font-bold text-slate-800">Bank Loan Project Report Banayein</h2>
+              <p className="text-slate-500 text-sm mt-1">4 steps mein details bharen — AI poori professional report banayega</p>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Form steps">
               {STEPS.map((s) => {
                 const Icon = s.icon;
                 const done = step > s.id;
                 const active = step === s.id;
                 return (
                   <button key={s.id} onClick={() => step > s.id && setStep(s.id)}
-                    className={`flex-1 min-w-[80px] flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${active ? "border-violet-500/60 bg-violet-600/15" : done ? "border-green-500/40 bg-green-500/10 cursor-pointer" : "border-slate-700/40 bg-slate-800/30 opacity-50"}`}>
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${active ? `bg-gradient-to-br ${s.color}` : done ? "bg-green-500/30" : "bg-slate-700"}`}>
-                      {done ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Icon className="w-4 h-4 text-white" />}
+                    role="tab" aria-selected={active} aria-label={`Step ${s.id}: ${s.sublabel}`}
+                    className={`flex-1 min-w-[80px] flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${active ? "border-blue-400 bg-blue-50 shadow-sm" : done ? "border-emerald-400 bg-emerald-50 cursor-pointer" : "border-slate-200 bg-slate-50 opacity-50"}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${active ? `bg-gradient-to-br ${s.color}` : done ? "bg-emerald-100" : "bg-slate-200"}`}>
+                      {done ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Icon className={`w-4 h-4 ${active ? "text-white" : "text-slate-500"}`} />}
                     </div>
                     <div className="text-center">
-                      <p className={`text-xs font-semibold ${active ? "text-violet-300" : done ? "text-green-400" : "text-slate-500"}`}>{s.label}</p>
-                      <p className="text-slate-600 text-xs hidden sm:block">{s.sublabel}</p>
+                      <p className={`text-xs font-semibold ${active ? "text-blue-600" : done ? "text-emerald-600" : "text-slate-400"}`}>{s.label}</p>
+                      <p className="text-slate-400 text-xs hidden sm:block">{s.sublabel}</p>
                     </div>
                   </button>
                 );
@@ -266,8 +340,8 @@ export default function ProjectReportPage() {
 
             <AnimatePresence mode="wait">
               {step === 1 && (
-                <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-white font-semibold flex items-center gap-2"><User className="w-4 h-4 text-violet-400" /> Aavedan Karta Ki Jankari</h3>
+                <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                  <h3 className="text-slate-800 font-semibold flex items-center gap-2"><User className="w-4 h-4 text-blue-600" /> Aavedan Karta Ki Jankari</h3>
                   <Section title="Personal Details" />
                   <Row>
                     <div><Lbl req>Poora Naam</Lbl><input value={f.applicantName} onChange={upd("applicantName")} placeholder="Ramesh Kumar Sharma" className={inp()} /></div>
@@ -317,8 +391,8 @@ export default function ProjectReportPage() {
               )}
 
               {step === 2 && (
-                <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-white font-semibold flex items-center gap-2"><Building2 className="w-4 h-4 text-blue-400" /> Business / Project Jankari</h3>
+                <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                  <h3 className="text-slate-800 font-semibold flex items-center gap-2"><Building2 className="w-4 h-4 text-blue-600" /> Business / Project Jankari</h3>
                   <Section title="Yojana (Scheme)" />
                   <Row>
                     <div><Lbl>Loan Yojana</Lbl>
@@ -364,8 +438,8 @@ export default function ProjectReportPage() {
               )}
 
               {step === 3 && (
-                <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-white font-semibold flex items-center gap-2"><Factory className="w-4 h-4 text-green-400" /> Takniki Vivaran (Technical Details)</h3>
+                <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                  <h3 className="text-slate-800 font-semibold flex items-center gap-2"><Factory className="w-4 h-4 text-emerald-600" /> Takniki Vivaran (Technical Details)</h3>
                   <Section title="Machine Details" />
                   <Row>
                     <div><Lbl>Machine Ka Naam</Lbl><input value={f.machineName} onChange={upd("machineName")} placeholder="Roll Forming Machine" className={inp()} /></div>
@@ -395,8 +469,8 @@ export default function ProjectReportPage() {
               )}
 
               {step === 4 && (
-                <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-white font-semibold flex items-center gap-2"><IndianRupee className="w-4 h-4 text-yellow-400" /> Vittiya Vivaran (Financial Details)</h3>
+                <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                  <h3 className="text-slate-800 font-semibold flex items-center gap-2"><IndianRupee className="w-4 h-4 text-amber-500" /> Vittiya Vivaran (Financial Details)</h3>
                   <Section title="Project Cost & Funding" />
                   <Row>
                     <div><Lbl req>Kul Pariyojana Lagat (Total Project Cost ₹)</Lbl><input value={f.totalProjectCost} onChange={upd("totalProjectCost")} placeholder="30,00,000" className={inp()} /></div>
@@ -429,23 +503,24 @@ export default function ProjectReportPage() {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => step > 1 ? setStep(s => s - 1) : setLocation("/home")}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-sm transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-sm transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                aria-label={step === 1 ? "Go home" : "Go back"}
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                 {step === 1 ? "Home" : "Wapas"}
               </button>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" aria-label="Progress indicator" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={4}>
                 {STEPS.map(s => (
-                  <div key={s.id} className={`w-2 h-2 rounded-full transition-all ${step === s.id ? "w-6 bg-violet-500" : step > s.id ? "bg-green-500" : "bg-slate-600"}`} />
+                  <div key={s.id} className={`h-2 rounded-full transition-all ${step === s.id ? "w-6 bg-blue-500" : step > s.id ? "w-2 bg-emerald-500" : "w-2 bg-slate-300"}`} />
                 ))}
               </div>
               {step < 4 ? (
-                <button onClick={nextStep} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white rounded-xl text-sm font-medium transition-all">
-                  Aage <ArrowRight className="w-4 h-4" />
+                <button onClick={nextStep} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-medium transition-all shadow-sm shadow-blue-200 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
+                  Aage <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
               ) : (
-                <button onClick={generate} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-violet-500/25">
-                  <FileText className="w-4 h-4" /> Report Generate Karein
+                <button onClick={generate} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-emerald-200 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+                  <FileText className="w-4 h-4" aria-hidden="true" /> Report Generate Karein
                 </button>
               )}
             </div>

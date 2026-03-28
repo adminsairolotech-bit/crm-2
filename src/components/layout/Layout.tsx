@@ -184,11 +184,12 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SearchProvider>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <div className="flex min-h-screen bg-background text-foreground font-sans">
         <Sidebar mobileOpen={mobileOpen} onMobileClose={handleMobileClose} />
         <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10 w-0">
           <Header mobileOpen={mobileOpen} onMenuToggle={handleMenuToggle} onBuddyToggle={handleBuddyToggle} buddyOpen={buddyOpen} />
-          <div className="flex-1 overflow-auto scroll-optimized p-4 sm:p-6 lg:p-8 relative">
+          <div id="main-content" className="flex-1 overflow-auto scroll-optimized p-4 sm:p-6 lg:p-8 relative">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location}
