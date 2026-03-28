@@ -115,7 +115,7 @@ export default function BuddyBot() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, typing])
 
-  const sendMessage = (text) => {
+  const sendMessage = async (text) => {
     if (!text.trim()) return
     const userMsg = { id: Date.now(), from: 'user', text: text.trim(), time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) }
     setMessages(prev => [...prev, userMsg])
@@ -124,8 +124,14 @@ export default function BuddyBot() {
 
     const navPath = detectNavigation(text)
 
-    setTimeout(() => {
-      let response = getBotResponse(text)
+    try {
+      const res = await fetch('/api/buddy-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text.trim(), history: messages.slice(-10) })
+      })
+      const data = await res.json()
+      let response = data.success ? data.reply : getBotResponse(text)
 
       if (navPath) {
         response += `\n\n🚀 **Navigating...** "${navPath}" page khul raha hai!`
@@ -134,8 +140,16 @@ export default function BuddyBot() {
 
       const botMsg = { id: Date.now() + 1, from: 'bot', text: response, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) }
       setMessages(prev => [...prev, botMsg])
-      setTyping(false)
-    }, 600 + Math.random() * 500)
+    } catch {
+      let response = getBotResponse(text)
+      if (navPath) {
+        response += `\n\n🚀 **Navigating...** "${navPath}" page khul raha hai!`
+        setTimeout(() => navigate(navPath), 1200)
+      }
+      const botMsg = { id: Date.now() + 1, from: 'bot', text: response, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) }
+      setMessages(prev => [...prev, botMsg])
+    }
+    setTyping(false)
   }
 
   const clearChat = () => {

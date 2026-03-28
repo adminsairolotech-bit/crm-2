@@ -5,8 +5,95 @@ export default defineConfig({
   plugins: [
     react(),
     {
-      name: 'gmail-leads-api',
+      name: 'ai-api-endpoints',
       configureServer(server) {
+
+        server.middlewares.use('/api/buddy-chat', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { message, history } = JSON.parse(body);
+            const { GoogleGenAI } = await import('@google/genai');
+            const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
+            const systemPrompt = `You are "Buddy" — SAI RoloTech CRM ka AI Assistant. You help with:
+- Sales & Lead Management (products: PLC Panels, HMI, SCADA, VFD, Servo Motors)
+- Service & Troubleshooting (machine repairs, PLC errors, maintenance)
+- Industrial Automation (PLC programming - Siemens, Allen Bradley, Mitsubishi, Omron, Delta)
+- PNMG Loan Schemes (Personal/Business/Machinery/Home/Education loans)
+- Machine Testing (15 test parameters for industrial panels)
+- CRM Navigation help
+
+Rules:
+- Reply in Hinglish (Hindi + English mix) unless user speaks pure English
+- Keep responses concise but helpful
+- Use bullet points and formatting
+- If user says "open X" or "go to X", tell them you'll navigate them there
+- You represent SAI RoloTech company
+- Be friendly and professional`;
+
+            const contents = [];
+            if (history && history.length > 0) {
+              for (const h of history.slice(-10)) {
+                contents.push({ role: h.from === 'user' ? 'user' : 'model', parts: [{ text: h.text }] });
+              }
+            }
+            contents.push({ role: 'user', parts: [{ text: message }] });
+
+            const response = await ai.models.generateContent({
+              model: 'gemini-2.0-flash',
+              contents,
+              config: { systemInstruction: systemPrompt, maxOutputTokens: 1024, temperature: 0.7 }
+            });
+            const reply = response.text || 'Sorry, main samajh nahi paaya. Dobara try karein.';
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, reply }));
+          } catch (err) {
+            console.error('Buddy chat error:', err.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
+
+        server.middlewares.use('/api/generate-questions', async (req, res) => {
+          if (req.method !== 'POST') { res.writeHead(405); res.end('Method not allowed'); return; }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { topic, count, qType } = JSON.parse(body);
+            const OpenAI = (await import('openai')).default;
+            const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY });
+            const prompt = `Generate exactly ${count || 5} ${qType === 'MCQ' ? 'multiple choice' : qType === 'Short' ? 'short answer' : 'mixed (MCQ and short answer)'} questions about "${topic || 'Industrial Automation, PLC, Electrical Safety, CRM Sales'}".
+
+Context: These are for SAI RoloTech CRM - an industrial automation company dealing with PLC, HMI, SCADA, VFD, Servo Motors, Panel Manufacturing, Machine Testing, and CRM/Sales.
+
+Return ONLY valid JSON array. Each question object must have:
+- "q": question text (in Hinglish - Hindi+English mix)
+- "a": correct answer
+- "type": "MCQ" or "Short"
+- "options": array of 4 options (only for MCQ type, include correct answer)
+
+Example: [{"q":"PLC ka full form kya hai?","a":"Programmable Logic Controller","type":"MCQ","options":["Programmable Logic Controller","Power Logic Circuit","Program Level Control","Process Logic Computer"]}]
+
+Return ONLY the JSON array, no other text.`;
+
+            const completion = await openai.chat.completions.create({
+              model: 'gpt-4o-mini',
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.8,
+              max_tokens: 2000,
+            });
+            let text = completion.choices[0]?.message?.content || '[]';
+            text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const questions = JSON.parse(text);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, questions }));
+          } catch (err) {
+            console.error('Question gen error:', err.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          }
+        });
         async function getGmailClient() {
           const { google } = await import('googleapis');
           const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
