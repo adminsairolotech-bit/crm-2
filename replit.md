@@ -1,6 +1,6 @@
 # CRM System - Beta
 
-A Customer Relationship Management (CRM) web application built with React + Vite.
+A Customer Relationship Management (CRM) web application built with React + Vite for **SAI RoloTech**.
 
 ## Features
 
@@ -8,6 +8,8 @@ A Customer Relationship Management (CRM) web application built with React + Vite
 - **Password Recovery** — Forgot password page with User ID lookup
 - **Beta Version Badge** — Shown on login page, recovery page, and dashboard header
 - **Protected Dashboard** — Stats, recent activity, user info with logout
+- **Gmail Integration** — Lead capture via Gmail API (Replit connector)
+- **Firebase Auth** — Authentication via Firebase
 
 ## Tech Stack
 
@@ -15,13 +17,23 @@ A Customer Relationship Management (CRM) web application built with React + Vite
 - **Build Tool:** Vite 5
 - **Runtime:** Node.js 20
 - **Package Manager:** npm
+- **Auth/DB:** Firebase
+- **APIs:** Google Gmail API via Replit connector
 
 ## Development
 
 ```bash
+npm install      # Install dependencies
 npm run dev      # Start dev server on port 5000
 npm run build    # Build for production
 ```
+
+## Replit Setup
+
+- **Workflow:** "Start application" runs `npm run dev` on port 5000
+- **Host:** 0.0.0.0 (configured in vite.config.js)
+- **AllowedHosts:** true (proxy-friendly)
+- **Deployment:** Static site — `npm run build` → `dist/` folder
 
 ## Demo Credentials
 
@@ -35,6 +47,7 @@ npm run build    # Build for production
 ```
 src/
   context/AuthContext.jsx   # Auth state and demo user management
+  firebase.js               # Firebase config
   pages/
     Login.jsx               # Login page with User ID + Password
     Login.module.css
@@ -45,23 +58,12 @@ src/
   App.jsx                   # Routes setup
   main.jsx                  # React entry point
   index.css                 # Global styles
+server/
+  index.js                  # Express server (for production static serving)
+  gmail.js                  # Gmail integration helpers
+mobile/                     # Expo React Native app (separate)
 ```
 
-## Deployment
+## Mobile App
 
-Configured as a static site: `npm run build` → `dist/` folder.
-
-## Mobile App (Play Store + App Store)
-
-`mobile/` folder mein complete Expo React Native app hai:
-- Login, Password Recovery, Dashboard, Customers, Leads, Profile
-- Beta badge on all screens
-- EAS Build config for Google Play and App Store
-- See `STORE_SUBMISSION_GUIDE.md` for submission steps
-
-## CI/CD — Auto Deploy from GitHub
-
-`.github/workflows/deploy.yml` — Every push to `main` triggers auto-deploy.
-`.github/workflows/ci.yml` — Every Pull Request runs a build check.
-
-See `DEVELOPER_GUIDE.md` for full setup instructions.
+`mobile/` folder contains a complete Expo React Native app with Login, Password Recovery, Dashboard, Customers, Leads, and Profile screens. See `STORE_SUBMISSION_GUIDE.md` for submission steps.
