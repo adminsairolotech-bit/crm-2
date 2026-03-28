@@ -14,6 +14,7 @@ import { generateReply } from './services/aiManager.js';
 import { resumeFollowups } from './services/followupService.js';
 import { startDailyReporter } from './services/reportService.js';
 import leadsRouter from './routes/leads.js';
+import productsRouter from './routes/products.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -572,6 +573,7 @@ app.post('/api/send-inquiry', async (req, res) => {
 
 /* ── CRM Lead Routes ─────────────────────── */
 app.use('/', leadsRouter);
+app.use('/api/products', productsRouter);
 app.use('/', (await import('./routes/adminPanel.js')).default);
 
 /* ── Queue Job Handlers ──────────────────── */

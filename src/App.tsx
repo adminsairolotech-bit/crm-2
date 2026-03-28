@@ -39,6 +39,7 @@ const PowerDashboardPage = lazy(() => import("@/pages/power-dashboard"));
 const AdminHealthPage = lazy(() => import("@/pages/admin-health"));
 const TestingLabPage = lazy(() => import("@/pages/testing"));
 const WaBetaTestingPage = lazy(() => import("@/pages/wa-beta-testing"));
+const ProductManagerPage = lazy(() => import("@/pages/product-manager"));
 
 const LoginPage = lazy(() => import("@/pages/login"));
 const RegisterPage = lazy(() => import("@/pages/register"));
@@ -265,6 +266,7 @@ function AppRoutes() {
                 <Route path="/admin-health">{() => <RoutePage Component={AdminHealthPage} />}</Route>
                 <Route path="/testing">{() => <RoutePage Component={TestingLabPage} />}</Route>
                 <Route path="/wa-beta">{() => <RoutePage Component={WaBetaTestingPage} />}</Route>
+                <Route path="/product-manager">{() => <RoutePage Component={ProductManagerPage} />}</Route>
                 <Route component={NotFoundPage} />
               </Switch>
             </Layout>

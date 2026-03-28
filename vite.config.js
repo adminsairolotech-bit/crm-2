@@ -939,6 +939,23 @@ Source: ${source || 'indiamart'}`;
           }
         });
 
+        /* ── Products CRUD + Photo Upload ───────── */
+        {
+          let productApp = null;
+          server.middlewares.use('/api/products', async (req, res, next) => {
+            if (!productApp) {
+              const { default: exp } = await import('express');
+              const { default: productsRouter } = await import('./server/routes/products.js');
+              productApp = exp();
+              productApp.use(exp.json({ limit: '2mb' }));
+              productApp.use(exp.urlencoded({ extended: false }));
+              productApp.use('/', productsRouter);
+            }
+            req.url = req.url.replace(/^\/api\/products/, '') || '/';
+            productApp(req, res, next);
+          });
+        }
+
         /* ── Beta Testing Endpoints ──────────────── */
         {
           const devBetaLog = [];
