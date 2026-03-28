@@ -11,7 +11,7 @@ import {
   Package, Star, Tag, IndianRupee, Clock, Info, Image as ImageIcon,
   Video, RefreshCw, CheckCircle2, AlertTriangle, ToggleLeft, ToggleRight,
   ChevronDown, ChevronUp, Upload, Smartphone, Play, ShoppingCart,
-  BadgeCheck, Layers, Zap,
+  BadgeCheck, Layers, Zap, Bot, Send, Sparkles, MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
@@ -374,6 +374,19 @@ export default function ProductManagerPage() {
   const [filterCat, setFilterCat] = useState("All");
   const [searchQ, setSearchQ]     = useState("");
 
+  /* ── AI Command state ── */
+  const [aiOpen, setAiOpen]       = useState(false);
+  const [aiCmd, setAiCmd]         = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiHistory, setAiHistory] = useState<Array<{
+    role: "user" | "model";
+    text: string;
+    action?: string;
+    success?: boolean;
+  }>>([]);
+  const aiInputRef  = useRef<HTMLInputElement>(null);
+  const aiScrollRef = useRef<HTMLDivElement>(null);
+
   /* ── Fetch products ── */
   const fetchProducts = useCallback(async () => {
     try {
@@ -475,6 +488,69 @@ export default function ProductManagerPage() {
     } catch { toast({ title: "Delete failed", variant: "destructive" }); }
   }
 
+  /* ── AI Command handler ── */
+  async function handleAiCommand() {
+    const cmd = aiCmd.trim();
+    if (!cmd || aiLoading) return;
+
+    const userMsg = { role: "user" as const, text: cmd };
+    setAiHistory(h => [...h, userMsg]);
+    setAiCmd("");
+    setAiLoading(true);
+
+    // Build history for Gemini (exclude current user msg — sent separately)
+    const historyForApi = aiHistory.map(h => ({ role: h.role, text: h.text }));
+
+    try {
+      const res = await fetch("/api/products/ai-command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: cmd, history: historyForApi }),
+      });
+      const json = await res.json();
+
+      if (json.success) {
+        // Update local product list immediately
+        if (json.products) setProducts(json.products);
+
+        const actionEmoji: Record<string, string> = {
+          created: "✅ Product create ho gaya!",
+          updated: "✏️ Product update ho gaya!",
+          deleted: "🗑️ Product delete ho gaya!",
+          none:    "💬",
+        };
+        const prefix = actionEmoji[json.executionResult] || "";
+        const modelMsg = {
+          role: "model" as const,
+          text: `${prefix} ${json.message}`,
+          action: json.executionResult,
+          success: true,
+        };
+        setAiHistory(h => [...h, modelMsg]);
+
+        if (json.executionResult !== "none") {
+          toast({ title: `AI: ${json.message}` });
+        }
+      } else {
+        setAiHistory(h => [...h, {
+          role: "model" as const,
+          text: `❌ ${json.error || "Kuch gadbad ho gayi"}`,
+          action: "error",
+          success: false,
+        }]);
+        toast({ title: json.error || "AI command failed", variant: "destructive" });
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Network error";
+      setAiHistory(h => [...h, { role: "model" as const, text: `❌ ${msg}`, action: "error", success: false }]);
+    }
+
+    setAiLoading(false);
+    setTimeout(() => {
+      aiScrollRef.current?.scrollTo({ top: aiScrollRef.current.scrollHeight, behavior: "smooth" });
+    }, 100);
+  }
+
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-5 pb-10">
       <PageHeader
@@ -565,6 +641,146 @@ export default function ProductManagerPage() {
                 <p className="text-[10px] text-muted-foreground">{s.label}</p>
               </div>
             ))}
+          </motion.div>
+
+          {/* ── AI Command Panel ──────────────────────────── */}
+          <motion.div variants={staggerItem}>
+            <button
+              onClick={() => { setAiOpen(o => !o); setTimeout(() => aiInputRef.current?.focus(), 150); }}
+              className="w-full flex items-center justify-between gap-3 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-2xl px-4 py-3 hover:from-violet-100 hover:to-indigo-100 transition-all group"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-violet-900">AI Product Assistant</p>
+                  <p className="text-[10px] text-violet-600">Bolke product add/delete/update karo • Gemini Powered</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {aiHistory.length > 0 && (
+                  <span className="text-[10px] font-semibold bg-violet-200 text-violet-800 rounded-full px-2 py-0.5">
+                    {aiHistory.filter(h => h.role === "user").length} commands
+                  </span>
+                )}
+                <Sparkles className={`w-4 h-4 text-violet-500 transition-transform ${aiOpen ? "rotate-180" : ""}`} />
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {aiOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-1 bg-white border border-violet-200 rounded-2xl shadow-lg overflow-hidden">
+                    {/* Chat header */}
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-600">
+                      <Bot className="w-4 h-4 text-white" />
+                      <span className="text-xs font-bold text-white">AI Product Manager</span>
+                      <div className="ml-auto flex gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+
+                    {/* Quick suggestion chips */}
+                    {aiHistory.length === 0 && (
+                      <div className="p-3 border-b border-violet-100">
+                        <p className="text-[10px] text-violet-500 font-semibold mb-2 uppercase tracking-wider">Quick Commands</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            "Saare products dikhao",
+                            "Shutter Patti ka price 4 lac karo",
+                            "Naya product add karo: Purlin Machine ₹2 lac",
+                            "False Ceiling machine ki category change karo",
+                            "Sabse expensive product delete karo",
+                          ].map(s => (
+                            <button key={s} onClick={() => { setAiCmd(s); aiInputRef.current?.focus(); }}
+                              className="text-[10px] bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 rounded-full px-2.5 py-1 transition-colors">
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Chat history */}
+                    {aiHistory.length > 0 && (
+                      <div ref={aiScrollRef} className="max-h-52 overflow-y-auto p-3 space-y-2.5">
+                        {aiHistory.map((msg, i) => (
+                          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                            <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
+                              msg.role === "user"
+                                ? "bg-violet-600 text-white rounded-br-sm"
+                                : msg.action === "error"
+                                  ? "bg-red-50 text-red-800 border border-red-200 rounded-bl-sm"
+                                  : msg.action === "created"
+                                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-bl-sm"
+                                    : msg.action === "updated"
+                                      ? "bg-blue-50 text-blue-800 border border-blue-200 rounded-bl-sm"
+                                      : msg.action === "deleted"
+                                        ? "bg-red-50 text-red-800 border border-red-200 rounded-bl-sm"
+                                        : "bg-gray-50 text-gray-700 border border-gray-200 rounded-bl-sm"
+                            }`}>
+                              {msg.text}
+                            </div>
+                          </div>
+                        ))}
+                        {aiLoading && (
+                          <div className="flex justify-start">
+                            <div className="bg-gray-50 border border-gray-200 rounded-2xl rounded-bl-sm px-3 py-2 flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                              <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                              <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Input bar */}
+                    <div className="flex items-center gap-2 p-3 border-t border-violet-100 bg-violet-50/50">
+                      <MessageSquare className="w-4 h-4 text-violet-400 shrink-0" />
+                      <input
+                        ref={aiInputRef}
+                        value={aiCmd}
+                        onChange={e => setAiCmd(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleAiCommand()}
+                        placeholder='Bolye... "Shutter machine ka price 3.5 lac karo"'
+                        disabled={aiLoading}
+                        className="flex-1 text-xs bg-white border border-violet-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-50 placeholder:text-violet-300"
+                      />
+                      <button
+                        onClick={handleAiCommand}
+                        disabled={!aiCmd.trim() || aiLoading}
+                        className="w-8 h-8 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 flex items-center justify-center transition-all shrink-0"
+                      >
+                        {aiLoading
+                          ? <RefreshCw className="w-3.5 h-3.5 text-white animate-spin" />
+                          : <Send className="w-3.5 h-3.5 text-white" />
+                        }
+                      </button>
+                    </div>
+
+                    {/* Clear history */}
+                    {aiHistory.length > 0 && (
+                      <div className="px-3 pb-2 flex justify-end">
+                        <button onClick={() => setAiHistory([])}
+                          className="text-[10px] text-violet-400 hover:text-violet-600 transition-colors">
+                          Clear history
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Search + Filter + Add */}

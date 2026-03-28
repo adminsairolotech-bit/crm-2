@@ -64,6 +64,146 @@ router.get('/', (req, res) => {
   res.json({ success: true, products: filtered, total: filtered.length });
 });
 
+/* ── GET /api/products/categories/list ──────────────── */
+/* NOTE: Must be before /:id to avoid Express matching "categories" as an ID */
+router.get('/categories/list', (req, res) => {
+  const products = readProducts();
+  const categories = [...new Set(products.map(p => p.category))];
+  res.json({ success: true, categories });
+});
+
+/* ── POST /api/products/ai-command ──────────────────── */
+/* NOTE: Must be before /:id to avoid Express matching "ai-command" as an ID */
+router.post('/ai-command', async (req, res) => {
+  try {
+    const GEMINI_KEY = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+    if (!GEMINI_KEY) {
+      return res.status(503).json({ success: false, error: 'Gemini API key not configured.' });
+    }
+
+    const { command, history = [] } = req.body;
+    if (!command?.trim()) return res.status(400).json({ success: false, error: 'command required' });
+
+    const products = readProducts();
+    const productSummary = products.map(p =>
+      `- ID: ${p.id} | Name: "${p.name}" | Category: "${p.category}" | Price: ₹${p.price} | Available: ${p.available} | Featured: ${p.featured}`
+    ).join('\n');
+
+    const systemPrompt = `Tu SAI RoloTech CRM ka AI Product Manager hai. SAI RoloTtech Delhi mein Roll Forming Machine manufacturer hai.
+
+CURRENT PRODUCTS IN DATABASE:
+${productSummary || '(koi product nahi hai abhi)'}
+
+VALID CATEGORIES: Shutter Plant, False Ceiling, Pipe Mill, Purlin Machine, Stud Track, Custom
+
+Admin ki natural language command sun aur SIRF ek valid JSON object return kar. Koi bhi extra text, explanation ya markdown nahi — sirf raw JSON.
+
+JSON format:
+{
+  "action": "create" | "update" | "delete" | "none",
+  "message": "<Hinglish mein kya kiya ya kya samjha — ek line>",
+  "data": { name, category, description, price, unit, specs, leadTime, available, featured, tags },
+  "id": "prod_xxx",
+  "changes": { field: value }
+}
+
+Rules:
+- create: naya product. data mein sab fields bharo. price = number (350000 for ₹3.5 lac). available=true by default.
+- update: existing product update. id zaroori. changes mein sirf changed fields.
+- delete: product delete. id zaroori.
+- none: command unclear hai ya info chahiye. message mein samjhao.
+- Product name se match karo (case-insensitive, partial ok) — phir uska ID use karo.
+- "lac"/"lakh" in price → multiply by 100000. "k"/"K" → multiply by 1000.
+- Category change = update with changes:{ category: "New Category" }.
+- Agar command mein product ka naam ambiguous hai, action "none" aur clarify karo.`;
+
+    const { GoogleGenAI } = await import('@google/genai');
+    const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
+
+    const contents = [
+      ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
+      { role: 'user', parts: [{ text: command }] },
+    ];
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents,
+      config: { systemInstruction: systemPrompt, maxOutputTokens: 1024, temperature: 0.1 },
+    });
+
+    const raw = (response.text || '{}').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return res.json({ success: false, error: 'Gemini ne valid JSON nahi diya', raw });
+    const aiResult = JSON.parse(jsonMatch[0]);
+    const { action, message, data, id, changes } = aiResult;
+
+    let executedProduct = null;
+    let executionResult = 'none';
+
+    if (action === 'create' && data) {
+      const prods = readProducts();
+      const newProd = {
+        id: `prod_${Date.now()}`,
+        name: (data.name || 'Untitled').trim(),
+        category: data.category || 'Custom',
+        description: data.description || '',
+        price: parseFloat(data.price) || 0,
+        unit: data.unit || 'Set',
+        photos: [],
+        videoUrl: data.videoUrl || '',
+        specs: data.specs || '',
+        leadTime: data.leadTime || '',
+        available: data.available !== false,
+        featured: !!data.featured,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      prods.push(newProd);
+      writeProducts(prods);
+      executedProduct = newProd;
+      executionResult = 'created';
+
+    } else if (action === 'update' && id && changes) {
+      const prods = readProducts();
+      const idx = prods.findIndex(p => p.id === id);
+      if (idx === -1) return res.json({ success: false, error: `Product ID "${id}" nahi mila`, aiMessage: message });
+      if (changes.price !== undefined) changes.price = parseFloat(changes.price) || 0;
+      if (changes.available !== undefined) changes.available = changes.available !== false && changes.available !== 'false';
+      if (changes.featured !== undefined) changes.featured = changes.featured === true || changes.featured === 'true';
+      prods[idx] = { ...prods[idx], ...changes, id: prods[idx].id, updatedAt: new Date().toISOString() };
+      writeProducts(prods);
+      executedProduct = prods[idx];
+      executionResult = 'updated';
+
+    } else if (action === 'delete' && id) {
+      const prods = readProducts();
+      const prod = prods.find(p => p.id === id);
+      if (!prod) return res.json({ success: false, error: `Product ID "${id}" nahi mila`, aiMessage: message });
+      (prod.photos || []).forEach(url => {
+        const fp = path.join(__dirname, '..', '..', 'public', url.replace(/^\//, ''));
+        if (fs.existsSync(fp)) fs.unlinkSync(fp);
+      });
+      writeProducts(prods.filter(p => p.id !== id));
+      executedProduct = prod;
+      executionResult = 'deleted';
+    }
+
+    res.json({
+      success: true,
+      action,
+      executionResult,
+      message: message || 'Done',
+      product: executedProduct,
+      products: readProducts(),
+    });
+
+  } catch (e) {
+    console.error('[AI-Command]', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 /* ── GET /api/products/:id ──────────────────────────── */
 router.get('/:id', (req, res) => {
   const products = readProducts();
@@ -181,13 +321,6 @@ router.delete('/:id/photos', (req, res) => {
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
-});
-
-/* ── GET /api/products/categories/list ──────────────── */
-router.get('/categories/list', (req, res) => {
-  const products = readProducts();
-  const categories = [...new Set(products.map(p => p.category))];
-  res.json({ success: true, categories });
 });
 
 export default router;
