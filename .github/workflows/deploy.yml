@@ -1,51 +1,49 @@
-name: 🌐 Web — Auto Deploy to Replit
+name: Deploy to GoDaddy
 
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'mobile/**'
-      - '*.md'
 
 jobs:
-  deploy-web:
-    name: Build & Deploy Web
+  deploy:
+    name: Build & Deploy to GoDaddy
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: 📦 Install Dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: 🔨 Build Project
+      - name: Build Project
         run: npm run build
         env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
 
-      - name: 🚀 Deploy Note
-        run: |
-          echo "Build complete! Replit auto-deploys from this repo."
-          echo "Live URL: https://crm-2-3.replit.app"
+      - name: Deploy to GoDaddy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /public_html/
 
-      - name: ✅ Web Deploy Complete
+      - name: Deploy Complete
         run: |
           echo "=========================================="
-          echo "✅ WEB DEPLOYED SUCCESSFULLY!"
+          echo "DEPLOYED SUCCESSFULLY TO SAIROLOTECH.COM!"
           echo "Commit: ${{ github.sha }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "By: ${{ github.actor }}"
           echo "=========================================="
