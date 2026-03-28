@@ -12,13 +12,7 @@
       "backgroundColor": "#1a1a2e"
     },
     "updates": {
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/2873f4f3-f488-46ef-9d0f-199ee9e9a26c",
-      "enabled": true,
-      "checkAutomatically": "ON_LOAD"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
+      "enabled": false
     },
     "assetBundlePatterns": [
       "**/*"
