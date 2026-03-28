@@ -1,81 +1,104 @@
-# CRM System - Beta (SAI RoloTech)
+# SAI RoloTech CRM 5.6 PRO
 
-A full-featured Customer Relationship Management (CRM) web application for SAI RoloTech, built with React + Vite and Firebase authentication.
-
-## Features / Modules
-
-1. **Login & Auth** — Firebase authentication + demo fallback login. All users can login from main page.
-2. **Dashboard** — Overview with stats, Gmail leads, quick access to all modules, system status.
-3. **Customers** — Add, search, and manage customer records.
-4. **Leads** — Kanban-style lead tracking with source, status, and follow-up notes.
-5. **Machine Testing Report** — Industrial machine/panel testing with 15 test parameters, OK/FAIL marking, and PDF-ready reports.
-6. **PLC Error Code Database** — 20+ PLC error codes for Siemens, Allen Bradley, Mitsubishi, Omron, Delta, Schneider, ABB with cause & solution.
-7. **PNMG Loan Management** — EMI calculator, loan application form, application tracking with status approvals.
-8. **AI Question Maker** — Quiz/training question generator for PLC, Electrical Safety, CRM, Machine Maintenance, Automation topics.
-9. **Buddy Chatbot** — AI-powered chatbot for Sales, Service, and Automation queries.
-10. **Inquiry Form** — Customer inquiry form (public, sends to Gmail).
+## Overview
+Full-featured CRM web application for SAI RoloTech - an industrial automation company. Dark-themed admin dashboard with 26 pages, role-based access, AI integrations, and comprehensive business management features.
 
 ## Tech Stack
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS with custom CSS variables (dark theme)
+- **Routing**: Wouter (lightweight router)
+- **Animations**: Framer Motion
+- **Charts**: Recharts
+- **UI Components**: Radix UI primitives + custom shared components
+- **Icons**: Lucide React
+- **AI**: Gemini (Buddy Chat), OpenAI (Question Generation)
+- **Email**: Gmail API integration via Google Mail connector
 
-- **Frontend:** React 18, React Router v6, CSS Modules
-- **Build Tool:** Vite 5
-- **Runtime:** Node.js 20
-- **Package Manager:** npm
-- **Auth:** Firebase (with demo fallback)
-- **APIs:** Google Gmail API via Replit connector
+## Architecture
 
-## Development
-
-```bash
-npm install      # Install dependencies
-npm run dev      # Start dev server on port 5000
-npm run build    # Build for production
-```
-
-## Replit Setup
-
-- **Workflow:** "Start application" runs `npm run dev` on port 5000
-- **Host:** 0.0.0.0 (configured in vite.config.js)
-- **AllowedHosts:** true (proxy-friendly)
-- **Deployment:** Static site — `npm run build` → `dist/` folder
-
-## Demo Login Credentials
-
-| Email | Password | Role |
-|-------|----------|------|
-| admin.sairolotech@gmail.com | v9667146889V | Admin |
-| admin@sairolotech.com | admin@123 | Admin |
-| sales@sairolotech.com | sales@123 | Sales |
-
-Firebase users can also login (when Firebase API key is configured via VITE_FIREBASE_API_KEY).
-
-## Project Structure
-
+### Directory Structure
 ```
 src/
-  components/
-    Layout.jsx          # Sidebar + topbar layout (shared across all pages)
-    Layout.module.css
-  context/
-    AuthContext.jsx     # Firebase auth + demo fallback
-  firebase.js           # Firebase config
-  pages/
-    Login.jsx / Login.module.css
-    ForgotPassword.jsx / ForgotPassword.module.css
-    Dashboard.jsx / Dashboard.module.css
-    Customers.jsx / Customers.module.css
-    Leads.jsx / Leads.module.css
-    MachineReport.jsx / MachineReport.module.css
-    PLCErrors.jsx / PLCErrors.module.css
-    PNMGLoan.jsx / PNMGLoan.module.css
-    AIQuestions.jsx / AIQuestions.module.css
-    BuddyBot.jsx / BuddyBot.module.css
-    InquiryForm.jsx / InquiryForm.module.css
-  App.jsx               # All routes
-  main.jsx
-  index.css
-server/
-  index.js              # Express server (production)
-  gmail.js              # Gmail integration
-mobile/                 # Expo React Native app (separate)
+├── App.tsx              # Main app with wouter Switch/Route routing
+├── main.tsx             # Entry point
+├── index.css            # Tailwind + CSS variables (dark theme)
+├── components/
+│   ├── layout/          # Layout.tsx, Sidebar.tsx, SearchContext.tsx
+│   ├── shared/          # PageHeader, StatsCard, DataTable, SectionCard, etc.
+│   ├── ui/              # badge, button, textarea, toggle (CVA-based)
+│   ├── BuddyPanel.tsx   # AI Buddy slide-out panel
+│   ├── AIProviderBadge.tsx
+│   ├── ErrorBoundary.tsx
+│   ├── ModeSelector.tsx  # Editor/Visitor mode selection
+│   ├── Toaster.tsx
+│   ├── FileUploadZone.tsx
+│   └── LoadingWithTimeout.tsx
+├── contexts/
+│   ├── RoleContext.tsx    # Roles: admin, supplier, machine_user
+│   └── AdminModeContext.tsx  # editor/visitor mode
+├── hooks/
+│   ├── use-device-capability.ts  # Responsive detection
+│   ├── use-swipe-navigation.ts   # Mobile swipe
+│   └── use-toast.ts              # Toast notifications
+├── lib/
+│   ├── animations.ts    # Framer Motion variants
+│   ├── apiFetch.ts      # API client with retry/timeout
+│   ├── chart-colors.ts  # Chart color palettes
+│   ├── firebase.ts      # Firebase config
+│   ├── role-routes.ts   # Navigation sections by role
+│   └── utils.ts         # cn() utility
+└── pages/               # 26 pages (all lazy-loaded)
+    ├── dashboard.tsx
+    ├── growth.tsx
+    ├── graphs.tsx
+    ├── suppliers.tsx
+    ├── machines.tsx
+    ├── sales-pipeline.tsx
+    ├── sales-tasks.tsx
+    ├── sales-sequences.tsx
+    ├── demo-scheduler.tsx
+    ├── lead-imports.tsx
+    ├── lead-intelligence.tsx
+    ├── map-view.tsx
+    ├── quotation-maker.tsx
+    ├── quotations.tsx
+    ├── ai-control.tsx
+    ├── buddy.tsx
+    ├── buddy-rules.tsx
+    ├── buddy-family.tsx
+    ├── marketing-content.tsx
+    ├── outreach-templates.tsx
+    ├── service-manager.tsx
+    ├── power-dashboard.tsx
+    ├── users.tsx
+    ├── feedback.tsx
+    ├── report-card.tsx
+    └── settings.tsx
 ```
+
+### API Endpoints (in vite.config.js)
+- `POST /api/buddy-chat` - Gemini AI chat (Buddy assistant)
+- `POST /api/generate-questions` - OpenAI question generation
+- `POST /api/send-inquiry` - Gmail-based lead inquiry emails
+- `GET /api/gmail-leads` - Fetch Gmail inbox as leads
+
+### Roles
+- `admin` - Full access to all 26 pages
+- `supplier` - Access to Dashboard, Map View, Settings
+- `machine_user` - Access to Dashboard, Machine Catalog
+
+### Key Features
+- Glass-card dark theme UI
+- Responsive with mobile sidebar (swipe navigation)
+- Lazy-loaded pages with error boundaries
+- Editor/Visitor mode toggle
+- AI Buddy panel (slide-out)
+- Real-time toast notifications
+- Virtual scrolling in DataTable
+- Adaptive animations based on device capability
+
+## Running
+```bash
+npm run dev
+```
+Runs on port 5000.

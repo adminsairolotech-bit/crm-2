@@ -1,0 +1,144 @@
+import { Switch, Route } from "wouter";
+import { RoleProvider } from "@/contexts/RoleContext";
+import { AdminModeProvider } from "@/contexts/AdminModeContext";
+import { Layout } from "@/components/layout/Layout";
+import { ModeSelector } from "@/components/ModeSelector";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Toaster } from "@/components/Toaster";
+import { lazy, Suspense, useEffect, type LazyExoticComponent, type ComponentType } from "react";
+import { toast } from "@/hooks/use-toast";
+
+const DashboardPage = lazy(() => import("@/pages/dashboard"));
+const GrowthAnalyticsPage = lazy(() => import("@/pages/growth"));
+const MachineCatalogPage = lazy(() => import("@/pages/machines"));
+const SupplierManagementPage = lazy(() => import("@/pages/suppliers"));
+const SalesPipelinePage = lazy(() => import("@/pages/sales-pipeline"));
+const SalesTasksPage = lazy(() => import("@/pages/sales-tasks"));
+const SalesSequencesPage = lazy(() => import("@/pages/sales-sequences"));
+const DemoSchedulerPage = lazy(() => import("@/pages/demo-scheduler"));
+const LeadImportsPage = lazy(() => import("@/pages/lead-imports"));
+const MapViewPage = lazy(() => import("@/pages/map-view"));
+const QuotationLogsPage = lazy(() => import("@/pages/quotations"));
+const QuotationMakerPage = lazy(() => import("@/pages/quotation-maker"));
+const AIControlCenterPage = lazy(() => import("@/pages/ai-control"));
+const BuddyDashboardPage = lazy(() => import("@/pages/buddy"));
+const BuddyRulesPage = lazy(() => import("@/pages/buddy-rules"));
+const MarketingContentPage = lazy(() => import("@/pages/marketing-content"));
+const LeadIntelligencePage = lazy(() => import("@/pages/lead-intelligence"));
+const OutreachTemplatesPage = lazy(() => import("@/pages/outreach-templates"));
+const BuddyParivarPage = lazy(() => import("@/pages/buddy-family"));
+const UserManagementPage = lazy(() => import("@/pages/users"));
+const FeedbackPage = lazy(() => import("@/pages/feedback"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
+const ReportCardPage = lazy(() => import("@/pages/report-card"));
+const GraphsPage = lazy(() => import("@/pages/graphs"));
+const ServiceManagerPage = lazy(() => import("@/pages/service-manager"));
+const PowerDashboardPage = lazy(() => import("@/pages/power-dashboard"));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center py-20">
+      <h1 className="text-4xl font-bold text-foreground mb-2">404</h1>
+      <p className="text-muted-foreground">Page not found</p>
+    </div>
+  );
+}
+
+function RoutePage({ Component }: { Component: LazyExoticComponent<ComponentType> }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Component />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function GlobalErrorHandlers() {
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("[Global] Uncaught error:", event.error);
+      toast({
+        title: "Unexpected Error",
+        description: "Something went wrong. Please refresh the page if things look broken.",
+        variant: "destructive",
+      });
+    };
+
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      console.error("[Global] Unhandled promise rejection:", event.reason);
+      toast({
+        title: "Unexpected Error",
+        description: "An unhandled error occurred. Some features may not work correctly.",
+        variant: "destructive",
+      });
+    };
+
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleRejection);
+
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleRejection);
+    };
+  }, []);
+
+  return null;
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary fallbackMessage="The admin dashboard encountered a critical error. Please refresh the page.">
+      <GlobalErrorHandlers />
+      <RoleProvider>
+        <AdminModeProvider>
+          <Switch>
+            <Route path="/select-mode" component={ModeSelector} />
+            <Route>
+              <Layout>
+                <Switch>
+                  <Route path="/">{() => <RoutePage Component={DashboardPage} />}</Route>
+                  <Route path="/growth">{() => <RoutePage Component={GrowthAnalyticsPage} />}</Route>
+                  <Route path="/machines">{() => <RoutePage Component={MachineCatalogPage} />}</Route>
+                  <Route path="/suppliers">{() => <RoutePage Component={SupplierManagementPage} />}</Route>
+                  <Route path="/sales-pipeline">{() => <RoutePage Component={SalesPipelinePage} />}</Route>
+                  <Route path="/sales-tasks">{() => <RoutePage Component={SalesTasksPage} />}</Route>
+                  <Route path="/sales-sequences">{() => <RoutePage Component={SalesSequencesPage} />}</Route>
+                  <Route path="/demo-scheduler">{() => <RoutePage Component={DemoSchedulerPage} />}</Route>
+                  <Route path="/lead-imports">{() => <RoutePage Component={LeadImportsPage} />}</Route>
+                  <Route path="/map-view">{() => <RoutePage Component={MapViewPage} />}</Route>
+                  <Route path="/quotations">{() => <RoutePage Component={QuotationLogsPage} />}</Route>
+                  <Route path="/quotation-maker">{() => <RoutePage Component={QuotationMakerPage} />}</Route>
+                  <Route path="/ai-control">{() => <RoutePage Component={AIControlCenterPage} />}</Route>
+                  <Route path="/buddy">{() => <RoutePage Component={BuddyDashboardPage} />}</Route>
+                  <Route path="/buddy-rules">{() => <RoutePage Component={BuddyRulesPage} />}</Route>
+                  <Route path="/marketing-content">{() => <RoutePage Component={MarketingContentPage} />}</Route>
+                  <Route path="/lead-intelligence">{() => <RoutePage Component={LeadIntelligencePage} />}</Route>
+                  <Route path="/outreach-templates">{() => <RoutePage Component={OutreachTemplatesPage} />}</Route>
+                  <Route path="/buddy-family">{() => <RoutePage Component={BuddyParivarPage} />}</Route>
+                  <Route path="/users">{() => <RoutePage Component={UserManagementPage} />}</Route>
+                  <Route path="/feedback">{() => <RoutePage Component={FeedbackPage} />}</Route>
+                  <Route path="/settings">{() => <RoutePage Component={SettingsPage} />}</Route>
+                  <Route path="/report-card">{() => <RoutePage Component={ReportCardPage} />}</Route>
+                  <Route path="/graphs">{() => <RoutePage Component={GraphsPage} />}</Route>
+                  <Route path="/service-manager">{() => <RoutePage Component={ServiceManagerPage} />}</Route>
+                  <Route path="/power-dashboard">{() => <RoutePage Component={PowerDashboardPage} />}</Route>
+                  <Route component={NotFoundPage} />
+                </Switch>
+              </Layout>
+            </Route>
+          </Switch>
+        </AdminModeProvider>
+      </RoleProvider>
+      <Toaster />
+    </ErrorBoundary>
+  );
+}

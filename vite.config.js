@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
 
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     {
       name: 'ai-api-endpoints',
       configureServer(server) {
@@ -94,6 +97,7 @@ Return ONLY the JSON array, no other text.`;
             res.end(JSON.stringify({ success: false, error: err.message }));
           }
         });
+
         async function getGmailClient() {
           const { google } = await import('googleapis');
           const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
@@ -239,10 +243,18 @@ Return ONLY the JSON array, no other text.`;
       },
     },
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   server: {
     host: '0.0.0.0',
     port: 5000,
     allowedHosts: true,
+    watch: {
+      ignored: ['**/.local/**', '**/node_modules/**'],
+    },
   },
   define: {
     'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(
