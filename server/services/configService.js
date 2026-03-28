@@ -30,8 +30,22 @@ let _stats = {
   pushSent: 0,
   totalLeads: 0,
   followupsSent: 0,
+  messagesToday: 0,
   startTime: Date.now(),
 };
+
+// ─── Daily reset — midnight mein messagesToday reset ─────────────────────────
+function scheduleReset() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+  const msUntilMidnight = midnight.getTime() - now.getTime();
+  setTimeout(() => {
+    _stats.messagesToday = 0;
+    console.log('[ConfigService] Daily message counter reset');
+    setInterval(() => { _stats.messagesToday = 0; }, 24 * 60 * 60 * 1000);
+  }, msUntilMidnight);
+}
+scheduleReset();
 
 // Load persisted config on startup
 try {
@@ -100,6 +114,24 @@ export function clearErrorLogs() { _errorLogs = []; }
 // ─── Stats ────────────────────────────────────────────────────────────────────
 export function increment(key) {
   if (key in _stats) _stats[key]++;
+  // Also track daily message count for WA sends
+  if (key === 'whatsappSent') _stats.messagesToday++;
+}
+
+// ─── Daily limit check ────────────────────────────────────────────────────────
+export function isWithinDailyLimit() {
+  return _stats.messagesToday < _config.dailyMessageLimit;
+}
+
+// ─── Retry with exponential backoff ───────────────────────────────────────────
+export async function retryOperation(fn, retries = 3, delayMs = 500) {
+  try {
+    return await fn();
+  } catch (e) {
+    if (retries <= 0) throw e;
+    await new Promise(r => setTimeout(r, delayMs));
+    return retryOperation(fn, retries - 1, delayMs * 2);
+  }
 }
 
 export function setLeadCount(n) { _stats.totalLeads = n; }

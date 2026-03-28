@@ -754,7 +754,10 @@ Return ONLY the JSON array, no other text.`;
           dailyMessageLimit: 100, alertOnError: true,
         };
         const _logs = [];
-        const _stats = { aiCalls: 0, aiErrors: 0, whatsappSent: 0, whatsappFailed: 0, pushSent: 0, totalLeads: 0, followupsSent: 0, startTime: Date.now() };
+        const _stats = { aiCalls: 0, aiErrors: 0, whatsappSent: 0, whatsappFailed: 0, pushSent: 0, totalLeads: 0, followupsSent: 0, messagesToday: 0, startTime: Date.now() };
+        // Daily reset at midnight
+        const _midnightReset = () => { const n = new Date(); const ms = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 0, 0, 5) - n; setTimeout(() => { _stats.messagesToday = 0; setInterval(() => { _stats.messagesToday = 0; }, 86400000); }, ms); };
+        _midnightReset();
 
         function readBody(req) {
           return new Promise((resolve) => {

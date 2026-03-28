@@ -292,13 +292,13 @@ export default function AIControlCenterPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Total Leads" value={s?.totalLeads ?? "—"} icon={TrendingUp} color="border-blue-400" />
           <StatCard label="AI Calls" value={s?.aiCalls ?? "—"} icon={Brain} color="border-purple-400" />
-          <StatCard label="WA Sent" value={s?.whatsappSent ?? "—"} icon={MessageSquare} color="border-emerald-400" />
-          <StatCard label="Errors" value={s?.errorCount ?? "—"} icon={AlertTriangle} color="border-red-400" />
+          <StatCard label="WA Sent (Total)" value={s?.whatsappSent ?? "—"} icon={MessageSquare} color="border-emerald-400" />
+          <StatCard label="Errors in Log" value={s?.errorCount ?? "—"} icon={AlertTriangle} color="border-red-400" />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+          <StatCard label="WA Today" value={`${s?.messagesToday ?? 0} / ${data?.config?.dailyMessageLimit ?? 100}`} icon={MessageSquare} color="border-teal-400" />
           <StatCard label="WA Failed" value={s?.whatsappFailed ?? "—"} icon={XCircle} color="border-amber-400" />
           <StatCard label="AI Errors" value={s?.aiErrors ?? "—"} icon={AlertTriangle} color="border-orange-400" />
-          <StatCard label="Follow-ups" value={s?.followupsSent ?? "—"} icon={Bell} color="border-cyan-400" />
           <StatCard label="Uptime" value={s ? fmtUptime(s.uptimeSeconds) : "—"} icon={Clock} color="border-slate-400" />
         </div>
       </motion.div>

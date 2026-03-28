@@ -11,38 +11,63 @@ const APP_LINK = process.env.APP_DOWNLOAD_LINK || 'https://sairolotech.app';
 
 // DND check import
 import { getLead, markDND } from '../models/leadModel.js';
+import { isEnabled, increment, logError, isWithinDailyLimit, retryOperation } from './configService.js';
 
 function isConfigured() {
   return !!(WA_TOKEN && PHONE_ID);
 }
 
 async function sendRaw(to, body) {
+  // ── Control Panel checks ─────────────────────────────────────────────────
+  if (!isEnabled('whatsappEnabled')) {
+    console.log(`📵 [WA BLOCKED] WhatsApp disabled via Control Panel. To: ${to}`);
+    return { blocked: true, reason: 'whatsapp_disabled' };
+  }
+
+  if (!isWithinDailyLimit()) {
+    console.warn(`⛔ [WA LIMIT] Daily limit reached. Message to ${to} dropped.`);
+    logError('WhatsApp', 'Daily message limit reached', `Attempted to send to ${to}`);
+    return { blocked: true, reason: 'daily_limit_reached' };
+  }
+
   if (!isConfigured()) {
     console.log(`📱 [WA MOCK] To: ${to}\n${body}`);
+    increment('whatsappSent');
     return { mock: true };
   }
 
-  const res = await fetch(WA_API, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${WA_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to: to.replace(/\D/g, ''),
-      type: 'text',
-      text: { body },
-    }),
-    signal: AbortSignal.timeout(10000),
-  });
+  // ── Send with auto-retry ─────────────────────────────────────────────────
+  try {
+    const result = await retryOperation(async () => {
+      const res = await fetch(WA_API, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WA_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: to.replace(/\D/g, ''),
+          type: 'text',
+          text: { body },
+        }),
+        signal: AbortSignal.timeout(10000),
+      });
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`WA API error ${res.status}: ${err}`);
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`WA API ${res.status}: ${err}`);
+      }
+      return res.json();
+    }, 3, 1000); // 3 retries, 1s → 2s → 4s backoff
+
+    increment('whatsappSent');
+    return result;
+  } catch (e) {
+    increment('whatsappFailed');
+    logError('WhatsApp', e.message, `To: ${to} | Message: ${body.slice(0, 80)}`);
+    throw e;
   }
-
-  return res.json();
 }
 
 /** Send first message — focused on app download */
