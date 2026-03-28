@@ -1,7 +1,7 @@
 # SAI RoloTech CRM 5.6 PRO
 
 ## Overview
-Full-featured CRM web application for SAI RoloTech - an industrial automation company. Dark-themed admin dashboard with 26 pages, role-based access, AI integrations, and comprehensive business management features.
+Full-featured CRM web application for SAI RoloTech - an industrial automation company. **Light-themed** professional admin dashboard with 39 pages, role-based access, AI integrations, and comprehensive business management features. PWA + Capacitor native mobile support (Play Store / App Store ready).
 
 ## Mobile / PWA Support
 - **PWA** (Progressive Web App): `public/manifest.json` + `public/sw.js` service worker → installable from Chrome/Safari
@@ -31,14 +31,14 @@ Located in `server/` — modular production-ready backend:
 ### Services (`server/services/`)
 - **aiManager.js** — OpenRouter (primary) → Gemini (fallback) → static message. Predefined quick replies for price/delivery/demo queries. Response caching.
 - **queueService.js** — In-memory job queue with retry logic. Max 5 retries, exponential delays (1m→5m→15m→1h→4h). Survives partial failures.
-- **whatsappService.js** — WhatsApp Business API. Welcome message, follow-ups, admin alerts, DND handling. Mock mode if keys not set.
+- **whatsappService.js** — WhatsApp Business API. Welcome message, location-aware follow-ups (NEAR/MEDIUM/FAR × 6 templates), admin alerts, DND handling, 3-retry exponential backoff. Mock mode if keys not set.
 - **fcmService.js** — Firebase Cloud Messaging push notifications. Falls back to WhatsApp if no FCM token.
 - **followupService.js** — 4-month follow-up schedule (Day 1,3,7,15, Month 1,2,3,4). Stops on user reply, DND, or meeting booked.
 - **calendarService.js** — Google Calendar free/busy slots, meeting booking with reminders.
 - **reportService.js** — Daily report at 8pm IST via WhatsApp. Auto-scheduled on server start.
 
 ### Models (`server/models/`)
-- **leadModel.js** — In-memory lead store + JSON file persistence. CRUD, score calculation, stats.
+- **leadModel.js** — In-memory lead store + JSON file persistence. CRUD, smart score calculation (Location 40% + Behavior 40% + Source 20%), location priority (HIGH/MEDIUM/LOW/UNKNOWN), source analytics, location analytics, priority lead ranking.
 
 ### Routes (`server/routes/`)
 - **leads.js** — All CRM HTTP endpoints (see API section below)
@@ -54,6 +54,7 @@ Located in `server/` — modular production-ready backend:
 | GET | `/api/calendar-slots` | Available meeting slots |
 | GET | `/api/leads` | Admin: all leads (requires X-Admin-Token) |
 | GET | `/api/lead-stats` | Lead scoring stats |
+| GET | `/api/lead-analytics` | Source ROI + location analytics + priority leads (Admin) |
 | POST | `/api/report` | Trigger manual daily report |
 | POST | `/api/ai-reply` | Test AI reply generation |
 
