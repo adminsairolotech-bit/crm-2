@@ -56,8 +56,8 @@ router.post('/api/admin/config/reset', adminAuth, (_req, res) => {
 router.get('/api/admin/stats', adminAuth, async (req, res) => {
   // Live lead count
   try {
-    const { getAll } = await import('../models/leadModel.js');
-    setLeadCount(getAll().length);
+    const { getAllLeads } = await import('../models/leadModel.js');
+    setLeadCount(getAllLeads().length);
   } catch (_) {}
 
   res.json({
