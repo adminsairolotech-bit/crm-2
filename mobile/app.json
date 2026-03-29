@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.amazingweb.design.sairolotech",
+      "package": "com.vipinjangra.crmmobile",
       "versionCode": 3,
       "compileSdkVersion": 35,
       "targetSdkVersion": 35,
