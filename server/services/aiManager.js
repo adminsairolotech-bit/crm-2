@@ -1,18 +1,15 @@
 /**
- * AI Manager — OpenRouter (primary) → Gemini (fallback) → Predefined message
+ * AI Manager — Gemini (personal key) → Predefined fallback
  * No lead ever gets lost due to AI failure
  */
 import { GoogleGenAI } from '@google/genai';
 import { isEnabled, increment, logError, getConfig } from './configService.js';
 import { validateAIResponse, sanitizeInput, isSpamInput } from './aiValidator.js';
 
-const GEMINI_KEY = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-const OPENROUTER_KEY = process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
-const OPENROUTER_BASE_URL = process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 
-// Response cache — same prompt se baar baar AI call nahi karte
 const responseCache = new Map();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL = 10 * 60 * 1000;
 
 const SYSTEM_PROMPT = `You are a helpful sales assistant for SAI RoloTech, an industrial roll forming machine manufacturer in New Delhi.
 
@@ -36,7 +33,6 @@ const FALLBACK_MESSAGES = [
   "Thank you for reaching out! Aapko kya chahiye — machine specs, pricing, ya demo?",
 ];
 
-// Predefined quick replies (no AI needed)
 const QUICK_REPLIES = {
   price: "Pricing aapki exact requirement pe depend karti hai. Dimensions aur capacity batao, ek detailed quote bhejte hain. 📋",
   delivery: "Delivery usually 45-60 din mein hoti hai. Urgent chahiye toh bata dein, arrange karte hain. 🚚",
@@ -55,45 +51,15 @@ function detectQuickReply(message) {
   return null;
 }
 
-async function tryOpenRouter(prompt) {
-  if (!OPENROUTER_KEY) throw new Error('No OpenRouter key');
-
-  const res = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENROUTER_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://sairolotech.com',
-      'X-Title': 'SAI RoloTech CRM',
-    },
-    body: JSON.stringify({
-      model: 'mistralai/mistral-7b-instruct:free',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 150,
-      temperature: 0.7,
-    }),
-    signal: AbortSignal.timeout(8000),
-  });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}`);
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
-}
-
 async function tryGemini(prompt, model = 'gemini-2.5-flash') {
   if (!GEMINI_KEY) throw new Error('No Gemini key');
   const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
-  // Map control panel model names to Gemini API model IDs
   const modelMap = {
     'gemini-2.5-flash': 'gemini-2.5-flash',
     'gemini-2.5-pro': 'gemini-2.5-pro',
     'gemini-2.0-flash': 'gemini-2.0-flash',
     'gemini-1.5-flash': 'gemini-1.5-flash',
     'gemini-1.5-pro': 'gemini-1.5-pro',
-    'mistral-7b': 'gemini-2.5-flash', // fallback to gemini-2.5 if OpenRouter not available
   };
   const resolvedModel = modelMap[model] || 'gemini-2.5-flash';
   const response = await ai.models.generateContent({
@@ -105,30 +71,25 @@ async function tryGemini(prompt, model = 'gemini-2.5-flash') {
 }
 
 export async function generateReply(userMessage, context = {}) {
-  // 0. Check if AI is enabled via Control Panel
   if (!isEnabled('aiEnabled')) {
     return 'Hamari team jaldi aapse contact karegi. Dhanyawad! 🙏';
   }
 
-  // 0.5 Input sanitization + spam check
   const safeMessage = sanitizeInput(userMessage);
   if (isSpamInput(safeMessage)) {
     console.log('🛡️ Spam input blocked');
     return 'Kripya apna sawaal clearly likhein, hum madad karenge! 🙏';
   }
 
-  // 1. Check for predefined quick reply (fastest, no API cost)
   const quick = detectQuickReply(safeMessage);
   if (quick) return quick;
 
-  // 2. Check cache
   const cacheKey = `${safeMessage}_${context.leadScore || ''}`;
   const cached = responseCache.get(cacheKey);
   if (cached && Date.now() - cached.time < CACHE_TTL) {
     return cached.reply;
   }
 
-  // Use model from Control Panel config
   const cfg = getConfig();
   const prompt = context.leadName
     ? `Customer: ${context.leadName}\nMessage: ${safeMessage}`
@@ -137,29 +98,16 @@ export async function generateReply(userMessage, context = {}) {
   let reply = '';
   increment('aiCalls');
 
-  // 3. Try OpenRouter (Replit AI Integration)
   try {
-    reply = await tryOpenRouter(prompt);
-    console.log('🤖 AI via OpenRouter');
-  } catch (e1) {
-    console.warn('OpenRouter failed:', e1.message, '— trying Gemini...');
-    logError('OpenRouter', e1.message, `Prompt: ${prompt.slice(0, 100)}`);
-
-    // 4. Try Gemini
-    try {
-      reply = await tryGemini(prompt, cfg.aiModel);
-      console.log('🤖 AI via Gemini (' + cfg.aiModel + ')');
-    } catch (e2) {
-      console.warn('Gemini failed:', e2.message, '— using fallback');
-      logError('Gemini', e2.message, `Model: ${cfg.aiModel}`);
-      increment('aiErrors');
-
-      // 5. Static fallback
-      reply = FALLBACK_MESSAGES[Math.floor(Math.random() * FALLBACK_MESSAGES.length)];
-    }
+    reply = await tryGemini(prompt, cfg.aiModel);
+    console.log('🤖 AI via Gemini (' + (cfg.aiModel || 'gemini-2.5-flash') + ')');
+  } catch (e) {
+    console.warn('Gemini failed:', e.message, '— using fallback');
+    logError('Gemini', e.message, `Model: ${cfg.aiModel}`);
+    increment('aiErrors');
+    reply = FALLBACK_MESSAGES[Math.floor(Math.random() * FALLBACK_MESSAGES.length)];
   }
 
-  // 6. SAFETY: Validate AI response before sending
   if (reply) {
     const validation = validateAIResponse(reply, context);
     if (validation.issueCount > 0) {
@@ -169,7 +117,6 @@ export async function generateReply(userMessage, context = {}) {
     reply = validation.response || FALLBACK_MESSAGES[0];
   }
 
-  // Cache successful reply
   if (reply) responseCache.set(cacheKey, { reply, time: Date.now() });
 
   return reply;

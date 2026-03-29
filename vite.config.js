@@ -813,7 +813,7 @@ Return ONLY the JSON array, no other text.`;
               whatsapp: !!process.env.WHATSAPP_ACCESS_TOKEN,
               fcm: !!process.env.FCM_SERVER_KEY,
               openrouter: !!(process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY),
-              gemini: !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+              gemini: !!(process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY),
               adminToken: !!process.env.ADMIN_API_TOKEN,
             },
             uptime: process.uptime(),

@@ -95,7 +95,7 @@ router.get('/api/admin/stats', adminAuth, async (req, res) => {
       whatsapp: !!process.env.WHATSAPP_ACCESS_TOKEN,
       fcm: !!process.env.FCM_SERVER_KEY,
       openrouter: !!(process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY),
-      gemini: !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+      gemini: !!(process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY),
       adminToken: !!process.env.ADMIN_API_TOKEN,
     },
     uptime: process.uptime(),
@@ -124,7 +124,7 @@ router.get('/api/admin/health', adminAuth, async (req, res) => {
   });
 
   // 3. Gemini AI
-  const geminiOk = !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+  const geminiOk = !!(process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY);
   if (!geminiOk) overallOk = false;
   checks.push({ id: 'ai', label: 'Gemini AI', status: geminiOk ? 'ok' : 'warn', detail: geminiOk ? 'API key configured' : 'Key missing — AI features limited' });
 

@@ -19,7 +19,7 @@ import productsRouter from './routes/products.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
-const GEMINI_KEY = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 
 /* ── Middleware ──────────────────────────── */
 app.use(cors({ origin: true, credentials: true }));
@@ -793,7 +793,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Gemini AI:   ${GEMINI_KEY ? '✅ Connected' : '⚠️  Key missing'}`);
   console.log(`   WhatsApp:    ${process.env.WHATSAPP_ACCESS_TOKEN ? '✅ Configured' : '⚠️  Not configured (mock mode)'}`);
   console.log(`   FCM Push:    ${process.env.FCM_SERVER_KEY ? '✅ Configured' : '⚠️  Not configured (mock mode)'}`);
-  console.log(`   OpenRouter:  ${process.env.OPENROUTER_API_KEY ? '✅ Configured' : '⚠️  Not configured (Gemini fallback)'}`);
+  console.log(`   OpenRouter:  ${(process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY) ? '✅ Configured (code audit only)' : '⚠️  Not configured'}`);
 
   // Resume any missed follow-ups from previous server session
   resumeFollowups();
