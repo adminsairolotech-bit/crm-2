@@ -123,21 +123,33 @@ jobs:
           console.log('Keystore ID:',ks.id);
           console.log('Key Alias:',ks.keyAlias);
           console.log('Keystore type:',ks.type);
-          const url=ks.keystore;
-          console.log('Keystore URL: [redacted]');
+          const ksData=ks.keystore;
           const fs=require('fs');
-          fs.writeFileSync('/tmp/ks_url.txt',url);
           fs.writeFileSync('/tmp/ks_pass.txt',ks.keystorePassword);
           fs.writeFileSync('/tmp/ks_alias.txt',ks.keyAlias);
           fs.writeFileSync('/tmp/key_pass.txt',ks.keyPassword);
+          if(ksData.startsWith('http')){
+            console.log('Keystore is URL — will download');
+            fs.writeFileSync('/tmp/ks_mode.txt','url');
+            fs.writeFileSync('/tmp/ks_url.txt',ksData);
+          } else {
+            console.log('Keystore is base64 — will decode');
+            fs.writeFileSync('/tmp/ks_mode.txt','base64');
+            fs.writeFileSync('/tmp/ks_data.txt',ksData);
+          }
           "
 
-          KS_URL=$(cat /tmp/ks_url.txt)
-          curl -s -o android/app/upload-keystore.jks "$KS_URL"
-          echo "✅ Keystore downloaded: $(du -h android/app/upload-keystore.jks | cut -f1)"
+          MODE=$(cat /tmp/ks_mode.txt)
+          if [ "$MODE" = "url" ]; then
+            KS_URL=$(cat /tmp/ks_url.txt)
+            curl -s -L -o android/app/upload-keystore.jks "$KS_URL"
+          else
+            cat /tmp/ks_data.txt | base64 -d > android/app/upload-keystore.jks
+          fi
+          echo "✅ Keystore ready: $(du -h android/app/upload-keystore.jks | cut -f1)"
 
           keytool -list -keystore android/app/upload-keystore.jks \
-            -storepass "$(cat /tmp/ks_pass.txt)" -alias "$(cat /tmp/ks_alias.txt)" 2>/dev/null | grep SHA1 || true
+            -storepass "$(cat /tmp/ks_pass.txt)" -alias "$(cat /tmp/ks_alias.txt)" 2>/dev/null | grep SHA1 || echo "SHA1 check skipped"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
