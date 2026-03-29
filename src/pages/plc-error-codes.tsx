@@ -241,6 +241,9 @@ export default function PLCErrorCodesPage() {
                 <ChevronDown className="w-4 h-4" />
               </button>
             </div>
+            <div className="px-4 pt-2">
+              <AIDisclaimer compact />
+            </div>
             <div className="max-h-64 overflow-y-auto p-4 space-y-3">
               {messages.slice(1).map((msg, i) => (
                 <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>

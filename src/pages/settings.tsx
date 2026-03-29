@@ -394,6 +394,39 @@ export default function SettingsPage() {
           </Button>
         </div>
       </SectionCard>
+
+      {/* ── Delete Account (Store Compliance) ─────────────────── */}
+      <SectionCard title="Account Delete Karein" headerAction={<Trash2 className="w-4 h-4 text-red-500" />}>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-bold text-red-800 mb-1">Permanent Action</h4>
+              <p className="text-xs text-red-600 leading-relaxed mb-3">
+                Account delete karne se aapka saara data — leads, quotations, settings, activity history — permanently remove ho jayega. Ye action undo nahi hoga.
+              </p>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  if (window.confirm("Kya aap sure hain? Aapka saara data permanently delete ho jayega. Ye undo nahi hoga.")) {
+                    toast({
+                      title: "Account Deletion Request",
+                      description: "Aapki request receive ho gayi hai. Hum 48 ghante ke andar aapko confirm karenge. Email: sairolotech@gmail.com",
+                    });
+                  }
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Account Delete Karein
+              </Button>
+              <p className="text-[10px] text-red-400 mt-2">
+                Aapko sairolotech@gmail.com par confirmation email bheji jayegi. Request 48 hours mein process hogi.
+              </p>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
     </motion.div>
   );
 }

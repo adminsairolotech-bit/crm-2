@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { ArrowLeft, FileText, ShoppingCart, AlertTriangle, Scale, RefreshCw, Phone } from "lucide-react";
+import { ArrowLeft, FileText, ShoppingCart, AlertTriangle, Scale, RefreshCw, Phone, Bot, MessageSquare, Server } from "lucide-react";
 
 const Section = ({ icon: Icon, title, color, children }: { icon: any; title: string; color: string; children: React.ReactNode }) => (
   <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -87,7 +87,39 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section icon={Scale} title="4. Intellectual Property" color="bg-purple-600">
+        <Section icon={Bot} title="4. AI Features — Liability Disclaimer" color="bg-violet-600">
+          <div className="bg-violet-50 border border-violet-200 rounded-xl p-3">
+            <p className="text-violet-800 font-medium mb-2">AI Tools ke baare mein:</p>
+            <ul className="list-none space-y-1 text-violet-700">
+              <li>&#x2022; AI-generated responses (quotations, troubleshooting, photo diagnosis) sirf <strong>guidance purpose</strong> ke liye hain</li>
+              <li>&#x2022; AI galat ya incomplete information de sakta hai — verify zaroor karein</li>
+              <li>&#x2022; SAI RoloTech AI-generated content ki accuracy ki <strong>guarantee nahi deta</strong></li>
+              <li>&#x2022; AI responses se koi bhi financial ya technical decision lene se pehle professional advice lein</li>
+              <li>&#x2022; AI outputs ka use aapke apne risk par hai</li>
+            </ul>
+          </div>
+        </Section>
+
+        <Section icon={MessageSquare} title="5. WhatsApp Communication Consent" color="bg-emerald-600">
+          <ul className="list-none space-y-1">
+            <li>&#x2714;&#xFE0F; App use karke aap WhatsApp updates receive karne ke liye consent dete hain</li>
+            <li>&#x2714;&#xFE0F; Messages sirf business-related updates ke liye bheje jaate hain (spam nahi)</li>
+            <li>&#x2714;&#xFE0F; Aap kabhi bhi "STOP" reply karke opt-out kar sakte hain</li>
+            <li>&#x2714;&#xFE0F; DND requests turant process hoti hain</li>
+            <li>&#x2714;&#xFE0F; Per-user rate limits active hain (maximum 1 message per 4 hours)</li>
+          </ul>
+        </Section>
+
+        <Section icon={Server} title="6. Service Availability" color="bg-slate-600">
+          <ul className="list-none space-y-1">
+            <li>&#x2022; App aur services <strong>"as available"</strong> basis par provide ki jaati hain</li>
+            <li>&#x2022; Scheduled ya unscheduled maintenance ke liye temporary downtime ho sakta hai</li>
+            <li>&#x2022; AI services third-party APIs (Google Gemini) par depend karti hain — unki availability guaranteed nahi hai</li>
+            <li>&#x2022; Critical business operations ke liye manual backup processes rakhein</li>
+          </ul>
+        </Section>
+
+        <Section icon={Scale} title="7. Intellectual Property" color="bg-purple-600">
           <ul className="list-none space-y-1">
             <li>✔️ App ka content, design, aur code SAI RoloTech ka property hai</li>
             <li>✔️ Bina permission copy ya redistribute nahi kar sakte</li>
@@ -96,7 +128,7 @@ export default function TermsPage() {
           </ul>
         </Section>
 
-        <Section icon={RefreshCw} title="5. Cancellation &amp; Refund Policy" color="bg-rose-500">
+        <Section icon={RefreshCw} title="8. Cancellation &amp; Refund Policy" color="bg-rose-500">
           <p><strong>Order Cancellation:</strong></p>
           <ul className="list-none space-y-1 mt-2">
             <li>✔️ Order date se 48 ghante ke andar: Full refund</li>
@@ -106,7 +138,7 @@ export default function TermsPage() {
           <p className="mt-3"><strong>App Subscription:</strong> Abhi yeh free hai. Future subscription ke liye alag terms batai jaayengi.</p>
         </Section>
 
-        <Section icon={Scale} title="6. Governing Law" color="bg-slate-600">
+        <Section icon={Scale} title="9. Governing Law" color="bg-slate-600">
           <ul className="list-none space-y-1">
             <li>✔️ Ye terms Indian law ke under governed hain</li>
             <li>✔️ Koi bhi dispute Delhi courts mein resolve hoga</li>
@@ -114,7 +146,7 @@ export default function TermsPage() {
           </ul>
         </Section>
 
-        <Section icon={Phone} title="7. Contact aur Grievance" color="bg-teal-600">
+        <Section icon={Phone} title="10. Contact aur Grievance" color="bg-teal-600">
           <p>Terms se related sawaal ya complaint ke liye:</p>
           <div className="bg-teal-50 rounded-xl p-3 mt-2 space-y-1">
             <p>📧 <strong>Email:</strong> sairolotech@gmail.com</p>
@@ -128,14 +160,14 @@ export default function TermsPage() {
           <p className="text-slate-500 text-xs leading-relaxed">
             In terms ko accept karke aap confirm karte hain ki aapne inhe padha aur samjha hai.
             <br />
-            <strong className="text-slate-700">Effective Date: March 1, 2025</strong>
+            <strong className="text-slate-700">Effective Date: March 29, 2026</strong>
           </p>
         </div>
 
       </main>
 
       <footer className="text-center py-6 text-slate-400 text-xs">
-        © 2025 SAI RoloTech · New Delhi · India
+        © 2026 SAI RoloTech · New Delhi · India
       </footer>
     </div>
   );

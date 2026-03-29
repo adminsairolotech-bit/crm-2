@@ -125,6 +125,7 @@ Return a JSON object:
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6 pb-10">
       <PageHeader title="Marketing Content" subtitle="AI Content Generator + Smart Timing Advisor" />
+      <motion.div variants={staggerItem} className="max-w-lg"><AIDisclaimer /></motion.div>
 
       <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatsCard label="Total Content"  value={mockContent.length}                                          icon={Megaphone}      iconBg="bg-violet-50"  iconColor="text-purple-500" />

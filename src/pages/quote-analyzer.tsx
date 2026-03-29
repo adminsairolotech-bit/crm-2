@@ -178,6 +178,7 @@ export default function QuoteAnalyzerPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-4 max-w-lg mx-auto"><AIDisclaimer /></div>
         <AnimatePresence mode="wait">
           {step === "input" && (
             <motion.div key="input" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">

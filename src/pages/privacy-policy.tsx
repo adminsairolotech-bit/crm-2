@@ -109,6 +109,31 @@ export default function PrivacyPolicyPage() {
           </p>
         </Section>
 
+        <Section icon={Database} title="AI Data Processing" color="bg-purple-600">
+          <p><strong>AI Features:</strong> Hamari app Google Gemini AI use karti hai aapke queries ke jawab dene ke liye.</p>
+          <ul className="space-y-1 list-none mt-2">
+            <li>✔️ AI inputs (aapke questions) temporarily process hote hain — permanently store nahi hote</li>
+            <li>✔️ AI responses validated aur filtered hote hain safety ke liye</li>
+            <li>✔️ Machine photos jo AI diagnosis ke liye bhejte hain — processing ke baad delete ho jaate hain</li>
+            <li>✔️ AI se generated quotations aapke account mein save hoti hain</li>
+          </ul>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-amber-700 mt-3">
+            ⚠️ AI-generated responses sirf guidance ke liye hain. Important business decisions ke liye professional advice zaroor lein.
+          </div>
+        </Section>
+
+        <Section icon={Bell} title="WhatsApp Communication" color="bg-emerald-600">
+          <p><strong>WhatsApp Messages:</strong> Hum WhatsApp Business API use karte hain aapko updates bhejne ke liye.</p>
+          <ul className="space-y-1 list-none mt-2">
+            <li>✔️ Messages sirf aapki consent ke baad bheje jaate hain</li>
+            <li>✔️ Follow-up messages controlled schedule par hain (spam nahi)</li>
+            <li>✔️ Per-user cooldown active hai — ek number par 4 ghante mein ek message</li>
+            <li>✔️ Daily message limit set hai abuse prevention ke liye</li>
+            <li>✔️ DND (Do Not Disturb) request hamesha respect ki jaati hai</li>
+          </ul>
+          <p className="mt-2"><strong>Opt-out:</strong> Kabhi bhi "STOP" reply karein ya app settings se WhatsApp notifications band karein.</p>
+        </Section>
+
         <Section icon={Eye} title="Data Ka Use Kaise Karte Hain" color="bg-indigo-600">
           <ul className="space-y-1 list-none">
             <li>✔️ Aapko relevant machine quotes aur recommendations bhejne ke liye</li>
