@@ -30,3 +30,9 @@ id = "BbBNN00PZtAVMWwvlnBhO"
 uri = "file://public/android-v4-release.zip"
 type = "unspecified"
 title = "android-v4-release.zip (versionCode=4)"
+
+[[outputs]]
+id = "xk39Lk3GBQXCooTZY0sxJ"
+uri = "file://public/android-versionCode4-FINAL.zip"
+type = "unspecified"
+title = "android-versionCode4-FINAL.zip — Play Store ke liye Upload Karo"
