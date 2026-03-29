@@ -5,6 +5,7 @@
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -16,8 +17,37 @@
         "backgroundColor": "#1a1a2e"
       },
       "package": "com.amazingweb.design.sairolotech",
-      "versionCode": 2
+      "versionCode": 2,
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "minSdkVersion": 24,
+
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+
+        "android.permission.CAMERA",
+
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+
+        "android.permission.WAKE_LOCK"
+      ]
     },
+
     "plugins": [
       [
         "expo-build-properties",
@@ -33,7 +63,9 @@
       "expo-router",
       "expo-secure-store"
     ],
+
     "scheme": "sairolotech",
+
     "extra": {
       "eas": {
         "projectId": "2873f4f3-f488-46ef-9d0f-199ee9e9a26c"
