@@ -19,6 +19,7 @@ const SalesPipelinePage = lazy(() => import("@/pages/sales-pipeline"));
 const SalesTasksPage = lazy(() => import("@/pages/sales-tasks"));
 const SalesSequencesPage = lazy(() => import("@/pages/sales-sequences"));
 const DemoSchedulerPage = lazy(() => import("@/pages/demo-scheduler"));
+const MeetingBookingPage = lazy(() => import("@/pages/meeting-booking"));
 const LeadImportsPage = lazy(() => import("@/pages/lead-imports"));
 const MapViewPage = lazy(() => import("@/pages/map-view"));
 const QuotationLogsPage = lazy(() => import("@/pages/quotations"));
@@ -307,6 +308,7 @@ function AppRoutes() {
                 <Route path="/sales-tasks">{() => <RoutePage Component={SalesTasksPage} />}</Route>
                 <Route path="/sales-sequences">{() => <RoutePage Component={SalesSequencesPage} />}</Route>
                 <Route path="/demo-scheduler">{() => <RoutePage Component={DemoSchedulerPage} />}</Route>
+                <Route path="/meeting-booking">{() => <RoutePage Component={MeetingBookingPage} />}</Route>
                 <Route path="/lead-imports">{() => <RoutePage Component={LeadImportsPage} />}</Route>
                 <Route path="/map-view">{() => <RoutePage Component={MapViewPage} />}</Route>
                 <Route path="/quotations">{() => <RoutePage Component={QuotationLogsPage} />}</Route>

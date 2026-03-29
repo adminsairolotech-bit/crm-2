@@ -45,13 +45,23 @@ Full-featured CRM web application for SAI RoloTech - an industrial automation co
 - **Global Error Handler**: Express catches all unhandled errors, returns generic 500
 - **Audit Report**: `data/CODEX-AUDIT-REPORT.md`
 
+## Business Engine Features (v5.8)
+- **Meeting Auto-Booking**: WhatsApp auto-detects "demo", "meeting", "milna" etc. → sends available time slots automatically. New `/meeting-booking` page for manual booking.
+- **Lead Priority Dashboard**: Color-coded priority indicators (Near/Medium/Far/Unknown) on main dashboard with colored dots.
+- **User Analytics**: Dashboard shows Total Users, Active (7d), Today Active, App Installed metrics.
+- **Quotation Tracker**: Dashboard widget showing Total Quotes, Accepted, Pending, Won Value.
+- **Smart Notification Router**: `server/services/notificationRouter.js` — App user → Push, Non-app → WhatsApp, Hot lead → Both.
+- **Permission Audit**: Mobile app (`mobile/app.json`) cleaned — removed unused Location, Biometric, legacy Storage, WiFi permissions.
+- **Dashboard Cleanup**: Reorganized with 3-column layout for analytics, quotation, and notification sections.
+
 ## CRM Backend System (Production)
 Located in `server/` — modular production-ready backend:
 
 ### Services (`server/services/`)
 - **aiManager.js** — OpenRouter (primary) → Gemini (fallback) → static message. Predefined quick replies for price/delivery/demo queries. Response caching.
-- **queueService.js** — In-memory job queue with retry logic. Max 5 retries, exponential delays (1m→5m→15m→1h→4h). Survives partial failures.
-- **whatsappService.js** — WhatsApp Business API. Welcome message, location-aware follow-ups (NEAR/MEDIUM/FAR × 6 templates), admin alerts, DND handling, 3-retry exponential backoff. Mock mode if keys not set.
+- **queueService.js** — In-memory job queue with retry logic. Max 5 retries, exponential delays (1m→5m→15m→1h→4h). Survives partial failures. Job types: SEND_WELCOME, SEND_FOLLOWUP, SEND_AI_REPLY, SEND_QUOTATION_FOLLOWUP, ADMIN_ALERT, SEND_PUSH, SEND_MEETING_SLOTS, SMART_NOTIFY.
+- **whatsappService.js** — WhatsApp Business API. Welcome message, location-aware follow-ups (NEAR/MEDIUM/FAR × 6 templates), admin alerts, DND handling, meeting auto-detection (sends available slots when lead mentions "demo"/"meeting"/"milna"/"dekhna"), 3-retry exponential backoff. Mock mode if keys not set.
+- **notificationRouter.js** — Smart notification routing: App users → Push, Non-app users → WhatsApp, Hot leads → Both channels.
 - **fcmService.js** — Firebase Cloud Messaging push notifications. Falls back to WhatsApp if no FCM token.
 - **followupService.js** — 4-month follow-up schedule (Day 1,3,7,15, Month 1,2,3,4). Stops on user reply, DND, or meeting booked.
 - **calendarService.js** — Google Calendar free/busy slots, meeting booking with reminders.

@@ -225,6 +225,8 @@ Batayein, hum ready hain! 😊`;
 }
 
 /** Handle incoming message — check DND keywords */
+const MEETING_KEYWORDS = ['demo', 'meeting', 'milna', 'dekhna', 'visit', 'dikha', 'call', 'video call', 'factory visit', 'time slot', 'appointment'];
+
 export async function handleIncoming(phone, message) {
   const lower = message.toLowerCase().trim();
   const DND_WORDS = ['stop', 'remove', 'no message', 'mat bhejo', 'band karo', 'unsubscribe'];
@@ -234,6 +236,37 @@ export async function handleIncoming(phone, message) {
     console.log(`🚫 DND set for ${phone}`);
     await sendRaw(phone, 'Aapko unsubscribe kar diya gaya hai. Agar future mein zaroorat ho toh contact karein. 🙏');
     return { dnd: true };
+  }
+
+  if (MEETING_KEYWORDS.some(k => lower.includes(k))) {
+    console.log(`📅 Meeting interest detected from ${phone}: "${message}"`);
+    const lead = getLead(phone);
+    const name = lead?.name || 'Sir';
+    const slotMsg =
+`${name} ji, meeting ke liye ye slots available hain:
+
+📅 *Available Time Slots:*
+• 10:00 AM
+• 11:00 AM
+• 2:00 PM
+• 3:00 PM
+• 5:00 PM
+
+Koi bhi time batayein — hum turant confirm kar denge!
+
+Meeting type:
+🏭 Factory Visit (Mundka, Delhi)
+📹 Video Call (WhatsApp/Google Meet)
+🏢 Aapki site par visit
+
+Bas reply karein apna preferred time aur type! 🙏`;
+
+    try {
+      await sendRaw(phone, slotMsg, { isAdminAlert: true });
+    } catch (e) {
+      console.error(`[Meeting Auto] Failed to send slots to ${phone}:`, e.message);
+    }
+    return { dnd: false, message, meetingInterest: true };
   }
 
   return { dnd: false, message };

@@ -68,6 +68,7 @@ export const navSections: NavSection[] = [
       { href: "/sales-tasks", label: "Sales Tasks", icon: CheckSquare, roles: ["admin"] },
       { href: "/sales-sequences", label: "Sales Sequences", icon: Zap, roles: ["admin"] },
       { href: "/demo-scheduler", label: "Demo Scheduler", icon: CalendarDays, roles: ["admin"] },
+      { href: "/meeting-booking", label: "Meeting Booking", icon: Send, roles: ["admin"] },
       { href: "/lead-imports", label: "Lead Imports", icon: ImageIcon, roles: ["admin"] },
     ],
   },
