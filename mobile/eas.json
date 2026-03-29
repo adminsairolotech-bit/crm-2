@@ -16,8 +16,7 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle",
-        "withoutCredentials": true
+        "buildType": "app-bundle"
       },
       "cache": {
         "disabled": true
