@@ -62,7 +62,7 @@ async function startWorker() {
 const ALLOWED_JOB_TYPES = new Set([
   'SEND_WELCOME', 'SEND_FOLLOWUP', 'SEND_AI_REPLY',
   'SEND_QUOTATION_FOLLOWUP', 'ADMIN_ALERT', 'SEND_PUSH',
-  'SEND_MEETING_SLOTS', 'SMART_NOTIFY',
+  'SEND_MEETING_SLOTS', 'SMART_NOTIFY', 'SMART_FOLLOWUP',
 ]);
 
 async function runJob(job) {

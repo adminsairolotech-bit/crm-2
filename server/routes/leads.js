@@ -16,6 +16,7 @@ import { handleIncoming, sendAdminAlert } from '../services/whatsappService.js';
 import { getAvailableSlots, bookMeeting } from '../services/calendarService.js';
 import { generateAndSendReport } from '../services/reportService.js';
 import { generateReply } from '../services/aiManager.js';
+import { processIncomingMessage, saveConversation, scheduleMeetingReminders } from '../services/memoryService.js';
 
 const router = express.Router();
 
@@ -155,21 +156,23 @@ router.post('/api/wa-webhook', async (req, res) => {
 
     console.log(`📨 WA message from ${phone}: "${text}"`);
 
-    // Check DND keywords
     const { dnd } = await handleIncoming(phone, text);
     if (dnd) return res.sendStatus(200);
 
-    // Stop follow-ups — user is active
+    const { intents, scheduledFollowups } = processIncomingMessage(phone, text);
+    if (intents.length > 0) {
+      console.log(`🧠 Detected intents: ${intents.map(i => i.intent).join(', ')} | Scheduled: ${scheduledFollowups.length} follow-ups`);
+    }
+
     stopFollowups(phone);
 
-    // Generate AI reply and queue it
     const lead = getLead(phone);
     enqueue('SEND_AI_REPLY', { phone, message: text, leadName: lead?.name }, { delayMs: 1000 });
 
     res.sendStatus(200);
   } catch (err) {
     console.error('WA webhook error:', err.message);
-    res.sendStatus(200); // Always 200 to WhatsApp
+    res.sendStatus(200);
   }
 });
 
@@ -190,6 +193,8 @@ router.post('/api/book-meeting', async (req, res) => {
     if (result.success) {
       updateLead(phone, { score: 'VERY_HOT' });
       enqueue('ADMIN_ALERT', { phone, event: 'Meeting Booked' }, {});
+      scheduleMeetingReminders(phone, slotStart);
+      saveConversation(phone, 'system', `Meeting booked for ${new Date(slotStart).toLocaleDateString('en-IN')}`, 'meeting_booked');
     }
 
     res.json(result);

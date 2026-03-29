@@ -183,14 +183,20 @@ export async function generateReply(userMessage, context = {}) {
 
   let promptParts = [];
 
-  if (context.leadName) promptParts.push(`Customer Name: ${context.leadName}`);
-  if (context.leadCity) promptParts.push(`Location: ${context.leadCity}`);
-  if (context.leadProduct) promptParts.push(`Interested In: ${context.leadProduct}`);
-  promptParts.push(`Lead Temperature: ${leadScore}`);
+  if (context.memoryContext) {
+    promptParts.push('=== LEAD MEMORY PROFILE ===');
+    promptParts.push(context.memoryContext);
+    promptParts.push('=== END MEMORY ===\n');
+  } else {
+    if (context.leadName) promptParts.push(`Customer Name: ${context.leadName}`);
+    if (context.leadCity) promptParts.push(`Location: ${context.leadCity}`);
+    if (context.leadProduct) promptParts.push(`Interested In: ${context.leadProduct}`);
+    promptParts.push(`Lead Temperature: ${leadScore}`);
 
-  if (history.length > 0) {
-    promptParts.push('\nPrevious conversation:');
-    history.forEach(h => promptParts.push(`${h.role === 'user' ? 'Customer' : 'You'}: ${h.text}`));
+    if (history.length > 0) {
+      promptParts.push('\nPrevious conversation:');
+      history.forEach(h => promptParts.push(`${h.role === 'user' ? 'Customer' : 'You'}: ${h.text}`));
+    }
   }
 
   promptParts.push(`\nNew message from customer: ${safeMessage}`);

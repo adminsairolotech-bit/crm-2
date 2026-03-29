@@ -22,6 +22,7 @@ The frontend is built with React 18, TypeScript, and Vite, utilizing Tailwind CS
 - **Lead Scoring**: Leads are scored (COLD, WARM, HOT, VERY_HOT) based on activity, triggering specific alerts and follow-ups.
 - **Premium UI (v5.9)**: Skeleton shimmer loaders on dashboard, premium glass-card hover effects, gradient top borders on stats/section cards, smooth data-row hover animations, mobile-optimized interactions.
 - **AI Smart Sales (v5.9)**: Conversation memory per lead (10 msg, 24h TTL), temperature-adaptive sales strategies (VERY_HOT→closing, HOT→demo, WARM→educate, COLD→rapport), rich context (name/city/product/score/history) passed to Gemini.
+- **AI Memory System (v6.0)**: Persistent conversation store (`data/conversations.json`), intent detection (visit_plan, meeting_confirm, price_interest, demo_request, machine_inquiry, callback_request, positive_signal), smart auto follow-up scheduler (`data/smart_followups.json`), meeting reminder system (day-before + same-morning), full lead memory profile passed to Gemini. Smart follow-ups: DND-safe, deduplication, defer on recent activity, proper send/fail retry. Admin APIs: `/api/admin/memory/stats`, `/api/admin/memory/lead/:phone`.
 - **Authentication**: Features a complete login/registration flow with role-based access (`admin`, `supplier`, `machine_user`, `new_user`, `operator`) and an `AuthContext` for state management.
 
 ### System Design Choices

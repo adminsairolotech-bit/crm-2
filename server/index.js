@@ -14,6 +14,7 @@ import { sendWelcomeMessage, sendFollowup, sendAdminAlert, sendQuotationFollowup
 import { sendPushNotification } from './services/fcmService.js';
 import { generateReply } from './services/aiManager.js';
 import { resumeFollowups } from './services/followupService.js';
+import { executeSmartFollowup, markFollowupSent, markFollowupFailed, getSmartFollowupStats, resumeSmartFollowups, getLeadProfile, getConversationHistory, buildContextPrompt } from './services/memoryService.js';
 import { startDailyReporter } from './services/reportService.js';
 import { logAI, logWhatsApp, logSecurity, logSystem, getLogs, getLogStats, clearLogs } from './services/activityLogger.js';
 import { validateAIResponse, sanitizeInput, SAFE_AI_FALLBACK } from './services/aiValidator.js';
@@ -1003,16 +1004,19 @@ registerHandler('SEND_FOLLOWUP', async ({ phone, followupIndex }) => {
 
 registerHandler('SEND_AI_REPLY', async ({ phone, message, leadName }) => {
   const lead = getLead(phone);
+  const memoryContext = buildContextPrompt(phone);
   const reply = await generateReply(message, {
     leadName: leadName || lead?.name,
     leadPhone: phone,
     leadScore: lead?.score || 'COLD',
     leadCity: lead?.city,
     leadProduct: lead?.machine_interest || lead?.machineInterest,
+    memoryContext,
   });
   if (reply) {
+    const { saveConversation: saveMem } = await import('./services/memoryService.js');
+    saveMem(phone, 'assistant', reply);
     if (lead) {
-      // Re-use followup channel with AI text
       await sendQuotationFollowup({ ...lead, _aiReply: reply }).catch(() => {});
     }
     console.log(`🤖 AI reply to ${phone}: ${reply.slice(0, 80)}`);
@@ -1033,10 +1037,44 @@ registerHandler('SEND_PUSH', async ({ phone, fcmToken, title, body }) => {
   if (fcmToken) {
     await sendPushNotification({ fcmToken, title, body, data: { phone } });
   } else {
-    // Fallback to WhatsApp
     const lead = getLead(phone);
     if (lead) await sendFollowup(lead, 0);
   }
+});
+
+registerHandler('SMART_FOLLOWUP', async ({ followupId }) => {
+  const result = executeSmartFollowup(followupId);
+  if (result) {
+    try {
+      await sendCustom(result.phone, result.message);
+      markFollowupSent(result.followupId);
+      logWhatsApp('smart_followup', result.phone, { intent: result.intent, message: result.message.slice(0, 80) });
+      console.log(`🧠 Smart follow-up delivered: [${result.intent}] → ${result.phone}`);
+    } catch (err) {
+      markFollowupFailed(result.followupId);
+      console.error(`❌ Smart follow-up send failed: ${err.message}`);
+      throw err;
+    }
+  }
+});
+
+/* ── AI Memory & Smart Follow-up Endpoints ── */
+app.get('/api/admin/memory/stats', inlineAdminAuth, (req, res) => {
+  try {
+    const stats = getSmartFollowupStats();
+    res.json({ success: true, ...stats });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/admin/memory/lead/:phone', inlineAdminAuth, (req, res) => {
+  try {
+    const phone = req.params.phone.replace(/\D/g, '');
+    if (!phone) return res.status(400).json({ success: false, error: 'Phone required' });
+    const profile = getLeadProfile(phone);
+    const history = getConversationHistory(phone, 20);
+    const context = buildContextPrompt(phone);
+    res.json({ success: true, profile, history, context });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 /* ── Beta Testing Endpoints (Admin Auth Required) ── */
@@ -1142,9 +1180,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   FCM Push:    ${process.env.FCM_SERVER_KEY ? '✅ Configured' : '⚠️  Not configured (mock mode)'}`);
   console.log(`   OpenRouter:  ${(process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY) ? '✅ Configured (code audit only)' : '⚠️  Not configured'}`);
 
-  // Resume any missed follow-ups from previous server session
   resumeFollowups();
-
-  // Start daily report sender (8pm IST every day)
+  resumeSmartFollowups();
   startDailyReporter();
 });

@@ -937,6 +937,35 @@ Return ONLY the JSON array, no other text.`;
           res.end(JSON.stringify({ success: true, history: _gmailState.history }));
         });
 
+        // ─── AI Memory & Smart Follow-up API (Dev Mode) ──────────────────────
+        const _memoryConversations = new Map();
+        const _memoryFollowups = new Map();
+
+        server.middlewares.use('/api/admin/memory/stats', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          const all = [..._memoryFollowups.values()];
+          json(res, {
+            success: true,
+            total: all.length,
+            pending: all.filter(f => f.status === 'pending').length,
+            sent: all.filter(f => f.status === 'sent').length,
+            cancelled: all.filter(f => f.status === 'cancelled').length,
+          });
+        });
+
+        server.middlewares.use('/api/admin/memory/lead/', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          const phone = req.url.replace(/^\//, '').replace(/\D/g, '');
+          const msgs = _memoryConversations.get(phone) || [];
+          const intents = msgs.filter(m => m.intent).map(m => m.intent);
+          json(res, {
+            success: true,
+            profile: { phone, totalMessages: msgs.length, intents },
+            history: msgs.slice(-20),
+            context: `Lead ${phone}: ${msgs.length} messages, intents: ${intents.join(', ') || 'none'}`,
+          });
+        });
+
         // ─── Admin Control Panel API ────────────────────────────────────────
         // In-memory config + error log store (dev mode)
         const _cfg = {
