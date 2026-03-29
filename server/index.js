@@ -804,6 +804,145 @@ app.get('/api/gmail-leads', inlineAdminAuth, async (req, res) => {
   }
 });
 
+/* ── Gmail Admin: Lead Capture System ────── */
+const _gmailState = { connected: false, email: '', connectedAt: '', lastSyncedAt: '', leads: [], history: [] };
+
+app.get('/api/admin/gmail/status', inlineAdminAuth, async (req, res) => {
+  try {
+    const gmail = await getGmailClient();
+    const profile = await gmail.users.getProfile({ userId: 'me' });
+    _gmailState.connected = true;
+    _gmailState.email = profile.data.emailAddress || 'inquirysairolotech@gmail.com';
+    if (!_gmailState.connectedAt) _gmailState.connectedAt = new Date().toISOString();
+    res.json({ success: true, connected: true, email: _gmailState.email, connectedAt: _gmailState.connectedAt, lastSyncedAt: _gmailState.lastSyncedAt });
+  } catch {
+    res.json({ success: true, connected: false });
+  }
+});
+
+app.get('/api/admin/gmail/connect', inlineAdminAuth, (req, res) => {
+  res.json({ success: true, authUrl: '', message: 'Gmail is connected via Replit integration. Use Sync to fetch leads.' });
+});
+
+app.delete('/api/admin/gmail/disconnect', inlineAdminAuth, (req, res) => {
+  _gmailState.connected = false; _gmailState.email = ''; _gmailState.leads = [];
+  res.json({ success: true });
+});
+
+app.post('/api/admin/gmail/sync', inlineAdminAuth, async (req, res) => {
+  try {
+    const gmail = await getGmailClient();
+    const PORTAL_SENDERS = {
+      'IndiaMart': ['indiamart', 'buyerconnect', 'buyleads'],
+      'JustDial': ['justdial', 'jd.com'],
+      'TradeIndia': ['tradeindia'],
+    };
+    const searchQuery = 'in:inbox (from:indiamart OR from:justdial OR from:tradeindia OR from:buyerconnect OR from:buyleads OR subject:inquiry OR subject:enquiry OR subject:lead OR subject:quote OR subject:interest) newer_than:30d';
+    const msgList = await gmail.users.messages.list({ userId: 'me', maxResults: 50, q: searchQuery });
+    const messages = msgList.data.messages || [];
+    const parsedLeads = [];
+
+    for (const msg of messages.slice(0, 40)) {
+      try {
+        const detail = await gmail.users.messages.get({ userId: 'me', id: msg.id, format: 'full' });
+        const headers = detail.data.payload?.headers || [];
+        const from = headers.find(h => h.name === 'From')?.value || '';
+        const subject = headers.find(h => h.name === 'Subject')?.value || '';
+        const date = headers.find(h => h.name === 'Date')?.value || '';
+        const fromLower = from.toLowerCase();
+
+        let source = 'Gmail';
+        for (const [portal, keywords] of Object.entries(PORTAL_SENDERS)) {
+          if (keywords.some(k => fromLower.includes(k))) { source = portal; break; }
+        }
+        if (source === 'Gmail') {
+          const subLower = subject.toLowerCase();
+          if (subLower.includes('indiamart') || subLower.includes('buyer')) source = 'IndiaMart';
+          else if (subLower.includes('justdial') || subLower.includes('jd.com') || subLower.includes('just dial')) source = 'JustDial';
+          else if (subLower.includes('tradeindia')) source = 'TradeIndia';
+        }
+        if (source === 'Gmail') continue;
+
+        let bodyText = '';
+        function extractText(part) {
+          if (part.mimeType === 'text/plain' && part.body?.data) {
+            bodyText += Buffer.from(part.body.data, 'base64').toString('utf8');
+          }
+          if (part.parts) part.parts.forEach(extractText);
+        }
+        if (detail.data.payload) extractText(detail.data.payload);
+        if (!bodyText && detail.data.snippet) bodyText = detail.data.snippet;
+
+        const phoneMatch = bodyText.match(/(?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}/);
+        const nameMatch = bodyText.match(/(?:name|buyer|contact|client)\s*[:\-]?\s*([A-Za-z\s]{2,40})/i);
+        const cityMatch = bodyText.match(/(?:city|location|address|place)\s*[:\-]?\s*([A-Za-z\s]{2,30})/i);
+        const productMatch = bodyText.match(/(?:product|machine|item|interest|requirement|looking for)\s*[:\-]?\s*([A-Za-z\s,]{3,60})/i);
+        const emailMatch = bodyText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+        const nameFromHeader = from.match(/^"?([^"<]+)"?\s*</) ? from.match(/^"?([^"<]+)"?\s*</)[1].trim() : '';
+
+        parsedLeads.push({
+          id: msg.id,
+          source,
+          name: nameMatch?.[1]?.trim() || nameFromHeader || 'Unknown',
+          phone: phoneMatch ? phoneMatch[0].replace(/[\s-]/g, '') : '',
+          email: emailMatch ? emailMatch[0] : '',
+          company: '',
+          product: productMatch?.[1]?.trim() || '',
+          city: cityMatch?.[1]?.trim() || '',
+          receivedAt: date ? new Date(date).toISOString() : new Date().toISOString(),
+          rawSubject: subject,
+          imported: _gmailState.leads.some(l => l.id === msg.id && l.imported),
+        });
+      } catch {}
+    }
+
+    _gmailState.leads = parsedLeads;
+    _gmailState.lastSyncedAt = new Date().toISOString();
+    const newLeads = parsedLeads.filter(l => !l.imported).length;
+
+    _gmailState.history.unshift({
+      id: `sync_${Date.now()}`,
+      syncedAt: _gmailState.lastSyncedAt,
+      source: 'gmail',
+      totalFetched: messages.length,
+      newLeads,
+      imported: 0,
+      skipped: parsedLeads.filter(l => l.imported).length,
+    });
+    if (_gmailState.history.length > 20) _gmailState.history = _gmailState.history.slice(0, 20);
+
+    res.json({ success: true, leads: parsedLeads, totalFetched: messages.length, newLeads, syncedAt: _gmailState.lastSyncedAt });
+  } catch (err) {
+    console.error('[gmail-sync]', err);
+    res.json({ success: false, error: 'Gmail sync failed', leads: [] });
+  }
+});
+
+app.get('/api/admin/gmail/leads', inlineAdminAuth, (req, res) => {
+  res.json({ success: true, leads: _gmailState.leads });
+});
+
+app.post('/api/admin/gmail/import', inlineAdminAuth, (req, res) => {
+  try {
+    const leadIds = req.body?.leadIds || [];
+    let imported = 0, skipped = 0;
+    for (const id of leadIds) {
+      const lead = _gmailState.leads.find(l => l.id === id);
+      if (!lead || lead.imported) { skipped++; continue; }
+      lead.imported = true;
+      imported++;
+    }
+    if (_gmailState.history.length > 0) _gmailState.history[0].imported += imported;
+    res.json({ success: true, imported, skipped });
+  } catch {
+    res.json({ success: false, imported: 0, skipped: 0 });
+  }
+});
+
+app.get('/api/admin/gmail/history', inlineAdminAuth, (req, res) => {
+  res.json({ success: true, history: _gmailState.history });
+});
+
 /* ── Gmail: Send Inquiry (Sanitized) ─────── */
 app.post('/api/send-inquiry', async (req, res) => {
   try {

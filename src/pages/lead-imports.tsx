@@ -11,13 +11,18 @@ import { Button } from "@/components/ui/button";
 import { leads as leadsService } from "@/lib/dataService";
 
 const apiFetch = async <T = any>(url: string, opts: any = {}): Promise<T> => {
+  const authUser = localStorage.getItem('sai_crm_auth_user');
+  const token = authUser ? JSON.parse(authUser)?.token || 'sairolotech_admin_2025' : 'sairolotech_admin_2025';
   const res = await fetch(`/api${url}`, {
     method: opts.method || 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
     body: opts.body,
+    signal: opts.timeout ? AbortSignal.timeout(opts.timeout) : undefined,
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  if (data && data.success === false) throw new Error(data.error || 'Request failed');
+  return data;
 };
 import { useToast } from "@/hooks/use-toast";
 
@@ -167,8 +172,15 @@ function GmailTab({ onHistoryRefresh }: GmailTabProps) {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const data = await apiFetch<{ authUrl: string }>("/admin/gmail/connect");
-      window.location.href = data.authUrl;
+      const data = await apiFetch<{ authUrl: string; message?: string }>("/admin/gmail/connect");
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        toast({ title: "Gmail Connected", description: data.message || "Gmail is connected via Replit integration" });
+        await fetchStatus();
+        await fetchLeads();
+        setConnecting(false);
+      }
     } catch {
       toast({ title: "Error", description: "Could not start Gmail connection", variant: "destructive" });
       setConnecting(false);

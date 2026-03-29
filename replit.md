@@ -1,243 +1,38 @@
 # SAI RoloTech CRM 5.7 PRO
 
 ## Overview
-Full-featured CRM web application for SAI RoloTech - an industrial automation company. **Light-themed** professional admin dashboard with 41 pages, role-based access, AI integrations, and comprehensive business management features. PWA + Capacitor native mobile support (Play Store / App Store ready).
+SAI RoloTech CRM is a comprehensive, full-featured web application designed for industrial automation companies. It offers a professional, light-themed admin dashboard with extensive business management functionalities, role-based access control, and advanced AI integrations. The system supports PWA and Capacitor for native mobile experiences (Android/iOS), enabling broad accessibility and a seamless user experience across devices. The project aims to provide a robust solution for managing leads, customer interactions, sales pipelines, and internal operations, significantly enhancing efficiency and market potential for industrial automation businesses.
 
-## Admin Credentials (Confidential)
-- **Email**: admin.sairolotech@gmail.com
-- **Password**: v9667146889V
-- Admin login hint removed from public login page
+## User Preferences
+I prefer that the agent focuses on the essential information, avoids verbose explanations, and prioritizes actionable steps. Do not make changes to the `public/` directory unless strictly necessary for PWA/Capacitor functionality. Do not make changes to `MOBILE_BUILD.md`. Ensure that all AI outputs are validated and adhere to safety standards. Do not make changes to the `server/services/aiManager.js` file regarding the OpenRouter primary and Gemini fallback configuration. All data operations should exclusively use Supabase, and Replit's built-in PostgreSQL should never be utilized. RLS on Supabase tables should remain disabled for development environments.
 
-## Mobile / PWA Support
-- **PWA** (Progressive Web App): `public/manifest.json` + `public/sw.js` service worker → installable from Chrome/Safari
-- **Capacitor**: `capacitor.config.json` + `@capacitor/android` + `@capacitor/ios` → native Android/iOS app
-- **App ID**: `com.sairolotech.designengine`
-- **Safe area insets**: CSS variables `--sat/--sab/--sal/--sar` via `env(safe-area-inset-*)` for notched phones
-- **Install prompt**: `src/components/PWAInstallPrompt.tsx` — shows "Add to Home Screen" banner
-- **Build scripts**: `npm run cap:android` (Android Studio), `npm run cap:ios` (Xcode)
-- **Build guide**: `MOBILE_BUILD.md` — step-by-step Play Store + App Store submission guide
+## System Architecture
 
-## Tech Stack
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS with custom CSS variables (light theme)
-- **Routing**: Wouter (lightweight router)
-- **Animations**: Framer Motion
-- **Charts**: Recharts
-- **UI Components**: Radix UI primitives + custom shared components
-- **Icons**: Lucide React
-- **Database**: Supabase (PostgreSQL) — all data stored in user's Supabase project
-- **Lead Store**: `data/leads.json` — JSON file persistence (no MongoDB needed)
-- **AI**: Gemini primary (personal GEMINI_API_KEY). OpenRouter/Codex 5.3 for code audit only.
-- **Email**: Gmail API integration via Google Mail connector
-- **Security**: helmet (CSP enabled), express-rate-limit, CORS allowlist, AI output validation, input length validation
+### UI/UX Decisions
+The application features a glass-card light-themed UI. It is fully responsive with a mobile sidebar and swipe navigation. Pages are lazy-loaded and include error boundaries for robustness. A toggle between Editor/Visitor modes is available, alongside a slide-out AI Buddy panel. Real-time toast notifications, virtual scrolling in data tables, and adaptive animations enhance the user experience.
 
-## Security Hardening (Codex 5.3 Audited — Score: 2.8 → 8.4 → ~9.1/10)
-- **CORS**: Strict origin allowlist (no more origin:true)
-- **CSP**: Helmet contentSecurityPolicy enabled with proper directives
-- **AI Safety**: All 11 AI endpoints have validateInputLengths() + validateAIResponse() + safeJsonParse()
-- **AI Confidence Gate**: Low-quality/uncertain/harmful AI responses blocked with safe fallback (SAFE_AI_FALLBACK)
-- **AI Retry+Fallback**: Gemini helper retries 2x, returns safe fallback on failure (never crashes)
-- **Error Handling**: All catch blocks return generic messages (no err.message leak — server + vite dev)
-- **Auth Protection**: /api/beta/*, /api/integration-status, /api/gmail-leads require admin auth
-- **WhatsApp Filter**: sendCustom() content filter + 4h per-user cooldown (prevents spam/flooding)
-- **Gmail Sanitization**: All user input sanitized via sanitizeInput() before HTML email
-- **Activity Logging**: All AI calls, WhatsApp sends, security events logged to data/logs/
-- **Global Error Handler**: Express catches all unhandled errors, returns generic 500
-- **Audit Report**: `data/CODEX-AUDIT-REPORT.md`
+### Technical Implementations
+The frontend is built with React 18, TypeScript, and Vite, utilizing Tailwind CSS with custom CSS variables for styling. Wouter handles routing, and Framer Motion provides animations. Radix UI primitives and custom components form the UI library, with Lucide React for icons. The application integrates with the Gmail API for lead capture and uses WhatsApp Business API for communication. Security is hardened with strict CORS, CSP, AI output validation, and comprehensive error handling.
 
-## Business Engine Features (v5.8)
-- **Meeting Auto-Booking**: WhatsApp auto-detects "demo", "meeting", "milna" etc. → sends available time slots automatically. New `/meeting-booking` page for manual booking.
-- **Lead Priority Dashboard**: Color-coded priority indicators (Near/Medium/Far/Unknown) on main dashboard with colored dots.
-- **User Analytics**: Dashboard shows Total Users, Active (7d), Today Active, App Installed metrics.
-- **Quotation Tracker**: Dashboard widget showing Total Quotes, Accepted, Pending, Won Value.
-- **Smart Notification Router**: `server/services/notificationRouter.js` — App user → Push, Non-app → WhatsApp, Hot lead → Both.
-- **Permission Audit**: Mobile app (`mobile/app.json`) cleaned — removed unused Location, Biometric, legacy Storage, WiFi permissions.
-- **Dashboard Cleanup**: Reorganized with 3-column layout for analytics, quotation, and notification sections.
+### Feature Specifications
+- **PWA & Mobile Support**: Installable PWA (`public/manifest.json`, `public/sw.js`) and Capacitor-based native Android/iOS apps (`capacitor.config.json`).
+- **Gmail Lead Capture**: Six backend endpoints manage Gmail integration for smart lead syncing, parsing, and CRM import from IndiaMart, JustDial, and TradeIndia emails.
+- **Business Engine**: Includes meeting auto-booking via WhatsApp, a color-coded lead priority dashboard, user analytics, and a quotation tracker. A smart notification router directs messages based on user presence.
+- **CRM Backend**: Modular structure in `server/` with dedicated services for AI management, job queueing, WhatsApp communication, push notifications (FCM), follow-up scheduling, Google Calendar integration, and reporting.
+- **Lead Scoring**: Leads are scored (COLD, WARM, HOT, VERY_HOT) based on activity, triggering specific alerts and follow-ups.
+- **Authentication**: Features a complete login/registration flow with role-based access (`admin`, `supplier`, `machine_user`, `new_user`, `operator`) and an `AuthContext` for state management.
 
-## CRM Backend System (Production)
-Located in `server/` — modular production-ready backend:
+### System Design Choices
+- **Data Layer**: A `dataService.ts` provides a unified CRUD interface for all Supabase tables, replacing legacy API clients.
+- **Modular Backend**: Services and models are separated for maintainability and scalability.
+- **AI Integration**: Gemini is the primary AI, with OpenRouter/Codex for specific tasks. AI responses are validated and include a confidence gate and retry mechanism.
+- **Job Queue**: An in-memory job queue with retry logic and exponential backoff handles asynchronous tasks like notifications and follow-ups.
+- **Security**: Strict security measures are implemented, including input validation, secure error handling, and robust authentication.
 
-### Services (`server/services/`)
-- **aiManager.js** — OpenRouter (primary) → Gemini (fallback) → static message. Predefined quick replies for price/delivery/demo queries. Response caching.
-- **queueService.js** — In-memory job queue with retry logic. Max 5 retries, exponential delays (1m→5m→15m→1h→4h). Survives partial failures. Job types: SEND_WELCOME, SEND_FOLLOWUP, SEND_AI_REPLY, SEND_QUOTATION_FOLLOWUP, ADMIN_ALERT, SEND_PUSH, SEND_MEETING_SLOTS, SMART_NOTIFY.
-- **whatsappService.js** — WhatsApp Business API. Welcome message, location-aware follow-ups (NEAR/MEDIUM/FAR × 6 templates), admin alerts, DND handling, meeting auto-detection (sends available slots when lead mentions "demo"/"meeting"/"milna"/"dekhna"), 3-retry exponential backoff. Mock mode if keys not set.
-- **notificationRouter.js** — Smart notification routing: App users → Push, Non-app users → WhatsApp, Hot leads → Both channels.
-- **fcmService.js** — Firebase Cloud Messaging push notifications. Falls back to WhatsApp if no FCM token.
-- **followupService.js** — 4-month follow-up schedule (Day 1,3,7,15, Month 1,2,3,4). Stops on user reply, DND, or meeting booked.
-- **calendarService.js** — Google Calendar free/busy slots, meeting booking with reminders.
-- **reportService.js** — Daily report at 8pm IST via WhatsApp. Auto-scheduled on server start.
-
-### Models (`server/models/`)
-- **leadModel.js** — In-memory lead store + JSON file persistence. CRUD, smart score calculation (Location 40% + Behavior 40% + Source 20%), location priority (HIGH/MEDIUM/LOW/UNKNOWN), source analytics, location analytics, priority lead ranking.
-
-### Routes (`server/routes/`)
-- **leads.js** — All CRM HTTP endpoints (see API section below)
-
-### CRM API Endpoints
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/new-lead` | Pabbly webhook — capture lead, schedule follow-ups |
-| POST | `/api/track` | App behavior tracking (download, open, feature use) |
-| POST | `/api/wa-webhook` | WhatsApp incoming messages + DND detection |
-| GET | `/api/wa-webhook` | WhatsApp webhook verification |
-| POST | `/api/book-meeting` | Google Calendar meeting booking |
-| GET | `/api/calendar-slots` | Available meeting slots |
-| GET | `/api/leads` | Admin: all leads (requires X-Admin-Token) |
-| GET | `/api/lead-stats` | Lead scoring stats |
-| GET | `/api/lead-analytics` | Source ROI + location analytics + priority leads (Admin) |
-| POST | `/api/report` | Trigger manual daily report |
-| POST | `/api/ai-reply` | Test AI reply generation |
-
-### Lead Scoring
-- **COLD** — No activity (default)
-- **WARM** — App opened
-- **HOT** — Quotation used (triggers admin alert + follow-up message)
-- **VERY_HOT** — Meeting booked
-
-### Required Env Vars for CRM
-- `WHATSAPP_ACCESS_TOKEN` — Meta/WhatsApp Business API token
-- `WHATSAPP_PHONE_ID` — WhatsApp Business Phone ID
-- `WA_VERIFY_TOKEN` — Webhook verification token (default: `sai_rolotech_verify_2025`)
-- `OPENROUTER_API_KEY` — OpenRouter AI (optional, Gemini is fallback)
-- `FCM_SERVER_KEY` — Firebase Cloud Messaging (optional)
-- `ADMIN_PHONE` — Admin WhatsApp number for alerts and reports
-- `ADMIN_API_TOKEN` — Admin API access (default: `sairolotech_admin_2025`)
-- `APP_DOWNLOAD_LINK` — App download URL for welcome messages
-- `GOOGLE_CALENDAR_ID` — Calendar ID for meeting booking (default: primary)
-
-## Database — Supabase
-All data is stored in the user's Supabase project (NOT Replit's built-in PostgreSQL).
-- **URL**: `https://gcbgpqxvhsxozwdudwao.supabase.co`
-- **Client**: `src/lib/supabase.ts` — Supabase JS client with TypeScript interfaces
-- **Data Layer**: `src/lib/dataService.ts` — CRUD helpers for all tables
-- **Tables**: `machines`, `leads`, `supplier_machines`, `users`, `quotation_requests`, `feedback_reports`, `marketing_content`, `buddy_rules`, `buddy_policy`, `showrooms`, `lead_tasks`, `lead_activities`, `lead_intelligence`, `integration_settings`, `ai_usage_logs`
-- **RLS**: Disabled on all tables for development
-- **Env vars**: `SUPABASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-
-## Architecture
-
-### Directory Structure
-```
-src/
-├── App.tsx              # Main app with wouter Switch/Route routing
-├── main.tsx             # Entry point
-├── index.css            # Tailwind + CSS variables (dark theme)
-├── components/
-│   ├── layout/          # Layout.tsx, Sidebar.tsx, SearchContext.tsx
-│   ├── shared/          # PageHeader, StatsCard, DataTable, SectionCard, etc.
-│   ├── ui/              # badge, button, textarea, toggle (CVA-based)
-│   ├── BuddyPanel.tsx   # AI Buddy slide-out panel
-│   ├── AIProviderBadge.tsx
-│   ├── ErrorBoundary.tsx
-│   ├── ModeSelector.tsx  # Editor/Visitor mode selection
-│   ├── Toaster.tsx
-│   ├── FileUploadZone.tsx
-│   └── LoadingWithTimeout.tsx
-├── contexts/
-│   ├── RoleContext.tsx    # Roles: admin, supplier, machine_user
-│   └── AdminModeContext.tsx  # editor/visitor mode
-├── hooks/
-│   ├── use-device-capability.ts  # Responsive detection
-│   ├── use-swipe-navigation.ts   # Mobile swipe
-│   └── use-toast.ts              # Toast notifications
-├── lib/
-│   ├── animations.ts    # Framer Motion variants
-│   ├── supabase.ts      # Supabase client + TypeScript interfaces
-│   ├── dataService.ts   # CRUD data access layer for all Supabase tables
-│   ├── apiFetch.ts      # Legacy API client (being replaced by dataService)
-│   ├── chart-colors.ts  # Chart color palettes
-│   ├── role-routes.ts   # Navigation sections by role
-│   └── utils.ts         # cn() utility
-└── pages/               # 26 pages (all lazy-loaded)
-    ├── dashboard.tsx          # Live Supabase data
-    ├── growth.tsx
-    ├── graphs.tsx             # Live Supabase data
-    ├── suppliers.tsx          # Live Supabase data
-    ├── machines.tsx           # Live Supabase data
-    ├── sales-pipeline.tsx     # Live Supabase data (Kanban)
-    ├── sales-tasks.tsx        # Live Supabase data
-    ├── sales-sequences.tsx
-    ├── demo-scheduler.tsx
-    ├── lead-imports.tsx       # Gmail integration
-    ├── lead-intelligence.tsx  # Live Supabase data
-    ├── map-view.tsx
-    ├── quotation-maker.tsx    # Live Supabase data
-    ├── quotations.tsx
-    ├── ai-control.tsx         # Live Supabase data
-    ├── buddy.tsx
-    ├── buddy-rules.tsx
-    ├── buddy-family.tsx
-    ├── marketing-content.tsx
-    ├── outreach-templates.tsx
-    ├── service-manager.tsx    # Live Supabase data
-    ├── power-dashboard.tsx    # Live Supabase data
-    ├── users.tsx
-    ├── feedback.tsx           # Live Supabase data
-    ├── report-card.tsx        # Live Supabase data
-    └── settings.tsx
-```
-
-### Supabase Data Service Exports (src/lib/dataService.ts)
-- `machines` — CRUD for machines table
-- `leads` — CRUD for leads table
-- `suppliers` — CRUD for supplier_machines table
-- `users` — CRUD for users table
-- `quotations` — CRUD for quotation_requests table
-- `feedbackReports` — CRUD for feedback_reports table
-- `buddyRules` — CRUD for buddy_rules table
-- `buddyPolicy` — CRUD for buddy_policy table
-- `showrooms` — CRUD for showrooms table
-- `leadTasks` — CRUD for lead_tasks table
-- `leadActivities` — CRUD for lead_activities table
-- `leadIntelligence` — CRUD for lead_intelligence table
-- `marketingContent` — CRUD for marketing_content table
-- `integrationSettings` — CRUD for integration_settings table
-- `aiUsageLogs` — CRUD for ai_usage_logs table
-
-### Roles
-- `admin` - Full access to all 26 pages
-- `supplier` - Access to Dashboard, Map View, Settings
-- `machine_user` - Access to Dashboard, Machine Catalog
-
-### Key Features
-- Glass-card dark theme UI
-- Responsive with mobile sidebar (swipe navigation)
-- Lazy-loaded pages with error boundaries
-- Editor/Visitor mode toggle
-- AI Buddy panel (slide-out)
-- Real-time toast notifications
-- Virtual scrolling in DataTable
-- Adaptive animations based on device capability
-- All data from Supabase (live, no mock data)
-
-## Auth Flow (NEW)
-The app now has a proper login/registration flow as the entry point:
-- `/login` — Login page (first page for unauthenticated users)
-- `/register` — New user registration
-- `/forgot-password` — Password reset page
-- `/role-select` — Shown after registration to select user type
-- `/home` — SAI RoloTech customer home page (for new_user & operator types)
-- `/select-mode` — Admin mode selector (admin only)
-
-### Auth Context (`src/contexts/AuthContext.tsx`)
-- Stores auth state in `localStorage` (key: `sai_crm_auth_user`)
-- Demo admin: `admin@sairolotech.com` / `admin123`
-- User types: `admin`, `machine_user`, `supplier`, `new_user`, `operator`
-
-### User Type → Destination Mapping
-- `admin` → `/select-mode` → CRM
-- `machine_user` → `/` (CRM dashboard, machine_user role)
-- `supplier` → `/map-view` (CRM, supplier role)
-- `new_user` → `/home` (customer home page)
-- `operator` → `/home` (customer home page)
-
-## Running
-```bash
-npm run dev
-```
-Runs on port 5000.
-
-## Important Notes
-- NEVER use Replit's built-in PostgreSQL — user wants Supabase ONLY
-- Vite config has `server.watch.ignored: ['**/.local/**']` to prevent infinite reload loops
-- All Supabase tables have RLS disabled for development
+## External Dependencies
+- **Database**: Supabase (PostgreSQL)
+- **AI**: Google Gemini (primary), OpenRouter/Codex (for specific audits)
+- **Email**: Gmail API
+- **Messaging**: WhatsApp Business API, Firebase Cloud Messaging (FCM)
+- **Calendar**: Google Calendar API
+- **Frontend Libraries**: React, TypeScript, Vite, Tailwind CSS, Wouter, Framer Motion, Recharts, Radix UI, Lucide React
