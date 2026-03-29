@@ -32,6 +32,7 @@ import {
   PackagePlus,
   BrainCircuit,
   Camera,
+  ArrowLeftRight,
   type LucideIcon,
 } from "lucide-react";
 
@@ -79,8 +80,9 @@ export const navSections: NavSection[] = [
   {
     title: "Machine Tools",
     items: [
-      { href: "/ai-photo-solution", label: "AI Photo Solution", icon: Camera, roles: ["admin", "machine_user"] },
-      { href: "/plc-error-codes",   label: "PLC / VFD Error Codes", icon: Zap, roles: ["admin", "machine_user"] },
+      { href: "/ai-photo-solution",        label: "AI Photo Solution",        icon: Camera,          roles: ["admin", "machine_user"] },
+      { href: "/plc-error-codes",          label: "PLC / VFD Error Codes",    icon: Zap,             roles: ["admin", "machine_user"] },
+      { href: "/used-machines-marketplace", label: "Buy & Sell Used Machines", icon: ArrowLeftRight,  roles: ALL_ROLES },
     ],
   },
   {

@@ -44,6 +44,7 @@ const ProductManagerPage = lazy(() => import("@/pages/product-manager"));
 const AIToolsPage = lazy(() => import("@/pages/ai-tools"));
 const AIPhotoSolutionPage = lazy(() => import("@/pages/ai-photo-solution"));
 const PLCErrorCodesPage = lazy(() => import("@/pages/plc-error-codes"));
+const UsedMachinesMarketplacePage = lazy(() => import("@/pages/used-machines-marketplace"));
 
 const LoginPage = lazy(() => import("@/pages/login"));
 const RegisterPage = lazy(() => import("@/pages/register"));
@@ -268,6 +269,13 @@ function AppRoutes() {
         {() => (
           <AuthGuard>
             <PublicRoute Component={PLCErrorCodesPage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/used-machines-marketplace">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={UsedMachinesMarketplacePage} />
           </AuthGuard>
         )}
       </Route>
