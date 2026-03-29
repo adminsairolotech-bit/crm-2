@@ -11,6 +11,61 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEM
 const responseCache = new Map();
 const CACHE_TTL = 10 * 60 * 1000;
 
+const conversationHistory = new Map();
+const HISTORY_TTL = 24 * 60 * 60 * 1000;
+const MAX_HISTORY = 10;
+
+function getHistory(leadPhone) {
+  if (!leadPhone) return [];
+  const entry = conversationHistory.get(leadPhone);
+  if (!entry || Date.now() - entry.lastUpdated > HISTORY_TTL) {
+    conversationHistory.delete(leadPhone);
+    return [];
+  }
+  return entry.messages;
+}
+
+function addToHistory(leadPhone, role, text) {
+  if (!leadPhone) return;
+  let entry = conversationHistory.get(leadPhone);
+  if (!entry || Date.now() - entry.lastUpdated > HISTORY_TTL) {
+    entry = { messages: [], lastUpdated: Date.now() };
+  }
+  entry.messages.push({ role, text: text.slice(0, 200) });
+  if (entry.messages.length > MAX_HISTORY) {
+    entry.messages = entry.messages.slice(-MAX_HISTORY);
+  }
+  entry.lastUpdated = Date.now();
+  conversationHistory.set(leadPhone, entry);
+  if (conversationHistory.size > 500) {
+    const oldest = [...conversationHistory.entries()].sort((a, b) => a[1].lastUpdated - b[1].lastUpdated);
+    for (let i = 0; i < 100; i++) conversationHistory.delete(oldest[i][0]);
+  }
+}
+
+const SMART_SALES_STRATEGIES = {
+  VERY_HOT: {
+    tone: 'confident and closing',
+    approach: 'Push for meeting/demo, mention urgency, offer special terms',
+    suffix: '\n\nSALES STRATEGY: This is a VERY HOT lead about to buy. Be confident, push for immediate meeting/demo booking. Create urgency. Mention "special terms for quick decision".'
+  },
+  HOT: {
+    tone: 'enthusiastic and solution-focused',
+    approach: 'Share specific solutions, offer demo, build trust',
+    suffix: '\n\nSALES STRATEGY: This is a HOT lead actively interested. Be enthusiastic, provide specific machine recommendations, and strongly push for a demo visit.'
+  },
+  WARM: {
+    tone: 'helpful and educational',
+    approach: 'Share knowledge, answer questions thoroughly, nurture interest',
+    suffix: '\n\nSALES STRATEGY: This is a WARM lead exploring options. Be educational, share helpful machine info, ask about their specific requirements to qualify them further.'
+  },
+  COLD: {
+    tone: 'friendly and welcoming',
+    approach: 'Welcome warmly, understand needs, be patient',
+    suffix: '\n\nSALES STRATEGY: This is a new/COLD lead. Be very warm and welcoming. Ask open questions about their business and needs. Do NOT push sales yet. Build rapport first.'
+  },
+};
+
 const SYSTEM_PROMPT = `You are a helpful sales assistant for SAI RoloTech, an industrial roll forming machine manufacturer in New Delhi.
 
 STRICT RULES (NEVER BREAK):
@@ -34,21 +89,46 @@ const FALLBACK_MESSAGES = [
 ];
 
 const QUICK_REPLIES = {
-  price: "Pricing aapki exact requirement pe depend karti hai. Dimensions aur capacity batao, ek detailed quote bhejte hain. 📋",
-  delivery: "Delivery usually 45-60 din mein hoti hai. Urgent chahiye toh bata dein, arrange karte hain. 🚚",
-  quality: "Hare material ISI certified hai. 5 saal ka warranty aur free installation support milta hai. ✅",
-  demo: "Demo ke liye free visit arrange kar sakte hain! Aapka location bata dein. 📍",
-  meeting: "Meeting ke liye kal ya parso available hain. Kon sa time suitable rahega? 📅",
+  price: {
+    COLD: "Namaste! Pricing aapki requirement pe depend karti hai. Pehle batayein aapko kaunsi machine chahiye? 📋",
+    WARM: "Pricing aapki exact requirement pe depend karti hai. Dimensions aur capacity batao, ek detailed quote bhejte hain. 📋",
+    HOT: "Aapke liye special pricing ready kar rahe hain! Ek quick call pe sab clear ho jayega. Kab baat karein? 📋",
+    VERY_HOT: "Aapke liye best deal ready hai! Abhi call karein ya meeting fix karein — special terms mil sakte hain. 📋🔥",
+  },
+  delivery: {
+    COLD: "Delivery estimated 45-60 din mein hoti hai. Kaunsi machine dekhna chahte hain? 🚚",
+    WARM: "Delivery usually 45-60 din mein hoti hai. Urgent chahiye toh bata dein, arrange karte hain. 🚚",
+    HOT: "Aapke order ke liye priority delivery arrange kar sakte hain! Details finalize karein? 🚚",
+    VERY_HOT: "Fast-track delivery available hai aapke liye! Abhi order confirm karein toh jaldi ship hoga. 🚚🔥",
+  },
+  quality: {
+    default: "Hamare material ISI certified hai. 5 saal ka warranty aur free installation support milta hai. ✅",
+  },
+  demo: {
+    COLD: "Demo ke liye free visit arrange kar sakte hain! Aapka location bata dein. 📍",
+    WARM: "Demo ke liye free visit arrange kar sakte hain! Aapka location bata dein. 📍",
+    HOT: "Bilkul! Aapke liye demo kal ya parso arrange karte hain. Kab aayenge? 📍",
+    VERY_HOT: "Demo ready hai! Aaj ya kal — bas time confirm karein, sab set kar dete hain. 📍🔥",
+  },
+  meeting: {
+    COLD: "Meeting ke liye kal ya parso available hain. Kon sa time suitable rahega? 📅",
+    WARM: "Meeting ke liye kal ya parso available hain. Kon sa time suitable rahega? 📅",
+    HOT: "Zaroor! Meeting fix karte hain — kal ya parso? Main personally milna chahunga. 📅",
+    VERY_HOT: "Bilkul! Aaj ya kal milte hain — aapke liye special session rakhte hain. Time batayein! 📅🔥",
+  },
 };
 
-function detectQuickReply(message) {
+function detectQuickReply(message, leadScore = 'COLD') {
   const lower = message.toLowerCase();
-  if (lower.includes('price') || lower.includes('rate') || lower.includes('kitna')) return QUICK_REPLIES.price;
-  if (lower.includes('delivery') || lower.includes('deliver') || lower.includes('kab')) return QUICK_REPLIES.delivery;
-  if (lower.includes('quality') || lower.includes('warranty')) return QUICK_REPLIES.quality;
-  if (lower.includes('demo') || lower.includes('visit')) return QUICK_REPLIES.demo;
-  if (lower.includes('meeting') || lower.includes('milna') || lower.includes('call')) return QUICK_REPLIES.meeting;
-  return null;
+  let category = null;
+  if (lower.includes('price') || lower.includes('rate') || lower.includes('kitna')) category = 'price';
+  else if (lower.includes('delivery') || lower.includes('deliver') || lower.includes('kab')) category = 'delivery';
+  else if (lower.includes('quality') || lower.includes('warranty')) category = 'quality';
+  else if (lower.includes('demo') || lower.includes('visit')) category = 'demo';
+  else if (lower.includes('meeting') || lower.includes('milna') || lower.includes('call')) category = 'meeting';
+  if (!category) return null;
+  const replies = QUICK_REPLIES[category];
+  return replies[leadScore] || replies.default || replies.COLD || replies.WARM;
 }
 
 async function tryGemini(prompt, model = 'gemini-2.5-flash') {
@@ -81,26 +161,52 @@ export async function generateReply(userMessage, context = {}) {
     return 'Kripya apna sawaal clearly likhein, hum madad karenge! 🙏';
   }
 
-  const quick = detectQuickReply(safeMessage);
-  if (quick) return quick;
+  const leadScore = context.leadScore || 'COLD';
 
-  const cacheKey = `${safeMessage}_${context.leadScore || ''}`;
+  const quick = detectQuickReply(safeMessage, leadScore);
+  if (quick) {
+    addToHistory(context.leadPhone, 'user', safeMessage);
+    addToHistory(context.leadPhone, 'assistant', quick);
+    return quick;
+  }
+
+  const cacheKey = `${context.leadPhone || 'anon'}_${safeMessage}_${leadScore}`;
   const cached = responseCache.get(cacheKey);
   if (cached && Date.now() - cached.time < CACHE_TTL) {
+    addToHistory(context.leadPhone, 'user', safeMessage);
+    addToHistory(context.leadPhone, 'assistant', cached.reply);
     return cached.reply;
   }
 
+  const history = getHistory(context.leadPhone);
+  const strategy = SMART_SALES_STRATEGIES[leadScore] || SMART_SALES_STRATEGIES.COLD;
+
+  let promptParts = [];
+
+  if (context.leadName) promptParts.push(`Customer Name: ${context.leadName}`);
+  if (context.leadCity) promptParts.push(`Location: ${context.leadCity}`);
+  if (context.leadProduct) promptParts.push(`Interested In: ${context.leadProduct}`);
+  promptParts.push(`Lead Temperature: ${leadScore}`);
+
+  if (history.length > 0) {
+    promptParts.push('\nPrevious conversation:');
+    history.forEach(h => promptParts.push(`${h.role === 'user' ? 'Customer' : 'You'}: ${h.text}`));
+  }
+
+  promptParts.push(`\nNew message from customer: ${safeMessage}`);
+  promptParts.push(strategy.suffix);
+
+  const prompt = promptParts.join('\n');
   const cfg = getConfig();
-  const prompt = context.leadName
-    ? `Customer: ${context.leadName}\nMessage: ${safeMessage}`
-    : safeMessage;
 
   let reply = '';
   increment('aiCalls');
 
+  addToHistory(context.leadPhone, 'user', safeMessage);
+
   try {
     reply = await tryGemini(prompt, cfg.aiModel);
-    console.log('🤖 AI via Gemini (' + (cfg.aiModel || 'gemini-2.5-flash') + ')');
+    console.log(`🤖 AI via Gemini (${cfg.aiModel || 'gemini-2.5-flash'}) | Score: ${leadScore} | History: ${history.length} msgs`);
   } catch (e) {
     console.warn('Gemini failed:', e.message, '— using fallback');
     logError('Gemini', e.message, `Model: ${cfg.aiModel}`);
@@ -117,7 +223,10 @@ export async function generateReply(userMessage, context = {}) {
     reply = validation.response || FALLBACK_MESSAGES[0];
   }
 
-  if (reply) responseCache.set(cacheKey, { reply, time: Date.now() });
+  if (reply) {
+    responseCache.set(cacheKey, { reply, time: Date.now() });
+    addToHistory(context.leadPhone, 'assistant', reply);
+  }
 
   return reply;
 }

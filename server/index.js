@@ -1002,10 +1002,15 @@ registerHandler('SEND_FOLLOWUP', async ({ phone, followupIndex }) => {
 });
 
 registerHandler('SEND_AI_REPLY', async ({ phone, message, leadName }) => {
-  const reply = await generateReply(message, { leadName });
+  const lead = getLead(phone);
+  const reply = await generateReply(message, {
+    leadName: leadName || lead?.name,
+    leadPhone: phone,
+    leadScore: lead?.score || 'COLD',
+    leadCity: lead?.city,
+    leadProduct: lead?.machine_interest || lead?.machineInterest,
+  });
   if (reply) {
-    // Send AI-generated reply back to user via WhatsApp
-    const lead = getLead(phone);
     if (lead) {
       // Re-use followup channel with AI text
       await sendQuotationFollowup({ ...lead, _aiReply: reply }).catch(() => {});

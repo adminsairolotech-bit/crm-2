@@ -6,7 +6,7 @@ interface LoadingSkeletonProps {
 }
 
 function SkeletonPulse({ className }: { className?: string }) {
-  return <div className={cn("bg-muted rounded animate-pulse", className)} />;
+  return <div className={cn("rounded skeleton-shimmer", className)} />;
 }
 
 function CardSkeleton() {

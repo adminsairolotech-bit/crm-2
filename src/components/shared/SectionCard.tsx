@@ -25,7 +25,7 @@ export function SectionCard({
       animate="visible"
       transition={smoothTransition}
       className={cn(
-        "glass-card rounded-xl",
+        "glass-card section-card-premium rounded-xl",
         className
       )}
     >

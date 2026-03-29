@@ -36,14 +36,14 @@ export function StatsCard({
     return (
       <motion.div
         variants={anim.staggerItem}
-        className="glass-card rounded-xl p-3.5 sm:p-5"
+        className="glass-card stats-card-premium rounded-xl p-3.5 sm:p-5"
       >
         <div className="flex items-start justify-between mb-3 sm:mb-4">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-muted animate-pulse" />
-          <div className="w-12 sm:w-16 h-5 sm:h-6 rounded-full bg-muted animate-pulse" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg skeleton-shimmer" />
+          <div className="w-12 sm:w-16 h-5 sm:h-6 rounded-full skeleton-shimmer" />
         </div>
-        <div className="w-16 sm:w-20 h-3 sm:h-4 bg-muted rounded animate-pulse mb-2" />
-        <div className="w-12 sm:w-16 h-6 sm:h-8 bg-muted rounded animate-pulse" />
+        <div className="w-16 sm:w-20 h-3 sm:h-4 rounded skeleton-shimmer mb-2" />
+        <div className="w-12 sm:w-16 h-6 sm:h-8 rounded skeleton-shimmer" />
       </motion.div>
     );
   }
@@ -52,7 +52,7 @@ export function StatsCard({
     <motion.div
       variants={anim.staggerItem}
       whileHover={anim.cardHover}
-      className="glass-card rounded-xl p-3.5 sm:p-5 transition-all duration-300 cursor-default gpu-accelerated"
+      className="glass-card stats-card-premium rounded-xl p-3.5 sm:p-5 transition-all duration-300 cursor-default gpu-accelerated"
     >
       <div className="flex items-start justify-between mb-3 sm:mb-4">
         <div

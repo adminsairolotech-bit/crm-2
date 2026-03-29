@@ -20,6 +20,8 @@ The frontend is built with React 18, TypeScript, and Vite, utilizing Tailwind CS
 - **Business Engine**: Includes meeting auto-booking via WhatsApp, a color-coded lead priority dashboard, user analytics, and a quotation tracker. A smart notification router directs messages based on user presence.
 - **CRM Backend**: Modular structure in `server/` with dedicated services for AI management, job queueing, WhatsApp communication, push notifications (FCM), follow-up scheduling, Google Calendar integration, and reporting.
 - **Lead Scoring**: Leads are scored (COLD, WARM, HOT, VERY_HOT) based on activity, triggering specific alerts and follow-ups.
+- **Premium UI (v5.9)**: Skeleton shimmer loaders on dashboard, premium glass-card hover effects, gradient top borders on stats/section cards, smooth data-row hover animations, mobile-optimized interactions.
+- **AI Smart Sales (v5.9)**: Conversation memory per lead (10 msg, 24h TTL), temperature-adaptive sales strategies (VERY_HOT→closing, HOT→demo, WARM→educate, COLD→rapport), rich context (name/city/product/score/history) passed to Gemini.
 - **Authentication**: Features a complete login/registration flow with role-based access (`admin`, `supplier`, `machine_user`, `new_user`, `operator`) and an `AuthContext` for state management.
 
 ### System Design Choices

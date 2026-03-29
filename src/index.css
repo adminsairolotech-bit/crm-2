@@ -340,6 +340,89 @@ aside.sidebar-light {
 }
 
 /* ══════════════════════════════════════════
+   PREMIUM SAAS ENHANCEMENTS
+══════════════════════════════════════════ */
+.glass-card {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.glass-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.06);
+  border-color: hsl(var(--primary) / 0.15);
+}
+
+.stats-card-premium {
+  position: relative;
+  overflow: hidden;
+}
+.stats-card-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(var(--primary)), var(--brand-indigo), var(--brand-cyan));
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.stats-card-premium:hover::before {
+  opacity: 1;
+}
+
+.section-card-premium {
+  position: relative;
+  overflow: hidden;
+}
+.section-card-premium::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), transparent);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted) / 0.5) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.metric-highlight {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.04), hsl(var(--primary) / 0.08));
+  border: 1px solid hsl(var(--primary) / 0.1);
+}
+.metric-highlight:hover {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(var(--primary) / 0.12));
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+.data-row-hover {
+  transition: all 0.15s ease;
+}
+.data-row-hover:hover {
+  background: hsl(var(--primary) / 0.03);
+  transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+  .glass-card {
+    border-radius: 0.75rem;
+  }
+  .glass-card:hover {
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+    border-color: hsl(var(--border));
+    transform: none;
+  }
+}
+
+/* ══════════════════════════════════════════
    PRINT STYLES
 ══════════════════════════════════════════ */
 @media print {

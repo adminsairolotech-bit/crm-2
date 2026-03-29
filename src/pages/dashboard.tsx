@@ -104,9 +104,46 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+        <PageHeader title="Dashboard" subtitle="SAI RoloTech — Business Engine" />
+        <div className="flex items-center gap-2 p-3 rounded-lg glass-card">
+          <div className="w-4 h-4 rounded-full skeleton-shimmer" />
+          <div className="w-48 h-4 skeleton-shimmer rounded" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <StatsCard key={i} label="" value="" icon={Cpu} isLoading />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="rounded-xl border border-border p-3 bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2.5 h-2.5 rounded-full skeleton-shimmer" />
+                <div className="w-12 h-3 skeleton-shimmer rounded" />
+              </div>
+              <div className="w-10 h-6 skeleton-shimmer rounded mb-1" />
+              <div className="w-8 h-2 skeleton-shimmer rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {[1,2,3].map(i => (
+            <div key={i} className="glass-card rounded-xl p-5 space-y-3">
+              <div className="w-28 h-5 skeleton-shimmer rounded" />
+              <div className="grid grid-cols-2 gap-3">
+                {[1,2,3,4].map(j => (
+                  <div key={j} className="bg-muted/40 rounded-xl p-3 space-y-2">
+                    <div className="w-5 h-5 mx-auto rounded skeleton-shimmer" />
+                    <div className="w-10 h-5 mx-auto rounded skeleton-shimmer" />
+                    <div className="w-14 h-2 mx-auto rounded skeleton-shimmer" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
     );
   }
 
@@ -237,7 +274,7 @@ export default function DashboardPage() {
               const leadScore = (lead as any).score || 'COLD';
               const sCfg = scoreConfig[leadScore] || scoreConfig.COLD;
               return (
-                <motion.div key={lead.id} variants={staggerItem} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-border">
+                <motion.div key={lead.id} variants={staggerItem} className="flex items-start gap-3 p-3 rounded-lg data-row-hover border border-border">
                   <div className="flex flex-col items-center gap-1">
                     <span className={`w-3 h-3 rounded-full ${pCfg.dot}`} title={locPriority} />
                   </div>
@@ -269,15 +306,15 @@ export default function DashboardPage() {
 
       <SectionCard title="Revenue Overview">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg border border-border bg-muted/20 text-center">
+          <div className="p-4 rounded-xl metric-highlight text-center transition-all duration-200">
             <p className="text-xs text-muted-foreground mb-1">Pipeline Value</p>
             <p className="text-2xl font-bold text-primary">₹{(stats.pipelineValue / 100000).toFixed(1)}L</p>
           </div>
-          <div className="p-4 rounded-lg border border-border bg-muted/20 text-center">
+          <div className="p-4 rounded-xl metric-highlight text-center transition-all duration-200">
             <p className="text-xs text-muted-foreground mb-1">Conversion Rate</p>
             <p className="text-2xl font-bold text-emerald-500">{stats.conversionRate}%</p>
           </div>
-          <div className="p-4 rounded-lg border border-border bg-muted/20 text-center">
+          <div className="p-4 rounded-xl metric-highlight text-center transition-all duration-200">
             <p className="text-xs text-muted-foreground mb-1">Won Deals</p>
             <p className="text-2xl font-bold text-amber-500">{stats.wonLeads}</p>
           </div>
