@@ -15,6 +15,7 @@ import { sendPushNotification } from './services/fcmService.js';
 import { generateReply } from './services/aiManager.js';
 import { resumeFollowups } from './services/followupService.js';
 import { executeSmartFollowup, markFollowupSent, markFollowupFailed, getSmartFollowupStats, resumeSmartFollowups, getLeadProfile, getConversationHistory, buildContextPrompt } from './services/memoryService.js';
+import { executeTaskFollowup, markTaskFailed, generateLeadNotes, generateDailyPlan, generateFollowUpMessage, createManualTask, completeTask, skipTask, getTodayTasks, getUpcomingTasks, getLeadTasks, getLeadNotes, getAllNotes, getTaskStats, bulkGenerateNotes, resumeTasks, startDailyTaskCron } from './services/notesTaskService.js';
 import { startDailyReporter } from './services/reportService.js';
 import { logAI, logWhatsApp, logSecurity, logSystem, getLogs, getLogStats, clearLogs } from './services/activityLogger.js';
 import { validateAIResponse, sanitizeInput, SAFE_AI_FALLBACK } from './services/aiValidator.js';
@@ -1014,12 +1015,16 @@ registerHandler('SEND_AI_REPLY', async ({ phone, message, leadName }) => {
     memoryContext,
   });
   if (reply) {
-    const { saveConversation: saveMem } = await import('./services/memoryService.js');
+    const { saveConversation: saveMem, getConversationHistory: getHist } = await import('./services/memoryService.js');
     saveMem(phone, 'assistant', reply);
     if (lead) {
       await sendQuotationFollowup({ ...lead, _aiReply: reply }).catch(() => {});
     }
     console.log(`🤖 AI reply to ${phone}: ${reply.slice(0, 80)}`);
+    const hist = getHist(phone, 50);
+    if (hist.length > 0 && hist.length % 5 === 0) {
+      generateLeadNotes(phone).catch(() => {});
+    }
   }
 });
 
@@ -1058,6 +1063,29 @@ registerHandler('SMART_FOLLOWUP', async ({ followupId }) => {
   }
 });
 
+registerHandler('TASK_FOLLOWUP', async ({ taskId }) => {
+  const result = executeTaskFollowup(taskId);
+  if (result) {
+    let msg = result.followupMessage;
+    if (!msg) {
+      msg = await generateFollowUpMessage(result.phone);
+    }
+    if (!msg) {
+      markTaskFailed(result.taskId, 'no_message_generated');
+      throw new Error(`No follow-up message for task ${taskId}`);
+    }
+    try {
+      await sendCustom(result.phone, msg);
+      completeTask(result.taskId);
+      logWhatsApp('task_followup', result.phone, { task: result.task.slice(0, 80), priority: result.priority });
+      console.log(`📋 Task follow-up sent: [${result.priority}] → ${result.phone}`);
+    } catch (err) {
+      markTaskFailed(result.taskId, `send_failed: ${err.message}`);
+      throw err;
+    }
+  }
+});
+
 /* ── AI Memory & Smart Follow-up Endpoints ── */
 app.get('/api/admin/memory/stats', inlineAdminAuth, (req, res) => {
   try {
@@ -1074,6 +1102,104 @@ app.get('/api/admin/memory/lead/:phone', inlineAdminAuth, (req, res) => {
     const history = getConversationHistory(phone, 20);
     const context = buildContextPrompt(phone);
     res.json({ success: true, profile, history, context });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+/* ── AI Notes & Tasks Endpoints ── */
+app.get('/api/admin/tasks/stats', inlineAdminAuth, (req, res) => {
+  try { res.json({ success: true, ...getTaskStats() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/admin/tasks/today', inlineAdminAuth, (req, res) => {
+  try { res.json({ success: true, tasks: getTodayTasks() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/admin/tasks/upcoming', inlineAdminAuth, (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 7;
+    res.json({ success: true, tasks: getUpcomingTasks(Math.min(days, 30)) });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/admin/tasks/daily-plan', inlineAdminAuth, async (req, res) => {
+  try {
+    const plan = await generateDailyPlan();
+    res.json({ success: true, ...plan });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/tasks/create', inlineAdminAuth, async (req, res) => {
+  try {
+    const { phone, task: taskText, scheduledAt, priority } = req.body;
+    if (!phone || !taskText || !scheduledAt) return res.status(400).json({ success: false, error: 'phone, task, scheduledAt required' });
+    if (typeof phone !== 'string' || typeof taskText !== 'string') return res.status(400).json({ success: false, error: 'Invalid input types' });
+    const result = createManualTask(phone.slice(0, 20), taskText.slice(0, 300), scheduledAt, priority);
+    if (!result) return res.status(400).json({ success: false, error: 'Invalid date' });
+    res.json({ success: true, task: result });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/tasks/:id/complete', inlineAdminAuth, (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid task ID' });
+    const result = completeTask(id);
+    if (!result) return res.status(404).json({ success: false, error: 'Task not found' });
+    res.json({ success: true, task: result });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/tasks/:id/skip', inlineAdminAuth, (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid task ID' });
+    const result = skipTask(id);
+    if (!result) return res.status(404).json({ success: false, error: 'Task not found' });
+    res.json({ success: true, task: result });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/admin/notes/all', inlineAdminAuth, (req, res) => {
+  try { res.json({ success: true, notes: getAllNotes() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/admin/notes/:phone', inlineAdminAuth, (req, res) => {
+  try {
+    const phone = req.params.phone.replace(/\D/g, '');
+    if (!phone) return res.status(400).json({ success: false, error: 'Phone required' });
+    const notes = getLeadNotes(phone);
+    const tasks = getLeadTasks(phone);
+    res.json({ success: true, notes, tasks });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/notes/generate/:phone', inlineAdminAuth, async (req, res) => {
+  try {
+    const phone = req.params.phone.replace(/\D/g, '');
+    if (!phone) return res.status(400).json({ success: false, error: 'Phone required' });
+    const notes = await generateLeadNotes(phone);
+    if (!notes) return res.status(400).json({ success: false, error: 'No data to generate notes from' });
+    res.json({ success: true, notes });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/notes/bulk-generate', inlineAdminAuth, async (req, res) => {
+  try {
+    const result = await bulkGenerateNotes();
+    res.json({ success: true, ...result });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/followup-message/:phone', inlineAdminAuth, async (req, res) => {
+  try {
+    const phone = req.params.phone.replace(/\D/g, '');
+    if (!phone) return res.status(400).json({ success: false, error: 'Phone required' });
+    const message = await generateFollowUpMessage(phone);
+    if (!message) return res.status(400).json({ success: false, error: 'No data for this lead' });
+    res.json({ success: true, message });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -1182,5 +1308,7 @@ app.listen(PORT, '0.0.0.0', () => {
 
   resumeFollowups();
   resumeSmartFollowups();
+  resumeTasks();
   startDailyReporter();
+  startDailyTaskCron();
 });

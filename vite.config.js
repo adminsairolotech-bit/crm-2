@@ -966,6 +966,37 @@ Return ONLY the JSON array, no other text.`;
           });
         });
 
+        // ─── AI Notes & Tasks API (Dev Mode) ────────────────────────────────
+        const _devTasks = new Map();
+        const _devNotes = new Map();
+        let _devTaskId = 1;
+
+        server.middlewares.use('/api/admin/tasks/stats', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          const all = [..._devTasks.values()];
+          json(res, { success: true, total: all.length, pending: all.filter(t => t.status === 'pending').length, completed: all.filter(t => t.status === 'completed').length, skipped: all.filter(t => t.status === 'skipped').length, todayPending: 0, highPriority: 0, notesCount: _devNotes.size });
+        });
+
+        server.middlewares.use('/api/admin/tasks/today', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          json(res, { success: true, tasks: [..._devTasks.values()].filter(t => t.status === 'pending') });
+        });
+
+        server.middlewares.use('/api/admin/tasks/upcoming', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          json(res, { success: true, tasks: [..._devTasks.values()].filter(t => t.status === 'pending') });
+        });
+
+        server.middlewares.use('/api/admin/tasks/daily-plan', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          json(res, { success: true, plan: 'Dev mode: No tasks yet. Create leads and interact to generate AI notes and tasks.', tasks: [], taskCount: 0, highPriority: 0, generatedAt: new Date().toISOString() });
+        });
+
+        server.middlewares.use('/api/admin/notes/all', async (req, res) => {
+          if (!adminOk(req, res)) return;
+          json(res, { success: true, notes: [..._devNotes.values()] });
+        });
+
         // ─── Admin Control Panel API ────────────────────────────────────────
         // In-memory config + error log store (dev mode)
         const _cfg = {
