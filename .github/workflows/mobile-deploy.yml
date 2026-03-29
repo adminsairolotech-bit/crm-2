@@ -1,63 +1,17 @@
-name: 📱 Mobile — OTA Update + Store Build
+name: 📱 Mobile — Play Store Build & Submit
 
 on:
-  push:
-    branches:
-      - main
   release:
     types: [published]
 
 jobs:
   # ─────────────────────────────────────────────
-  # JOB 1: OTA Update — Har push par instant update
-  # ─────────────────────────────────────────────
-  ota-update:
-    name: ⚡ OTA Instant Update (Android + iOS)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
-    steps:
-      - name: ⬇️ Checkout
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: 🛠️ Setup EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: 📦 Install Dependencies
-        run: npm install
-        working-directory: mobile
-
-      - name: ⚡ Push OTA Update
-        run: |
-          eas update \
-            --branch production \
-            --message "Auto: ${{ github.event.head_commit.message }}" \
-            --non-interactive
-        working-directory: mobile
-
-      - name: ✅ OTA Complete
-        run: |
-          echo "OTA UPDATE DONE — Users ko next open par milega"
-          echo "By: ${{ github.actor }}"
-
-  # ─────────────────────────────────────────────
-  # JOB 2: Android — LOCAL build (no EAS credits needed)
-  # GitHub Actions machine par build hota hai
+  # Android — LOCAL build on GitHub machine
+  # No EAS cloud credits used for build
   # ─────────────────────────────────────────────
   build-android:
-    name: 🤖 Android — Play Store Submit (Local Build)
+    name: 🤖 Android — Play Store Submit
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
 
     steps:
       - name: ⬇️ Checkout
@@ -81,6 +35,13 @@ jobs:
 
       - name: 📦 Install Android Build Tools & NDK
         run: |
+          sdkmanager --licenses <<< "y
+          y
+          y
+          y
+          y
+          y
+          y"
           sdkmanager "build-tools;34.0.0" "platforms;android-34" "ndk;26.3.11579264"
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.3.11579264" >> $GITHUB_ENV
@@ -107,7 +68,35 @@ jobs:
         run: |
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > mobile/google-service-account.json
 
-      - name: 🔨 Build Android AAB (Local — GitHub Machine par)
+      - name: 🔧 Force Kotlin 1.9.25 via Gradle Init Script
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/init.gradle << 'INITEOF'
+          allprojects {
+            buildscript {
+              configurations.all {
+                resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                  if (details.requested.group == 'org.jetbrains.kotlin') {
+                    details.useVersion '1.9.25'
+                    details.because 'Force Kotlin 1.9.25 for Compose Compiler 1.5.15 compatibility'
+                  }
+                }
+              }
+            }
+            configurations.all {
+              resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.jetbrains.kotlin') {
+                  details.useVersion '1.9.25'
+                  details.because 'Force Kotlin 1.9.25 for Compose Compiler 1.5.15 compatibility'
+                }
+              }
+            }
+          }
+          INITEOF
+          echo "Gradle init script created"
+          cat ~/.gradle/init.gradle
+
+      - name: 🔨 Build Android AAB (Local Build — No Cloud Credits)
         run: |
           eas build \
             --platform android \
@@ -118,6 +107,16 @@ jobs:
         working-directory: mobile
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+          EXPO_NO_EXPO_UPDATES: "1"
+          ORG_GRADLE_PROJECT_kotlinVersion: "1.9.25"
+
+      - name: 📤 Upload AAB as Artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: mobile/android-release.aab
+          retention-days: 7
 
       - name: 🚀 Submit to Play Store (Production)
         run: |
@@ -128,50 +127,10 @@ jobs:
         working-directory: mobile
 
       - name: 🧹 Cleanup
-        run: rm -f mobile/google-service-account.json mobile/android-release.aab
+        run: |
+          rm -f mobile/google-service-account.json
+          rm -f mobile/android-release.aab
         if: always()
 
-      - name: ✅ Play Store Done
-        run: echo "Android AAB submitted to Play Store!"
-
-  # ─────────────────────────────────────────────
-  # JOB 3: App Store — Release publish par
-  # ─────────────────────────────────────────────
-  build-ios:
-    name: 🍎 iOS — App Store Submit
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-
-    steps:
-      - name: ⬇️ Checkout
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: 🛠️ Setup EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: 📦 Install Dependencies
-        run: npm install
-        working-directory: mobile
-
-      - name: 🔨 Build iOS
-        run: eas build --platform ios --profile production --non-interactive
-        working-directory: mobile
-
-      - name: 🚀 Submit to App Store
-        run: eas submit --platform ios --latest --non-interactive
-        working-directory: mobile
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
-
-      - name: ✅ App Store Done
-        run: echo "iOS submitted to App Store!"
+      - name: ✅ Done
+        run: echo "Android submitted to Play Store!"
