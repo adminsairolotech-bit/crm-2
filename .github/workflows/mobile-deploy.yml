@@ -63,6 +63,8 @@ jobs:
           NEW=$((CURRENT + 1))
           jq ".expo.android.versionCode = $NEW" app.json > app.json.tmp && mv app.json.tmp app.json
           echo "versionCode: $CURRENT → $NEW"
+          echo "VERSION_CODE=$NEW" >> $GITHUB_ENV
+          echo "✅ VERSION_CODE set to $NEW for EAS build"
 
       - name: 🔑 Google Service Account Setup
         run: |
@@ -98,6 +100,7 @@ jobs:
 
       - name: 🔨 Build Android AAB (Local Build — No Cloud Credits)
         run: |
+          echo "🔢 Building with VERSION_CODE=$VERSION_CODE"
           eas build \
             --platform android \
             --profile production \
@@ -110,6 +113,7 @@ jobs:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           EXPO_NO_EXPO_UPDATES: "1"
           ORG_GRADLE_PROJECT_kotlinVersion: "1.9.25"
+          VERSION_CODE: ${{ env.VERSION_CODE }}
 
       - name: 📤 Upload AAB as Artifact (backup)
         uses: actions/upload-artifact@v4
