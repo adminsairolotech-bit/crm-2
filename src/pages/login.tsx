@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, LogIn, UserPlus, KeyRound, Shield, Zap } from "lucide-react";
+import { Eye, EyeOff, LogIn, UserPlus, KeyRound, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -162,13 +162,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Admin hint */}
-          <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3" role="note">
-            <Shield className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
-            <p className="text-amber-700 text-xs leading-relaxed">
-              Admin ke liye: <span className="font-semibold">admin@sairolotech.com</span> aur registered password use karein
-            </p>
-          </div>
         </div>
 
         {/* PWA Feature strip */}

@@ -218,6 +218,79 @@ REPLY RULES: Hinglish mein jawab do. Step-by-step numbered list. Practical & act
   }
 });
 
+/* ── AI: Photo → Solution (Vision) ──────── */
+app.post('/api/ai-photo-solution', async (req, res) => {
+  try {
+    const ip = req.ip;
+    if (rateLimit(`photo-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests. 1 minute baad try karein.' });
+    const { imageBase64, mimeType = 'image/jpeg', description = '' } = req.body;
+    if (!imageBase64) return res.status(400).json({ success: false, error: 'Image data required' });
+
+    const systemPrompt = `Aap SAI RoloTech ke Senior Industrial Engineer hain. Aap roll forming machines, VFDs (Variable Frequency Drives), PLC systems, aur industrial automation equipment ke expert hain.
+
+User ne ek photo upload ki hai apni machine/product ki. Aap:
+1. Photo mein dikhne wali problem ya equipment identify karein
+2. Sambhavit issue/fault diagnose karein
+3. Step-by-step solution batayein
+4. Safety precautions batayein
+5. Preventive maintenance tips dein
+
+REPLY RULES: Hinglish mein jawab do. Numbered steps use karein. Emojis use karein (🔧 ⚙️ ⚠️ ✅ 📸). Practical aur actionable advice dein. Agar aur detail chahiye toh poochho.`;
+
+    const userText = description
+      ? `Photo dekh kar problem diagnose karo. User ka description: "${description}"`
+      : `Photo dekh kar machine/equipment ki problem identify karo aur solution batao.`;
+
+    const contents = [{
+      role: 'user',
+      parts: [
+        { inlineData: { mimeType, data: imageBase64 } },
+        { text: userText }
+      ]
+    }];
+
+    const reply = await gemini(contents, systemPrompt, { maxTokens: 1500, temp: 0.4 });
+    res.json({ success: true, reply });
+  } catch (err) {
+    console.error('[ai-photo-solution]', err.message);
+    res.json({ success: false, error: err.message });
+  }
+});
+
+/* ── AI: PLC Error Code Lookup ──────── */
+app.post('/api/plc-error-lookup', async (req, res) => {
+  try {
+    const ip = req.ip;
+    if (rateLimit(`plc-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests.' });
+    const { errorCode, driver, description = '' } = req.body;
+    if (!errorCode) return res.status(400).json({ success: false, error: 'Error code required' });
+
+    const systemPrompt = `Aap SAI RoloTech ke VFD/PLC/Servo Drive Expert hain. Aapko VFD (Variable Frequency Drive) error codes bahut achhe se pata hain. Especially:
+- Vichi VFD (most common: F series, E series codes)
+- Delta VFD (VFD-EL, VFD-M, VFD-CP, VFD-ED series)
+- Fanuc (Servo Amplifier, CNC error codes)
+- Fuji Electric VFD (FRENIC series)
+
+Error code explain karo:
+1. Error ka naam / full form
+2. Possible causes (sabse common pehle)
+3. Step-by-step troubleshooting
+4. Reset karne ka tarika
+5. Preventive measures
+
+REPLY RULES: Hinglish mein jawab do. Numbered steps. Emojis (⚡ 🔧 ⚠️ ✅ 📊). Practical solution dein.`;
+
+    const userText = `${driver ? `Driver: ${driver}. ` : ''}Error Code: ${errorCode}.${description ? ` Additional info: ${description}` : ''} Is error ka matlab aur solution batao.`;
+
+    const contents = [{ role: 'user', parts: [{ text: userText }] }];
+    const reply = await gemini(contents, systemPrompt, { maxTokens: 1200, temp: 0.4 });
+    res.json({ success: true, reply });
+  } catch (err) {
+    console.error('[plc-error-lookup]', err.message);
+    res.json({ success: false, error: err.message });
+  }
+});
+
 /* ── AI: Project Report Generator ──────── */
 app.post('/api/generate-project-report', async (req, res) => {
   try {

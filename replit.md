@@ -1,7 +1,12 @@
-# SAI RoloTech CRM 5.6 PRO
+# SAI RoloTech CRM 5.7 PRO
 
 ## Overview
-Full-featured CRM web application for SAI RoloTech - an industrial automation company. **Light-themed** professional admin dashboard with 39 pages, role-based access, AI integrations, and comprehensive business management features. PWA + Capacitor native mobile support (Play Store / App Store ready).
+Full-featured CRM web application for SAI RoloTech - an industrial automation company. **Light-themed** professional admin dashboard with 41 pages, role-based access, AI integrations, and comprehensive business management features. PWA + Capacitor native mobile support (Play Store / App Store ready).
+
+## Admin Credentials (Confidential)
+- **Email**: admin.sairolotech@gmail.com
+- **Password**: v9667146889V
+- Admin login hint removed from public login page
 
 ## Mobile / PWA Support
 - **PWA** (Progressive Web App): `public/manifest.json` + `public/sw.js` service worker → installable from Chrome/Safari

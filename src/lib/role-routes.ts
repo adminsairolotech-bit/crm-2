@@ -31,6 +31,7 @@ import {
   Smartphone,
   PackagePlus,
   BrainCircuit,
+  Camera,
   type LucideIcon,
 } from "lucide-react";
 
@@ -73,6 +74,13 @@ export const navSections: NavSection[] = [
     title: "Service",
     items: [
       { href: "/service-manager", label: "Service Manager", icon: Wrench, roles: ["admin"] },
+    ],
+  },
+  {
+    title: "Machine Tools",
+    items: [
+      { href: "/ai-photo-solution", label: "AI Photo Solution", icon: Camera, roles: ["admin", "machine_user"] },
+      { href: "/plc-error-codes",   label: "PLC / VFD Error Codes", icon: Zap, roles: ["admin", "machine_user"] },
     ],
   },
   {

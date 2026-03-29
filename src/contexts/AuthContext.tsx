@@ -192,8 +192,8 @@ interface StoredUser {
   salt: string;
 }
 
-const ADMIN_EMAIL = "admin@sairolotech.com";
-const ADMIN_PASS  = "admin123";
+const ADMIN_EMAIL = "admin.sairolotech@gmail.com";
+const ADMIN_PASS  = "v9667146889V";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]               = useState<AuthUser | null>(null);

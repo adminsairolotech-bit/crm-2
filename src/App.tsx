@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { RoleProvider } from "@/contexts/RoleContext";
+import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import { AdminModeProvider } from "@/contexts/AdminModeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
@@ -9,6 +9,7 @@ import { Toaster } from "@/components/Toaster";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { lazy, Suspense, useEffect, type LazyExoticComponent, type ComponentType } from "react";
 import { toast } from "@/hooks/use-toast";
+import { isRouteAllowed } from "@/lib/role-routes";
 
 const DashboardPage = lazy(() => import("@/pages/dashboard"));
 const GrowthAnalyticsPage = lazy(() => import("@/pages/growth"));
@@ -41,6 +42,8 @@ const TestingLabPage = lazy(() => import("@/pages/testing"));
 const WaBetaTestingPage = lazy(() => import("@/pages/wa-beta-testing"));
 const ProductManagerPage = lazy(() => import("@/pages/product-manager"));
 const AIToolsPage = lazy(() => import("@/pages/ai-tools"));
+const AIPhotoSolutionPage = lazy(() => import("@/pages/ai-photo-solution"));
+const PLCErrorCodesPage = lazy(() => import("@/pages/plc-error-codes"));
 
 const LoginPage = lazy(() => import("@/pages/login"));
 const RegisterPage = lazy(() => import("@/pages/register"));
@@ -143,6 +146,41 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && user && user.userType !== "admin") {
+      toast({ title: "Access Denied", description: "Yeh page sirf admin ke liye hai.", variant: "destructive" });
+      setLocation("/home");
+    }
+    if (!isLoading && !user) {
+      setLocation("/");
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) return <PageLoader />;
+  if (!user || user.userType !== "admin") return <PageLoader />;
+
+  return <>{children}</>;
+}
+
+function RoleGuard({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const { role } = useRole();
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!user) return;
+    if (!isRouteAllowed(location, role)) {
+      setLocation("/home");
+    }
+  }, [location, role, user, setLocation]);
+
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
@@ -219,6 +257,20 @@ function AppRoutes() {
           </AuthGuard>
         )}
       </Route>
+      <Route path="/ai-photo-solution">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={AIPhotoSolutionPage} />
+          </AuthGuard>
+        )}
+      </Route>
+      <Route path="/plc-error-codes">
+        {() => (
+          <AuthGuard>
+            <PublicRoute Component={PLCErrorCodesPage} />
+          </AuthGuard>
+        )}
+      </Route>
       <Route path="/project-report">
         {() => (
           <AuthGuard>
@@ -236,6 +288,7 @@ function AppRoutes() {
       <Route>
         {() => (
           <AuthGuard>
+            <RoleGuard>
             <Layout>
               <Switch>
                 <Route path="/">{() => <RoutePage Component={DashboardPage} />}</Route>
@@ -272,6 +325,7 @@ function AppRoutes() {
                 <Route component={NotFoundPage} />
               </Switch>
             </Layout>
+            </RoleGuard>
           </AuthGuard>
         )}
       </Route>

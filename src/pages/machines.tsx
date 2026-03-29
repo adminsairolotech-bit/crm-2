@@ -128,18 +128,18 @@ type AutoType = "semi" | "auto" | "combo";
 type Grade = "Basic" | "Medium" | "Advance";
 
 function ShutterWizard({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [autoType, setAutoType] = useState<AutoType | null>(null);
-  const [stations, setStations]   = useState(8);
   const [grade, setGrade]         = useState<Grade | null>(null);
   const [, navigate] = useLocation();
 
-  const price = grade && autoType ? calcPrice(grade, stations, autoType) : 0;
+  const DEFAULT_STATIONS = 8;
+  const price = grade && autoType ? calcPrice(grade, DEFAULT_STATIONS, autoType) : 0;
 
   const handleAddToQuote = () => {
     if (!grade || !autoType) return;
     const item = {
-      description: `Shutter Patti Machine — ${grade} | ${stations} Stations | ${autoType === "semi" ? "Semi-Automatic" : autoType === "auto" ? "Fully Automatic" : "Combo (Semi + Auto)"}`,
+      description: `Shutter Patti Machine — ${grade} | ${autoType === "semi" ? "Semi-Automatic" : autoType === "auto" ? "Fully Automatic" : "Combo (Semi + Auto)"}`,
       hsn: "8455",
       quantity: 1,
       unit: "NOS",
@@ -173,12 +173,12 @@ function ShutterWizard({ onClose }: { onClose: () => void }) {
           </div>
           {/* Step bar */}
           <div className="flex items-center gap-1.5 mt-3">
-            {[1, 2, 3, 4].map(s => (
+            {[1, 2, 3].map(s => (
               <div key={s} className={`h-1.5 flex-1 rounded-full transition-all ${s <= step ? "bg-white" : "bg-white/30"}`} />
             ))}
           </div>
           <div className="flex justify-between text-[10px] opacity-70 mt-1">
-            <span>Type</span><span>Stations</span><span>Grade</span><span>Price</span>
+            <span>Type</span><span>Grade</span><span>Price</span>
           </div>
         </div>
 
@@ -210,54 +210,8 @@ function ShutterWizard({ onClose }: { onClose: () => void }) {
               </motion.div>
             )}
 
-            {/* Step 2: Stations */}
+            {/* Step 2: Grade */}
             {step === 2 && (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-800">Number of Stations</h3>
-                <p className="text-xs text-gray-500">Zyada stations = zyada production speed + better finish</p>
-
-                {/* Large station display */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 text-center text-white">
-                  <p className="text-5xl font-black">{stations}</p>
-                  <p className="text-sm opacity-80 mt-1">Stations</p>
-                </div>
-
-                {/* +/- controls */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setStations(s => Math.max(6, s - 1))}
-                    className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 transition-colors text-xl font-bold"
-                  >−</button>
-                  <input
-                    type="range" min={6} max={16} value={stations}
-                    onChange={e => setStations(Number(e.target.value))}
-                    className="flex-1 accent-blue-600 h-2"
-                  />
-                  <button
-                    onClick={() => setStations(s => Math.min(16, s + 1))}
-                    className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-200 transition-colors text-xl font-bold"
-                  >+</button>
-                </div>
-
-                {/* Quick select */}
-                <div className="grid grid-cols-6 gap-1.5">
-                  {[6, 8, 10, 12, 13, 16].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setStations(n)}
-                      className={`py-2 rounded-xl text-xs font-bold transition-all ${stations === n ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-                    >{n}</button>
-                  ))}
-                </div>
-
-                <button onClick={() => setStep(3)} className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-semibold text-sm">
-                  Aage Badhein →
-                </button>
-              </motion.div>
-            )}
-
-            {/* Step 3: Grade */}
-            {step === 3 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
                 <h3 className="text-sm font-semibold text-gray-800">Machine Grade Select Karein</h3>
                 {([
@@ -279,7 +233,7 @@ function ShutterWizard({ onClose }: { onClose: () => void }) {
                 ] as const).map(opt => (
                   <button
                     key={opt.value}
-                    onClick={() => { setGrade(opt.value); setStep(4); }}
+                    onClick={() => { setGrade(opt.value); setStep(3); }}
                     className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${grade === opt.value ? opt.color + " border-opacity-100" : "border-gray-200 hover:border-gray-300"}`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -299,8 +253,8 @@ function ShutterWizard({ onClose }: { onClose: () => void }) {
               </motion.div>
             )}
 
-            {/* Step 4: Price Summary */}
-            {step === 4 && grade && autoType && (
+            {/* Step 3: Price Summary */}
+            {step === 3 && grade && autoType && (
               <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white text-center">
                   <p className="text-xs opacity-80 mb-1">Your Machine Price</p>
@@ -312,8 +266,8 @@ function ShutterWizard({ onClose }: { onClose: () => void }) {
                 <div className="bg-gray-50 rounded-2xl p-4 space-y-2.5 text-sm">
                   <p className="font-semibold text-gray-700 text-xs uppercase tracking-wide">Price Breakdown</p>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Base ({stations} stations × ₹{(PER_STATION[grade] / 1000).toFixed(0)}K)</span>
-                    <span className="font-semibold">{fmtINR(PER_STATION[grade] * stations)}</span>
+                    <span className="text-gray-600">Base ({DEFAULT_STATIONS} stations × ₹{(PER_STATION[grade] / 1000).toFixed(0)}K)</span>
+                    <span className="font-semibold">{fmtINR(PER_STATION[grade] * DEFAULT_STATIONS)}</span>
                   </div>
                   {autoType !== "semi" && (
                     <div className="flex justify-between text-blue-700">
@@ -324,7 +278,7 @@ function ShutterWizard({ onClose }: { onClose: () => void }) {
                   {autoType === "combo" && (
                     <div className="flex justify-between text-purple-700">
                       <span>Semi-Auto Unit</span>
-                      <span className="font-semibold">+ {fmtINR(PER_STATION[grade] * stations)}</span>
+                      <span className="font-semibold">+ {fmtINR(PER_STATION[grade] * DEFAULT_STATIONS)}</span>
                     </div>
                   )}
                   <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-800">
@@ -334,10 +288,9 @@ function ShutterWizard({ onClose }: { onClose: () => void }) {
                 </div>
 
                 {/* Config summary */}
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="grid grid-cols-2 gap-2 text-center text-xs">
                   {[
                     { l: "Type", v: autoType === "semi" ? "Semi-Auto" : autoType === "auto" ? "Fully Auto" : "Combo" },
-                    { l: "Stations", v: String(stations) },
                     { l: "Grade", v: grade },
                   ].map(({ l, v }) => (
                     <div key={l} className="bg-gray-50 rounded-xl p-2.5">
