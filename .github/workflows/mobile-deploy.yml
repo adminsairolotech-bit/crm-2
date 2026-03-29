@@ -111,6 +111,13 @@ jobs:
           EXPO_NO_EXPO_UPDATES: "1"
           ORG_GRADLE_PROJECT_kotlinVersion: "1.9.25"
 
+      - name: 📤 Upload AAB as Artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: mobile/android-release.aab
+          retention-days: 7
+
       - name: 🚀 Submit to Play Store (Production)
         run: |
           eas submit \
