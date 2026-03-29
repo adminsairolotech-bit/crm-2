@@ -70,6 +70,13 @@ jobs:
         run: |
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > mobile/google-service-account.json
 
+      - name: 🏗️ Generate Android project files (expo prebuild)
+        run: |
+          npx expo prebuild --clean --platform android --non-interactive
+        working-directory: mobile
+        env:
+          VERSION_CODE: ${{ env.VERSION_CODE }}
+
       - name: 🔧 Force Kotlin 1.9.25 via Gradle Init Script
         run: |
           mkdir -p ~/.gradle
