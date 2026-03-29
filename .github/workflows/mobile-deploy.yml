@@ -68,6 +68,34 @@ jobs:
         run: |
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > mobile/google-service-account.json
 
+      - name: 🔧 Force Kotlin 1.9.25 via Gradle Init Script
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/init.gradle << 'INITEOF'
+          allprojects {
+            buildscript {
+              configurations.all {
+                resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                  if (details.requested.group == 'org.jetbrains.kotlin') {
+                    details.useVersion '1.9.25'
+                    details.because 'Force Kotlin 1.9.25 for Compose Compiler 1.5.15 compatibility'
+                  }
+                }
+              }
+            }
+            configurations.all {
+              resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.jetbrains.kotlin') {
+                  details.useVersion '1.9.25'
+                  details.because 'Force Kotlin 1.9.25 for Compose Compiler 1.5.15 compatibility'
+                }
+              }
+            }
+          }
+          INITEOF
+          echo "Gradle init script created"
+          cat ~/.gradle/init.gradle
+
       - name: 🔨 Build Android AAB (Local Build — No Cloud Credits)
         run: |
           eas build \
@@ -81,6 +109,7 @@ jobs:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           EXPO_NO_EXPO_UPDATES: "1"
+          ORG_GRADLE_PROJECT_kotlinVersion: "1.9.25"
 
       - name: 🚀 Submit to Play Store (Production)
         run: |
