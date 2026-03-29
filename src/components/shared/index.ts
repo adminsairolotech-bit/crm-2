@@ -5,3 +5,4 @@ export { LoadingSkeleton } from "./LoadingSkeleton";
 export { EmptyState } from "./EmptyState";
 export { DataTable } from "./DataTable";
 export { AdaptiveImage } from "./AdaptiveImage";
+export { AIDisclaimer } from "./AIDisclaimer";

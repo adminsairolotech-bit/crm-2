@@ -8,6 +8,7 @@ import {
   ClipboardList, RefreshCw, ChevronRight, Sparkles, Eye
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AIDisclaimer } from "@/components/shared";
 
 interface ProItem { point: string; detail: string; }
 interface ConItem { point: string; detail: string; severity: "High" | "Medium" | "Low"; }

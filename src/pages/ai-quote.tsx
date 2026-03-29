@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { AIDisclaimer } from "@/components/shared";
 
 interface MachineSpec { param: string; value: string; }
 
@@ -400,6 +401,9 @@ export default function AIQuotePage() {
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800">Machine Quotation Generate Karein</h2>
                 <p className="text-slate-500 text-sm mt-1">SAI RoloTech ka official format mein — same jaise real quotations</p>
+                <div className="mt-3 max-w-md mx-auto">
+                  <AIDisclaimer />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

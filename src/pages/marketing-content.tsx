@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { AIDisclaimer } from "@/components/shared";
 
 /* ── Static content library ──────────────────────────────── */
 const channelIcons = { whatsapp: MessageSquare, email: Mail, sms: MessageSquare };

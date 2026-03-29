@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Bot, X } from "lucide-react";
+import { AIDisclaimer } from "@/components/shared";
 
 interface BuddyToggleButtonProps {
   onClick: () => void;
@@ -55,6 +56,9 @@ export function BuddyPanel({ isOpen, onClose }: BuddyPanelProps) {
                 AI Buddy is ready to help you with insights and automation.
               </p>
             </div>
+          </div>
+          <div className="p-3 border-t border-border">
+            <AIDisclaimer compact />
           </div>
         </motion.aside>
       )}

@@ -6,6 +6,7 @@ import {
   ChevronRight, RefreshCw
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AIDisclaimer } from "@/components/shared";
 
 interface Message {
   role: "user" | "master";
@@ -141,6 +142,10 @@ export default function MachineGuidePage() {
           </button>
         </div>
       </header>
+
+      <div className="max-w-3xl mx-auto px-4 pt-2">
+        <AIDisclaimer compact />
+      </div>
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto" role="log" aria-live="polite" aria-label="Conversation">

@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, X
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AIDisclaimer } from "@/components/shared";
 
 const DRIVERS = [
   {

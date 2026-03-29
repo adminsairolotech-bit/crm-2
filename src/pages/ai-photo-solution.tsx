@@ -6,6 +6,7 @@ import {
   CheckCircle2, AlertTriangle, Lightbulb, RefreshCw, ImageIcon
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AIDisclaimer } from "@/components/shared";
 
 interface Result {
   reply: string;
@@ -43,6 +44,8 @@ function ResultCard({ result, onReset }: { result: Result; onReset: () => void }
           {result.reply}
         </div>
       </div>
+
+      <AIDisclaimer />
 
       <button
         onClick={onReset}
