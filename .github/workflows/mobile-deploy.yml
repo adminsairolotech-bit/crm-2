@@ -96,46 +96,66 @@ jobs:
           }
           INITEOF
 
-      - name: "\U0001F511 Setup Upload Keystore"
+      - name: "\U0001F511 Download Keystore from EAS"
         run: |
-          cd mobile/android/app
-          if [ -n "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" ]; then
-            echo "Using stored keystore from secrets"
-            echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > upload-keystore.jks
-          else
-            echo "Generating new upload keystore"
-            keytool -genkeypair \
-              -v \
-              -keystore upload-keystore.jks \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass sairolotech2026 \
-              -keypass sairolotech2026 \
-              -alias upload \
-              -dname "CN=SAI RoloTech, OU=Mobile, O=SAI RoloTech, L=Delhi, S=Delhi, C=IN"
-            echo "⚠️ New keystore generated — store as GitHub secret for future builds"
-            base64 -w 0 upload-keystore.jks > /tmp/keystore-base64.txt
-            echo "Keystore base64 length: $(wc -c < /tmp/keystore-base64.txt)"
-          fi
-          echo "✅ Keystore ready"
+          cd mobile
+
+          echo "📥 Downloading keystore from Expo (EAS)..."
+
+          QUERY='query($appId:String!){app{byId(appId:$appId){androidAppCredentials{androidAppBuildCredentialsList{isDefault androidKeystore{id type keystore{url}keystorePassword keyAlias keyPassword}}}}}}'
+
+          RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.EXPO_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.expo.dev/graphql" \
+            -d "{\"query\":\"$QUERY\",\"variables\":{\"appId\":\"2873f4f3-f488-46ef-9d0f-199ee9e9a26c\"}}")
+
+          echo "API Response (redacted passwords):"
+          echo "$RESPONSE" | node -e "
+          const d=require('fs').readFileSync('/dev/stdin','utf8');
+          const j=JSON.parse(d);
+          if(j.errors){console.log('ERROR:',JSON.stringify(j.errors));process.exit(1);}
+          const creds=j.data.app.byId.androidAppCredentials;
+          if(!creds||creds.length===0){console.log('No Android credentials found');process.exit(1);}
+          const buildCreds=creds[0].androidAppBuildCredentialsList;
+          const defaultCred=buildCreds.find(c=>c.isDefault)||buildCreds[0];
+          const ks=defaultCred.androidKeystore;
+          console.log('Keystore ID:',ks.id);
+          console.log('Key Alias:',ks.keyAlias);
+          console.log('Keystore type:',ks.type);
+          const url=ks.keystore.url;
+          console.log('Keystore URL: [redacted]');
+          const fs=require('fs');
+          fs.writeFileSync('/tmp/ks_url.txt',url);
+          fs.writeFileSync('/tmp/ks_pass.txt',ks.keystorePassword);
+          fs.writeFileSync('/tmp/ks_alias.txt',ks.keyAlias);
+          fs.writeFileSync('/tmp/key_pass.txt',ks.keyPassword);
+          "
+
+          KS_URL=$(cat /tmp/ks_url.txt)
+          curl -s -o android/app/upload-keystore.jks "$KS_URL"
+          echo "✅ Keystore downloaded: $(du -h android/app/upload-keystore.jks | cut -f1)"
+
+          keytool -list -keystore android/app/upload-keystore.jks \
+            -storepass "$(cat /tmp/ks_pass.txt)" -alias "$(cat /tmp/ks_alias.txt)" 2>/dev/null | grep SHA1 || true
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: "\U0001F4DD Configure Signing in build.gradle"
         run: |
           cd mobile/android/app
 
-          STORE_PASS="${{ secrets.KEYSTORE_PASSWORD }}"
-          KEY_PASS="${{ secrets.KEY_PASSWORD }}"
-          [ -z "$STORE_PASS" ] && STORE_PASS="sairolotech2026"
-          [ -z "$KEY_PASS" ] && KEY_PASS="sairolotech2026"
+          KS_PASS=$(cat /tmp/ks_pass.txt)
+          KS_ALIAS=$(cat /tmp/ks_alias.txt)
+          KEY_PASS=$(cat /tmp/key_pass.txt)
 
           cat > signing.gradle << SIGNEOF
           android {
             signingConfigs {
               release {
                 storeFile file("upload-keystore.jks")
-                storePassword "$STORE_PASS"
-                keyAlias "upload"
+                storePassword "$KS_PASS"
+                keyAlias "$KS_ALIAS"
                 keyPassword "$KEY_PASS"
               }
             }
@@ -148,7 +168,7 @@ jobs:
           SIGNEOF
 
           echo 'apply from: "signing.gradle"' >> build.gradle
-          echo "✅ Signing config applied"
+          echo "✅ Signing config applied with EAS keystore"
 
       - name: "\U0001F528 Build Android AAB with Gradle"
         run: |
