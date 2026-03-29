@@ -24,3 +24,9 @@ id = "BnfWSqOS_wJesX1EqShi1"
 uri = "file://android-v2-release.zip"
 type = "unspecified"
 title = "SAI RoloTech CRM — Android AAB v2 (API 35, VersionCode 3)"
+
+[[outputs]]
+id = "BbBNN00PZtAVMWwvlnBhO"
+uri = "file://public/android-v4-release.zip"
+type = "unspecified"
+title = "android-v4-release.zip (versionCode=4)"
