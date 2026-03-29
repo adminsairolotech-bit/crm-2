@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { google } from 'googleapis';
 import { GoogleGenAI } from '@google/genai';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 /* ── CRM Backend Services ── */
 import { registerHandler, getQueueStats } from './services/queueService.js';
@@ -13,6 +15,8 @@ import { sendPushNotification } from './services/fcmService.js';
 import { generateReply } from './services/aiManager.js';
 import { resumeFollowups } from './services/followupService.js';
 import { startDailyReporter } from './services/reportService.js';
+import { logAI, logWhatsApp, logSecurity, logSystem, getLogs, getLogStats, clearLogs } from './services/activityLogger.js';
+import { validateAIResponse, sanitizeInput } from './services/aiValidator.js';
 import leadsRouter from './routes/leads.js';
 import productsRouter from './routes/products.js';
 
@@ -21,14 +25,37 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 
-/* ── Middleware ──────────────────────────── */
+/* ── Security Middleware ──────────────────── */
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false }));
 
-/* ── Rate limit helper (simple in-memory) ── */
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { success: false, error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  message: { success: false, error: 'AI rate limit exceeded, wait a moment' },
+});
+app.use('/api/buddy-chat', aiLimiter);
+app.use('/api/ai-quotation', aiLimiter);
+app.use('/api/ai-photo-solution', aiLimiter);
+app.use('/api/ai-machine-spec', aiLimiter);
+
+/* ── Rate limit helper (per-key, in-memory) ── */
 const hitMap = new Map();
-function rateLimit(key, maxPerMinute = 10) {
+function rateLimitKey(key, maxPerMinute = 10) {
   const now = Date.now();
   const hits = hitMap.get(key) || [];
   const recent = hits.filter(t => now - t < 60000);
@@ -36,6 +63,15 @@ function rateLimit(key, maxPerMinute = 10) {
   hitMap.set(key, recent);
   return recent.length > maxPerMinute;
 }
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, hits] of hitMap) {
+    const valid = hits.filter(t => now - t < 120000);
+    if (valid.length === 0) hitMap.delete(key);
+    else hitMap.set(key, valid);
+  }
+}, 60000);
 
 /* ── Gemini helper ──────────────────────── */
 function getAI() {
@@ -67,7 +103,7 @@ async function readBody(req) {
 app.post('/api/buddy-chat', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`buddy-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`buddy-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { message, history = [] } = req.body;
     if (!message?.trim()) return res.status(400).json({ success: false, error: 'Message required' });
 
@@ -99,7 +135,7 @@ Rules: Reply in Hinglish (Hindi + English mix). Concise but helpful. Use bullet 
 app.post('/api/ai-quotation', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`quote-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`quote-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { clientName, clientPhone, clientEmail, clientCompany, clientAddress, clientGstin, products, budget, requirements, catalogData = {} } = req.body;
 
     const today = new Date();
@@ -195,7 +231,7 @@ Client: ${clientName}, ${clientPhone}${clientCompany ? ', ' + clientCompany : ''
 app.post('/api/machine-guide', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`machine-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`machine-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { message, history = [] } = req.body;
 
     const systemPrompt = `You are "MASTER" — SAI RoloTech ka Roll Forming Machine Expert AI. 20+ saal ka experience. Expertise: Roll Forming Machines, Coil Slitting, Decoiler, Forming Stations, Punching, Cut-off, PLC/HMI/Encoder/Servo, Material handling.
@@ -222,7 +258,7 @@ REPLY RULES: Hinglish mein jawab do. Step-by-step numbered list. Practical & act
 app.post('/api/ai-photo-solution', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`photo-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests. 1 minute baad try karein.' });
+    if (rateLimitKey(`photo-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests. 1 minute baad try karein.' });
     const { imageBase64, mimeType = 'image/jpeg', description = '' } = req.body;
     if (!imageBase64) return res.status(400).json({ success: false, error: 'Image data required' });
 
@@ -261,7 +297,7 @@ REPLY RULES: Hinglish mein jawab do. Numbered steps use karein. Emojis use karei
 app.post('/api/plc-error-lookup', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`plc-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests.' });
+    if (rateLimitKey(`plc-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests.' });
     const { errorCode, driver, description = '' } = req.body;
     if (!errorCode) return res.status(400).json({ success: false, error: 'Error code required' });
 
@@ -295,7 +331,7 @@ REPLY RULES: Hinglish mein jawab do. Numbered steps. Emojis (⚡ 🔧 ⚠️ ✅
 app.post('/api/generate-project-report', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`report-${ip}`, 3)) return res.status(429).json({ success: false, error: 'Too many requests. 1 minute wait karein.' });
+    if (rateLimitKey(`report-${ip}`, 3)) return res.status(429).json({ success: false, error: 'Too many requests. 1 minute wait karein.' });
     const { formData: f } = req.body;
     if (!f) return res.status(400).json({ success: false, error: 'Form data required' });
 
@@ -365,7 +401,7 @@ Be thorough, professional, bank-ready. ~1200-1500 words.`;
 app.post('/api/ai-machine-spec', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`spec-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`spec-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { form } = req.body;
 
     const prompt = `You are a roll forming machine expert at SAI RoloTech, Pune.
@@ -390,7 +426,7 @@ Control: ${form.controlSystem||'N/A'}, Special: ${form.specialRequirements||'Non
 app.post('/api/analyze-quotation', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`analyze-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`analyze-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { quotationText, catalogData = {} } = req.body;
 
     const saiPricing = (catalogData.products || []).map(p => `${p.name}: ₹${p.basePrice?.toLocaleString('en-IN')}/${p.unit}`).join('\n')
@@ -419,7 +455,7 @@ Analyze the quotation and return ONLY valid JSON:
 app.post('/api/generate-questions', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`questions-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`questions-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { topic, count, qType } = req.body;
     const { default: OpenAI } = await import('openai');
     const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY });
@@ -492,7 +528,7 @@ app.get('/api/integration-status', (req, res) => {
 app.post('/api/message-quality', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`msgq-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`msgq-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { message, leadContext = '' } = req.body;
     if (!message?.trim()) return res.status(400).json({ success: false, error: 'Message required' });
 
@@ -527,7 +563,7 @@ Return a JSON object (no markdown) with:
 app.post('/api/ab-variants', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`ab-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`ab-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { goal = 'meeting', leadName = 'Customer', locationZone = 'HIGH', source = 'indiamart' } = req.body;
 
     const zones = { HIGH: 'Delhi/NCR (nearby — same day visit possible)', MEDIUM: 'North India (video call preferred)', LOW: 'South India (app self-service)', UNKNOWN: 'Unknown location' };
@@ -573,7 +609,7 @@ Return ONLY a JSON object (no markdown):
 app.post('/api/smart-timing', async (req, res) => {
   try {
     const ip = req.ip;
-    if (rateLimit(`timing-${ip}`, 15)) return res.status(429).json({ success: false, error: 'Too many requests' });
+    if (rateLimitKey(`timing-${ip}`, 15)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { score = 'WARM', locationZone = 'UNKNOWN', source = 'unknown', daysSinceCreation = 0, repliesCount = 0 } = req.body;
 
     const prompt = `You are a sales timing advisor for SAI RoloTech (industrial machinery CRM).
