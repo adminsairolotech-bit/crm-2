@@ -10,6 +10,7 @@ on:
 jobs:
   # ─────────────────────────────────────────────
   # JOB 1: OTA Update — Har push par instant update
+  # (Koi native code change nahi, sirf JS/UI update)
   # ─────────────────────────────────────────────
   ota-update:
     name: ⚡ OTA Instant Update (Android + iOS)
@@ -54,7 +55,8 @@ jobs:
           echo "=========================================="
 
   # ─────────────────────────────────────────────
-  # JOB 2: Play Store — Release publish par
+  # JOB 2: Play Store — GitHub Release publish par
+  # GitHub par: Releases → Draft new release → Publish
   # ─────────────────────────────────────────────
   build-android:
     name: 🤖 Android — Play Store Submit
@@ -82,16 +84,24 @@ jobs:
         run: npm install
         working-directory: mobile
 
+      - name: 🔢 Auto-Bump versionCode
+        run: |
+          cd mobile
+          CURRENT=$(jq '.expo.android.versionCode' app.json)
+          NEW=$((CURRENT + 1))
+          jq ".expo.android.versionCode = $NEW" app.json > app.json.tmp && mv app.json.tmp app.json
+          echo "✅ versionCode: $CURRENT → $NEW"
+
       - name: 🔑 Google Service Account Setup
         run: |
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > mobile/google-service-account.json
-          echo "Service account: rapit-174@gen-lang-client-0749108261.iam.gserviceaccount.com"
+          echo "Service account ready"
 
       - name: 🔨 Build Android AAB
         run: eas build --platform android --profile production --non-interactive
         working-directory: mobile
 
-      - name: 🚀 Submit to Play Store
+      - name: 🚀 Submit to Play Store (Production)
         run: eas submit --platform android --latest --non-interactive
         working-directory: mobile
 

@@ -2,7 +2,7 @@
   "expo": {
     "name": "SAI RoloTech CRM",
     "slug": "sai-rolotech-crm",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -10,17 +10,26 @@
       "resizeMode": "contain",
       "backgroundColor": "#1a1a2e"
     },
+    "updates": {
+      "url": "https://u.expo.dev/2873f4f3-f488-46ef-9d0f-199ee9e9a26c",
+      "fallbackToCacheTimeout": 0,
+      "checkAutomatically": "ON_LOAD"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
       "package": "com.amazingweb.design.sairolotech",
-      "versionCode": 49
+      "versionCode": 50
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-updates"
     ],
     "scheme": "sairolotech",
     "extra": {
