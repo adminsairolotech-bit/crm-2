@@ -27,11 +27,41 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEM
 
 /* ── Security Middleware ──────────────────── */
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "https://generativelanguage.googleapis.com", "https://graph.facebook.com"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+    },
+  },
   crossOriginEmbedderPolicy: false,
 }));
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '2mb' }));
+
+const ALLOWED_ORIGINS = [
+  `https://${process.env.REPLIT_DEV_DOMAIN || ''}`,
+  `https://${process.env.REPL_SLUG || ''}.${process.env.REPL_OWNER || ''}.repl.co`,
+  process.env.PRODUCTION_URL,
+  'https://sairolotech.com',
+  'https://www.sairolotech.com',
+].filter(Boolean);
+
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return cb(null, true);
+    cb(new Error('CORS blocked'), false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'x-admin-token'],
+}));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 
 const apiLimiter = rateLimit({
