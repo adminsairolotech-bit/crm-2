@@ -54,7 +54,7 @@ const ALLOWED_ORIGINS = [
 app.use(cors({
   origin(origin, cb) {
     if (!origin) return cb(null, true);
-    if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
     cb(new Error('CORS blocked'), false);
   },
   credentials: true,
@@ -103,6 +103,55 @@ setInterval(() => {
   }
 }, 60000);
 
+/* ── Codex Fix: Input length validator ──── */
+const MAX_MSG_LEN = 2000;
+const MAX_STR_LEN = 500;
+
+function validateInputLengths(payload, parentKey = '') {
+  if (payload == null) return null;
+  if (typeof payload === 'string') {
+    const key = parentKey.toLowerCase();
+    const maxLen = (key === 'message' || key.endsWith('message') || key === 'imagebase64') ? MAX_MSG_LEN : MAX_STR_LEN;
+    if (key === 'imagebase64') return null;
+    if (payload.length > maxLen) return `${parentKey || 'field'} exceeds maximum length of ${maxLen}`;
+    return null;
+  }
+  if (Array.isArray(payload)) {
+    for (let i = 0; i < Math.min(payload.length, 50); i++) {
+      const err = validateInputLengths(payload[i], `${parentKey}[${i}]`);
+      if (err) return err;
+    }
+    return null;
+  }
+  if (typeof payload === 'object') {
+    for (const [key, value] of Object.entries(payload)) {
+      if (key === 'imageBase64' || key === 'catalogData') continue;
+      const err = validateInputLengths(value, key);
+      if (err) return err;
+    }
+  }
+  return null;
+}
+
+/* ── Codex Fix: Admin auth for inline routes ── */
+function inlineAdminAuth(req, res, next) {
+  const token = req.headers['x-admin-token'] || req.headers['authorization']?.replace('Bearer ', '');
+  const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN;
+  if (!ADMIN_TOKEN) return res.status(503).json({ success: false, error: 'Auth not configured' });
+  if (token !== ADMIN_TOKEN) return res.status(401).json({ success: false, error: 'Unauthorized' });
+  next();
+}
+
+/* ── Codex Fix: Safe JSON parser ── */
+function safeJsonParse(text) {
+  try {
+    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return { data: JSON.parse(clean), error: null };
+  } catch (e) {
+    return { data: null, error: e.message };
+  }
+}
+
 /* ── Gemini helper ──────────────────────── */
 function getAI() {
   if (!GEMINI_KEY) throw new Error('Gemini API key not configured');
@@ -132,6 +181,8 @@ async function readBody(req) {
 /* ── AI: Buddy Chat ─────────────────────── */
 app.post('/api/buddy-chat', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`buddy-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { message, history = [] } = req.body;
@@ -153,17 +204,20 @@ Rules: Reply in Hinglish (Hindi + English mix). Concise but helpful. Use bullet 
     }));
     contents.push({ role: 'user', parts: [{ text: message }] });
 
-    const reply = await gemini(contents, systemPrompt, { maxTokens: 1024, temp: 0.7 });
-    res.json({ success: true, reply });
+    const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1024, temp: 0.7 });
+    const validated = validateAIResponse(rawReply);
+    res.json({ success: true, reply: validated.response || rawReply });
   } catch (err) {
-    console.error('[buddy-chat]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[buddy-chat]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
 /* ── AI: Quotation Generator ────────────── */
 app.post('/api/ai-quotation', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`quote-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { clientName, clientPhone, clientEmail, clientCompany, clientAddress, clientGstin, products, budget, requirements, catalogData = {} } = req.body;
@@ -248,18 +302,20 @@ Client: ${clientName}, ${clientPhone}${clientCompany ? ', ' + clientCompany : ''
       [{ role: 'user', parts: [{ text: userMsg }] }],
       systemPrompt, { maxTokens: 3000, temp: 0.2 }
     );
-    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const quotation = JSON.parse(clean);
+    const { data: quotation, error: parseErr } = safeJsonParse(text);
+    if (parseErr || !quotation) return res.status(500).json({ success: false, error: 'Failed to generate quotation, please try again' });
     res.json({ success: true, quotation });
   } catch (err) {
-    console.error('[ai-quotation]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[ai-quotation]', err);
+    res.status(500).json({ success: false, error: 'Quotation generation failed, please try again' });
   }
 });
 
 /* ── AI: Machine Guide (Troubleshooter) ──── */
 app.post('/api/machine-guide', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`machine-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { message, history = [] } = req.body;
@@ -276,17 +332,20 @@ REPLY RULES: Hinglish mein jawab do. Step-by-step numbered list. Practical & act
     }));
     contents.push({ role: 'user', parts: [{ text: message }] });
 
-    const reply = await gemini(contents, systemPrompt, { maxTokens: 1500, temp: 0.5 });
-    res.json({ success: true, reply });
+    const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1500, temp: 0.5 });
+    const validated = validateAIResponse(rawReply);
+    res.json({ success: true, reply: validated.response || rawReply });
   } catch (err) {
-    console.error('[machine-guide]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[machine-guide]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
 /* ── AI: Photo → Solution (Vision) ──────── */
 app.post('/api/ai-photo-solution', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`photo-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests. 1 minute baad try karein.' });
     const { imageBase64, mimeType = 'image/jpeg', description = '' } = req.body;
@@ -315,17 +374,20 @@ REPLY RULES: Hinglish mein jawab do. Numbered steps use karein. Emojis use karei
       ]
     }];
 
-    const reply = await gemini(contents, systemPrompt, { maxTokens: 1500, temp: 0.4 });
-    res.json({ success: true, reply });
+    const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1500, temp: 0.4 });
+    const validated = validateAIResponse(rawReply);
+    res.json({ success: true, reply: validated.response || rawReply });
   } catch (err) {
-    console.error('[ai-photo-solution]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[ai-photo-solution]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
 /* ── AI: PLC Error Code Lookup ──────── */
 app.post('/api/plc-error-lookup', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`plc-${ip}`, 20)) return res.status(429).json({ success: false, error: 'Too many requests.' });
     const { errorCode, driver, description = '' } = req.body;
@@ -349,17 +411,20 @@ REPLY RULES: Hinglish mein jawab do. Numbered steps. Emojis (⚡ 🔧 ⚠️ ✅
     const userText = `${driver ? `Driver: ${driver}. ` : ''}Error Code: ${errorCode}.${description ? ` Additional info: ${description}` : ''} Is error ka matlab aur solution batao.`;
 
     const contents = [{ role: 'user', parts: [{ text: userText }] }];
-    const reply = await gemini(contents, systemPrompt, { maxTokens: 1200, temp: 0.4 });
-    res.json({ success: true, reply });
+    const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1200, temp: 0.4 });
+    const validated = validateAIResponse(rawReply);
+    res.json({ success: true, reply: validated.response || rawReply });
   } catch (err) {
-    console.error('[plc-error-lookup]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[plc-error-lookup]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
 /* ── AI: Project Report Generator ──────── */
 app.post('/api/generate-project-report', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`report-${ip}`, 3)) return res.status(429).json({ success: false, error: 'Too many requests. 1 minute wait karein.' });
     const { formData: f } = req.body;
@@ -422,14 +487,16 @@ Be thorough, professional, bank-ready. ~1200-1500 words.`;
     );
     res.json({ success: true, report });
   } catch (err) {
-    console.error('[project-report]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[project-report]', err);
+    res.status(500).json({ success: false, error: 'Report generation failed, please try again' });
   }
 });
 
 /* ── AI: Machine Spec Estimator ─────────── */
 app.post('/api/ai-machine-spec', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`spec-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { form } = req.body;
@@ -445,16 +512,20 @@ Control: ${form.controlSystem||'N/A'}, Special: ${form.specialRequirements||'Non
 
 5-8 lines covering: forming stations, motor/drive, frame, tooling material, machine size (L×W×H), technical notes.`;
 
-    const spec = await gemini([{ role: 'user', parts: [{ text: prompt }] }], null, { maxTokens: 512, temp: 0.3 });
-    res.json({ success: true, spec });
+    const rawSpec = await gemini([{ role: 'user', parts: [{ text: prompt }] }], null, { maxTokens: 512, temp: 0.3 });
+    const validated = validateAIResponse(rawSpec);
+    res.json({ success: true, spec: validated.response || rawSpec });
   } catch (err) {
-    res.json({ success: false, error: err.message });
+    console.error('[ai-machine-spec]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
 /* ── AI: Quotation Analyzer ─────────────── */
 app.post('/api/analyze-quotation', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`analyze-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { quotationText, catalogData = {} } = req.body;
@@ -472,18 +543,20 @@ Analyze the quotation and return ONLY valid JSON:
       [{ role: 'user', parts: [{ text: `Analyze:\n\n${quotationText}` }] }],
       systemPrompt, { maxTokens: 2048, temp: 0.4 }
     );
-    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const analysis = JSON.parse(clean);
+    const { data: analysis, error: parseErr } = safeJsonParse(text);
+    if (parseErr || !analysis) return res.status(500).json({ success: false, error: 'Analysis failed, please try again' });
     res.json({ success: true, analysis });
   } catch (err) {
-    console.error('[analyze-quotation]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[analyze-quotation]', err);
+    res.status(500).json({ success: false, error: 'Analysis service temporarily unavailable' });
   }
 });
 
 /* ── AI: Question Generator (OpenAI) ─────── */
 app.post('/api/generate-questions', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`questions-${ip}`, 5)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { topic, count, qType } = req.body;
@@ -498,11 +571,11 @@ Return ONLY valid JSON array. Each: {"q":"(Hinglish)","a":"correct answer","type
       model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 2000
     });
     let text = completion.choices[0]?.message?.content || '[]';
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    res.json({ success: true, questions: JSON.parse(text) });
+    const { data: questions, error: parseErr } = safeJsonParse(text);
+    res.json({ success: true, questions: questions || [] });
   } catch (err) {
-    console.error('[generate-questions]', err.message);
-    res.json({ success: false, error: err.message });
+    console.error('[generate-questions]', err);
+    res.status(500).json({ success: false, error: 'Question generation failed' });
   }
 });
 
@@ -536,20 +609,16 @@ app.get('/api/lead-analytics', async (req, res) => {
     const priorityLeads = getPriorityLeads(10);
     res.json({ success: true, stats, sources, locations, priorityLeads });
   } catch (err) {
-    console.error('[lead-analytics]', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('[lead-analytics]', err);
+    res.status(500).json({ success: false, error: 'Analytics service unavailable' });
   }
 });
 
-/* ── Integration Status Check ─────────────── */
-app.get('/api/integration-status', (req, res) => {
+/* ── Integration Status Check (Admin Only) ── */
+app.get('/api/integration-status', inlineAdminAuth, (req, res) => {
   res.json({
-    whatsapp:  !!process.env.WHATSAPP_ACCESS_TOKEN,
-    fcm:       !!process.env.FCM_SERVER_KEY,
-    gmail:     !!process.env.GOOGLE_ACCESS_TOKEN,
-    adminPhone:!!process.env.ADMIN_PHONE,
-    gemini:    !!GEMINI_KEY,
-    adminToken:!!process.env.ADMIN_API_TOKEN,
+    success: true,
+    configured: true,
   });
 });
 
@@ -557,6 +626,8 @@ app.get('/api/integration-status', (req, res) => {
 /* POST /api/message-quality  body: { message, leadContext? } */
 app.post('/api/message-quality', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`msgq-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { message, leadContext = '' } = req.body;
@@ -580,11 +651,13 @@ Return a JSON object (no markdown) with:
 
     const raw = await gemini([{ role: 'user', parts: [{ text: prompt }] }], '', { maxTokens: 512, temp: 0.4 });
     const json = raw.match(/\{[\s\S]*\}/)?.[0];
-    const result = json ? JSON.parse(json) : { score: 50, grade: 'Average', issues: [], improved: message, tips: [] };
+    let result;
+    try { result = json ? JSON.parse(json) : { score: 50, grade: 'Average', issues: [], improved: message, tips: [] }; }
+    catch { result = { score: 50, grade: 'Average', issues: [], improved: message, tips: [] }; }
     res.json({ success: true, ...result });
   } catch (err) {
-    console.error('[message-quality]', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('[message-quality]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
@@ -592,6 +665,8 @@ Return a JSON object (no markdown) with:
 /* POST /api/ab-variants  body: { goal, leadName, locationZone, source } */
 app.post('/api/ab-variants', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`ab-${ip}`, 10)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { goal = 'meeting', leadName = 'Customer', locationZone = 'HIGH', source = 'indiamart' } = req.body;
@@ -625,12 +700,13 @@ Return ONLY a JSON object (no markdown):
 
     const raw = await gemini([{ role: 'user', parts: [{ text: prompt }] }], '', { maxTokens: 600, temp: 0.8 });
     const json = raw.match(/\{[\s\S]*\}/)?.[0];
-    if (!json) throw new Error('AI response parse failed');
-    const result = JSON.parse(json);
+    if (!json) return res.status(500).json({ success: false, error: 'AI failed to generate variants, please try again' });
+    const { data: result, error: parseErr } = safeJsonParse(json);
+    if (parseErr || !result) return res.status(500).json({ success: false, error: 'AI response parsing failed' });
     res.json({ success: true, ...result });
   } catch (err) {
-    console.error('[ab-variants]', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('[ab-variants]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
@@ -638,6 +714,8 @@ Return ONLY a JSON object (no markdown):
 /* POST /api/smart-timing  body: { score, locationZone, source, daysSinceCreation, repliesCount } */
 app.post('/api/smart-timing', async (req, res) => {
   try {
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
     const ip = req.ip;
     if (rateLimitKey(`timing-${ip}`, 15)) return res.status(429).json({ success: false, error: 'Too many requests' });
     const { score = 'WARM', locationZone = 'UNKNOWN', source = 'unknown', daysSinceCreation = 0, repliesCount = 0 } = req.body;
@@ -664,16 +742,18 @@ Return ONLY a JSON object (no markdown):
 
     const raw = await gemini([{ role: 'user', parts: [{ text: prompt }] }], '', { maxTokens: 300, temp: 0.3 });
     const json = raw.match(/\{[\s\S]*\}/)?.[0];
-    if (!json) throw new Error('AI response parse failed');
-    res.json({ success: true, ...JSON.parse(json) });
+    if (!json) return res.status(500).json({ success: false, error: 'AI failed to generate timing, please try again' });
+    const { data: timing, error: parseErr } = safeJsonParse(json);
+    if (parseErr || !timing) return res.status(500).json({ success: false, error: 'AI response parsing failed' });
+    res.json({ success: true, ...timing });
   } catch (err) {
-    console.error('[smart-timing]', err.message);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('[smart-timing]', err);
+    res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
   }
 });
 
 /* ── Gmail: Leads ───────────────────────── */
-app.get('/api/gmail-leads', async (req, res) => {
+app.get('/api/gmail-leads', inlineAdminAuth, async (req, res) => {
   try {
     const gmail = await getGmailClient();
     const labelsResp = await gmail.users.labels.list({ userId: 'me' });
@@ -682,31 +762,40 @@ app.get('/api/gmail-leads', async (req, res) => {
     const inboxDetail = inboxLabel ? (await gmail.users.labels.get({ userId: 'me', id: 'INBOX' })).data : null;
     res.json({ success: true, connected: true, email: 'inquirysairolotech@gmail.com', labels, inbox: inboxDetail ? { total: inboxDetail.messagesTotal, unread: inboxDetail.messagesUnread } : null, leads: [] });
   } catch (err) {
-    res.json({ success: false, error: err.message, leads: [], labels: [] });
+    console.error('[gmail-leads]', err);
+    res.json({ success: false, error: 'Gmail service unavailable', leads: [], labels: [] });
   }
 });
 
-/* ── Gmail: Send Inquiry ─────────────────── */
+/* ── Gmail: Send Inquiry (Sanitized) ─────── */
 app.post('/api/send-inquiry', async (req, res) => {
   try {
-    const { name, email, phone, message, source } = req.body;
+    const lenErr = validateInputLengths(req.body);
+    if (lenErr) return res.status(400).json({ success: false, error: lenErr });
+    const stripCRLF = (s) => s.replace(/[\r\n]/g, ' ');
+    const safeName = stripCRLF(sanitizeInput(req.body.name || 'Unknown'));
+    const safeEmail = stripCRLF(sanitizeInput(req.body.email || ''));
+    const safePhone = stripCRLF(sanitizeInput(req.body.phone || 'N/A'));
+    const safeMessage = sanitizeInput(req.body.message || 'N/A');
+    const safeSource = stripCRLF(sanitizeInput(req.body.source || 'Website'));
     const gmail = await getGmailClient();
     const INQUIRY_EMAIL = 'inquirysairolotech@gmail.com';
     const emailContent = [
       `From: CRM System <${INQUIRY_EMAIL}>`, `To: ${INQUIRY_EMAIL}`,
-      `Subject: New Lead: ${name} (${source||'Website'})`,
+      `Subject: New Lead: ${safeName} (${safeSource})`,
       `MIME-Version: 1.0`, `Content-Type: text/html; charset=utf-8`, ``,
       `<div style="font-family:Arial;max-width:600px;padding:20px">`,
-      `<h2 style="color:#2563eb">📋 New Lead Inquiry</h2>`,
-      `<p><b>Name:</b> ${name}</p><p><b>Email:</b> ${email}</p>`,
-      `<p><b>Phone:</b> ${phone||'N/A'}</p><p><b>Message:</b> ${message||'N/A'}</p>`,
+      `<h2 style="color:#2563eb">New Lead Inquiry</h2>`,
+      `<p><b>Name:</b> ${safeName}</p><p><b>Email:</b> ${safeEmail}</p>`,
+      `<p><b>Phone:</b> ${safePhone}</p><p><b>Message:</b> ${safeMessage}</p>`,
       `<p style="color:#6b7280;font-size:12px">Time: ${new Date().toLocaleString('en-IN')}</p></div>`,
     ].join('\n');
     const encoded = Buffer.from(emailContent).toString('base64url');
     await gmail.users.messages.send({ userId: 'me', requestBody: { raw: encoded } });
     res.json({ success: true });
   } catch (err) {
-    res.json({ success: false, error: err.message });
+    console.error('[send-inquiry]', err);
+    res.json({ success: false, error: 'Email service unavailable' });
   }
 });
 
@@ -769,20 +858,20 @@ registerHandler('SEND_PUSH', async ({ phone, fcmToken, title, body }) => {
   }
 });
 
-/* ── Beta Testing Endpoints ─────────────── */
-const betaLog = [];   // in-memory session log, max 200
+/* ── Beta Testing Endpoints (Admin Auth Required) ── */
+const betaLog = [];
 
-app.post('/api/beta/create-lead', async (req, res) => {
+app.post('/api/beta/create-lead', inlineAdminAuth, async (req, res) => {
   try {
     const { createLead } = await import('./models/leadModel.js');
     const { name, phone, source = 'beta_test', state = 'Delhi', notes = '' } = req.body;
     if (!name || !phone) return res.status(400).json({ success: false, error: 'name and phone required' });
     const result = createLead({ name, phone, source, extra: { state, notes, isBetaTest: true } });
     res.json({ success: true, ...result });
-  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+  } catch (e) { console.error('[beta/create-lead]', e); res.status(500).json({ success: false, error: 'Lead creation failed' }); }
 });
 
-app.post('/api/beta/send-wa', async (req, res) => {
+app.post('/api/beta/send-wa', inlineAdminAuth, async (req, res) => {
   try {
     const { phone, messageType, dayIndex = 0, customText } = req.body;
     if (!phone) return res.status(400).json({ success: false, error: 'phone required' });
@@ -820,10 +909,10 @@ app.post('/api/beta/send-wa', async (req, res) => {
     betaLog.unshift(entry);
     if (betaLog.length > 200) betaLog.pop();
     res.json({ success: true, entry, waResult });
-  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+  } catch (e) { console.error('[beta/send-wa]', e); res.status(500).json({ success: false, error: 'WhatsApp send failed' }); }
 });
 
-app.get('/api/beta/get-lead', (req, res) => {
+app.get('/api/beta/get-lead', inlineAdminAuth, (req, res) => {
   const phone = (req.query.phone || '').replace(/\D/g, '');
   if (!phone) return res.status(400).json({ success: false, error: 'phone required' });
   const lead = getLead(phone);
@@ -831,13 +920,13 @@ app.get('/api/beta/get-lead', (req, res) => {
   res.json({ success: true, lead });
 });
 
-app.get('/api/beta/message-log', (req, res) => {
+app.get('/api/beta/message-log', inlineAdminAuth, (req, res) => {
   const phone = (req.query.phone || '').replace(/\D/g, '');
   const log = phone ? betaLog.filter(m => m.phone === phone) : betaLog;
   res.json({ success: true, log, total: log.length });
 });
 
-app.delete('/api/beta/clear-log', (req, res) => {
+app.delete('/api/beta/clear-log', inlineAdminAuth, (req, res) => {
   betaLog.length = 0;
   res.json({ success: true, message: 'Log cleared' });
 });

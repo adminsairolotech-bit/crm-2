@@ -111,6 +111,7 @@ export async function bookMeeting({ lead, slotStart, slotEnd, notes = '' }) {
     return { success: true, eventId: event.data.id, link: event.data.htmlLink };
   } catch (err) {
     console.error('Calendar bookMeeting error:', err.message);
-    return { success: false, error: err.message };
+    console.error('[calendar]', err);
+    return { success: false, error: 'Calendar service unavailable' };
   }
 }

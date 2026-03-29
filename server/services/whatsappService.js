@@ -234,8 +234,28 @@ ${new Date().toLocaleDateString('en-IN')}
   return sendRaw(ADMIN_PHONE, msg);
 }
 
-/** Send a fully custom message text to any number */
+/** Send a custom message — with content safety filter */
+const WA_BLOCKED_CONTENT = [
+  /https?:\/\/(?!(?:www\.)?sairolotech\.(?:com|app)(?:\/|$))/i,
+  /click\s+(?:here|this|now)/i,
+  /you\s+(?:won|win|selected)/i,
+  /free\s+(?:money|cash|gift|prize)/i,
+  /(?:otp|password|bank\s*account|card\s*number)/i,
+];
+
 export async function sendCustom(phone, text) {
+  if (!text || typeof text !== 'string' || text.trim().length < 2) {
+    return { blocked: true, reason: 'empty_message' };
+  }
+  if (text.length > 1000) {
+    return { blocked: true, reason: 'message_too_long' };
+  }
+  for (const pattern of WA_BLOCKED_CONTENT) {
+    if (pattern.test(text)) {
+      console.warn(`[WA FILTER] Blocked suspicious content to ${phone}: ${pattern.source}`);
+      return { blocked: true, reason: 'content_blocked' };
+    }
+  }
   return sendRaw(phone, text);
 }
 

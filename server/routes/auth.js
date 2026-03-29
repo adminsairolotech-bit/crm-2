@@ -42,7 +42,8 @@ router.post('/login', async (req, res) => {
     const { password_hash, ...safeUser } = user;
     res.json({ success: true, token, user: safeUser });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[auth/login]', err);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
@@ -65,13 +66,15 @@ router.post('/register', async (req, res) => {
       if (error.code === '23505') {
         return res.status(409).json({ error: 'Username already exists' });
       }
-      return res.status(500).json({ error: error.message });
+      console.error('[auth/register]', error);
+      return res.status(500).json({ error: 'Registration failed' });
     }
 
     const { password_hash, ...safeUser } = data;
     res.json({ success: true, user: safeUser });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[auth/register]', err);
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -101,10 +104,11 @@ router.get('/users', async (req, res) => {
       .select('id, username, name, email, phone, role, avatar_url, is_active, created_at')
       .order('created_at', { ascending: false });
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) { console.error('[auth/users]', error); return res.status(500).json({ error: 'Failed to fetch users' }); }
     res.json({ success: true, users: data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[auth/users]', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 

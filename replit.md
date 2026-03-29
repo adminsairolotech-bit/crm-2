@@ -27,8 +27,19 @@ Full-featured CRM web application for SAI RoloTech - an industrial automation co
 - **Icons**: Lucide React
 - **Database**: Supabase (PostgreSQL) — all data stored in user's Supabase project
 - **Lead Store**: `data/leads.json` — JSON file persistence (no MongoDB needed)
-- **AI**: Gemini primary + OpenRouter fallback (Buddy Chat, AI Quotation, AI Machine Guide, etc.)
+- **AI**: Gemini primary (personal GEMINI_API_KEY). OpenRouter/Codex 5.3 for code audit only.
 - **Email**: Gmail API integration via Google Mail connector
+- **Security**: helmet (CSP enabled), express-rate-limit, CORS allowlist, AI output validation, input length validation
+
+## Security Hardening (Codex 5.3 Audited — Score: 2.8 → 8.4/10)
+- **CORS**: Strict origin allowlist (no more origin:true)
+- **CSP**: Helmet contentSecurityPolicy enabled with proper directives
+- **AI Safety**: All 11 AI endpoints have validateInputLengths() + validateAIResponse() + safeJsonParse()
+- **Error Handling**: All catch blocks return generic messages (no err.message leak)
+- **Auth Protection**: /api/beta/*, /api/integration-status, /api/gmail-leads require admin auth
+- **WhatsApp Filter**: sendCustom() has content safety filter (blocks phishing, external URLs, OTP)
+- **Gmail Sanitization**: All user input sanitized via sanitizeInput() before HTML email
+- **Audit Report**: `data/CODEX-AUDIT-REPORT.md`
 
 ## CRM Backend System (Production)
 Located in `server/` — modular production-ready backend:

@@ -194,8 +194,8 @@ router.post('/api/book-meeting', async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error('Book meeting error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('Book meeting error:', err);
+    res.status(500).json({ error: 'Booking failed, please try again' });
   }
 });
 
@@ -207,7 +207,8 @@ router.get('/api/calendar-slots', async (req, res) => {
     const slots = await getAvailableSlots();
     res.json({ success: true, slots });
   } catch (err) {
-    res.json({ success: false, slots: [], error: err.message });
+    console.error('[calendar-slots]', err);
+    res.json({ success: false, slots: [], error: 'Calendar service unavailable' });
   }
 });
 
@@ -248,7 +249,8 @@ router.post('/api/report', adminAuth, async (req, res) => {
     const report = await generateAndSendReport();
     res.json({ success: true, report });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[report]', err);
+    res.status(500).json({ error: 'Report generation failed' });
   }
 });
 
@@ -261,7 +263,8 @@ router.post('/api/ai-reply', adminAuth, async (req, res) => {
     const reply = await generateReply(message, { leadName });
     res.json({ success: true, reply });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[ai-reply]', err);
+    res.status(500).json({ error: 'AI service unavailable' });
   }
 });
 
