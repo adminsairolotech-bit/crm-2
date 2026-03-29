@@ -36,7 +36,7 @@ export default function PrivacyPolicyPage() {
           </div>
           <div>
             <h1 className="text-slate-800 font-semibold text-sm">Privacy Policy</h1>
-            <p className="text-slate-400 text-xs">SAI RoloTech · Last updated: March 2026</p>
+            <p className="text-slate-400 text-xs">sairolotech.com · Last updated: March 2026</p>
           </div>
         </div>
       </header>
@@ -178,7 +178,7 @@ export default function PrivacyPolicyPage() {
       </main>
 
       <footer className="text-center py-6 text-slate-400 text-xs">
-        © 2026 SAI RoloTech · New Delhi · India
+        © 2026 SAI RoloTech · sairolotech.com · New Delhi · India
       </footer>
     </div>
   );
