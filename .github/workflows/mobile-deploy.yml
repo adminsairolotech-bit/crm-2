@@ -102,7 +102,7 @@ jobs:
 
           echo "📥 Downloading keystore from Expo (EAS)..."
 
-          QUERY='query($appId:String!){app{byId(appId:$appId){androidAppCredentials{androidAppBuildCredentialsList{isDefault androidKeystore{id type keystore{url}keystorePassword keyAlias keyPassword}}}}}}'
+          QUERY='query($appId:String!){app{byId(appId:$appId){androidAppCredentials{androidAppBuildCredentialsList{isDefault androidKeystore{id type keystore keystorePassword keyAlias keyPassword}}}}}}'
 
           RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer ${{ secrets.EXPO_TOKEN }}" \
@@ -123,7 +123,7 @@ jobs:
           console.log('Keystore ID:',ks.id);
           console.log('Key Alias:',ks.keyAlias);
           console.log('Keystore type:',ks.type);
-          const url=ks.keystore.url;
+          const url=ks.keystore;
           console.log('Keystore URL: [redacted]');
           const fs=require('fs');
           fs.writeFileSync('/tmp/ks_url.txt',url);
