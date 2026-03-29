@@ -12,3 +12,9 @@ id = "DSB9sThxsxlB95oSXPkDf"
 uri = "file://android-release-aab.zip"
 type = "unspecified"
 title = "SAI RoloTech CRM — Android AAB (Play Store Upload File)"
+
+[[outputs]]
+id = "wXnWHMtWApSJGNLkpSF2L"
+uri = "file://android-api35-release.zip"
+type = "unspecified"
+title = "SAI RoloTech CRM — Android AAB (API Level 35) — Play Store Ready"
