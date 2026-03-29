@@ -1,4 +1,4 @@
-name: "\U0001F4F1 Mobile — Play Store Build & Submit"
+name: "📱 Mobile — Play Store Build & Submit"
 
 on:
   release:
@@ -6,30 +6,30 @@ on:
 
 jobs:
   build-android:
-    name: "\U0001F916 Android — Build AAB"
+    name: "🤖 Android — Build AAB"
     runs-on: ubuntu-latest
 
     steps:
-      - name: "\u2B07\uFE0F Checkout"
+      - name: "⬇️ Checkout"
         uses: actions/checkout@v4
 
-      - name: "\u2699\uFE0F Setup Node.js"
+      - name: "⚙️ Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: mobile/package-lock.json
 
-      - name: "\u2615 Setup Java 17"
+      - name: "☕ Setup Java 17"
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      - name: "\U0001F916 Setup Android SDK"
+      - name: "🤖 Setup Android SDK"
         uses: android-actions/setup-android@v3
 
-      - name: "\U0001F4E6 Install Android Build Tools & NDK"
+      - name: "📦 Install Android Build Tools & NDK"
         run: |
           sdkmanager --licenses <<< "y
           y
@@ -42,17 +42,17 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.3.11579264" >> $GITHUB_ENV
 
-      - name: "\U0001F6E0\uFE0F Setup EAS CLI"
+      - name: "🛠️ Setup EAS CLI"
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: "\U0001F4E6 Install Mobile Dependencies"
+      - name: "📦 Install Mobile Dependencies"
         run: npm install
         working-directory: mobile
 
-      - name: "\U0001F522 Auto-Bump versionCode"
+      - name: "🔢 Auto-Bump versionCode"
         run: |
           cd mobile
           CURRENT=$(jq '.expo.android.versionCode' app.json)
@@ -62,7 +62,7 @@ jobs:
           echo "VERSION_CODE=$NEW" >> $GITHUB_ENV
           echo "✅ VERSION_CODE set to $NEW for EAS build"
 
-      - name: "\U0001F3D7\uFE0F Expo Prebuild — Generate Android Project"
+      - name: "🏗️ Expo Prebuild — Generate Android Project"
         run: |
           export VERSION_CODE=${{ env.VERSION_CODE }}
           npx expo prebuild --clean --platform android --non-interactive
@@ -70,7 +70,7 @@ jobs:
           ls -la android/app/ | head -10
         working-directory: mobile
 
-      - name: "\U0001F527 Force Kotlin 1.9.25 via Gradle Init Script"
+      - name: "🔧 Force Kotlin 1.9.25 via Gradle Init Script"
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/init.gradle << 'INITEOF'
@@ -96,7 +96,7 @@ jobs:
           }
           INITEOF
 
-      - name: "\U0001F511 Download Keystore from EAS"
+      - name: "🔑 Download Keystore from EAS"
         run: |
           cd mobile
 
@@ -153,7 +153,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: "\U0001F4DD Configure Signing in build.gradle"
+      - name: "📝 Configure Signing in build.gradle"
         run: |
           cd mobile/android/app
 
@@ -182,7 +182,7 @@ jobs:
           echo 'apply from: "signing.gradle"' >> build.gradle
           echo "✅ Signing config applied with EAS keystore"
 
-      - name: "\U0001F528 Build Android AAB with Gradle"
+      - name: "🔨 Build Android AAB with Gradle"
         run: |
           cd mobile/android
           chmod +x gradlew
@@ -194,19 +194,19 @@ jobs:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           ORG_GRADLE_PROJECT_kotlinVersion: "1.9.25"
 
-      - name: "\U0001F4E6 Prepare AAB for upload"
+      - name: "📦 Prepare AAB for upload"
         run: |
           cp mobile/android/app/build/outputs/bundle/release/app-release.aab mobile/android-release.aab
           echo "AAB size: $(du -h mobile/android-release.aab | cut -f1)"
 
-      - name: "\U0001F4E4 Upload AAB as Artifact"
+      - name: "📤 Upload AAB as Artifact"
         uses: actions/upload-artifact@v4
         with:
           name: android-release-aab
           path: mobile/android-release.aab
           retention-days: 30
 
-      - name: "\U0001F680 Upload AAB to GitHub Release"
+      - name: "🚀 Upload AAB to GitHub Release"
         run: |
           TAG="${{ github.event.release.tag_name }}"
           RELEASE_ID="${{ github.event.release.id }}"
@@ -219,12 +219,12 @@ jobs:
             "https://uploads.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}/assets?name=android-release-v${TAG}.zip"
           echo "✅ AAB uploaded to GitHub release $TAG"
 
-      - name: "\U0001F9F9 Cleanup"
+      - name: "🧹 Cleanup"
         run: |
           rm -f mobile/google-service-account.json
           rm -f mobile/android-release.aab
           rm -f mobile/android/app/upload-keystore.jks
         if: always()
 
-      - name: "\u2705 Done"
+      - name: "✅ Done"
         run: echo "Android AAB built and uploaded to GitHub release!"
