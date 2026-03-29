@@ -36,3 +36,9 @@ id = "xk39Lk3GBQXCooTZY0sxJ"
 uri = "file://public/android-versionCode4-FINAL.zip"
 type = "unspecified"
 title = "SAI RoloTech AAB — Naye App ke liye Upload Karo (Extract karke .aab upload karo)"
+
+[[outputs]]
+id = "NlXjmkU4i_Erqm0LMxSoa"
+uri = "file://public/android-v1.0.44-API35.zip"
+type = "unspecified"
+title = "SAI RoloTech AAB — API 35 (Play Console mein upload karo)"
