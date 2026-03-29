@@ -25,6 +25,7 @@ let _errorLogs = [];
 let _stats = {
   aiCalls: 0,
   aiErrors: 0,
+  aiFiltered: 0,
   whatsappSent: 0,
   whatsappFailed: 0,
   pushSent: 0,

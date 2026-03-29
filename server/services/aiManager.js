@@ -4,9 +4,11 @@
  */
 import { GoogleGenAI } from '@google/genai';
 import { isEnabled, increment, logError, getConfig } from './configService.js';
+import { validateAIResponse, sanitizeInput, isSpamInput } from './aiValidator.js';
 
 const GEMINI_KEY = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_KEY = process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+const OPENROUTER_BASE_URL = process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
 
 // Response cache — same prompt se baar baar AI call nahi karte
 const responseCache = new Map();
@@ -14,13 +16,19 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 const SYSTEM_PROMPT = `You are a helpful sales assistant for SAI RoloTech, an industrial roll forming machine manufacturer in New Delhi.
 
-Rules:
+STRICT RULES (NEVER BREAK):
 - Reply in Hinglish (mix of Hindi and English) — friendly, helpful tone
 - Keep replies SHORT — under 50 words
-- Never over-promise or use fake urgency
-- Ask questions, don't push sales
-- Focus on understanding customer needs first
-- If asked about pricing, say "Aapki requirement ke hisaab se quote bhejta hoon"`;
+- NEVER mention exact prices, rates or amounts
+- NEVER promise delivery dates (say "estimated" only)
+- NEVER guarantee anything — say "we strive to" instead
+- NEVER mention competitor names or compare
+- NEVER make false claims about being "best" or "cheapest"
+- If asked about pricing: "Aapki requirement ke hisaab se quote bhejte hain"
+- If asked about delivery: "Estimated delivery aapke order pe depend karti hai"
+- Ask questions first, don't push sales
+- Always be polite and professional
+- If unsure, say "Main team se check karke batata hoon"`;
 
 const FALLBACK_MESSAGES = [
   "Namaste! SAI RoloTech mein aapka swagat hai. Aap kaunsi machine ke baare mein jaanna chahte hain? 🙏",
@@ -50,7 +58,7 @@ function detectQuickReply(message) {
 async function tryOpenRouter(prompt) {
   if (!OPENROUTER_KEY) throw new Error('No OpenRouter key');
 
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const res = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${OPENROUTER_KEY}`,
@@ -102,12 +110,19 @@ export async function generateReply(userMessage, context = {}) {
     return 'Hamari team jaldi aapse contact karegi. Dhanyawad! 🙏';
   }
 
+  // 0.5 Input sanitization + spam check
+  const safeMessage = sanitizeInput(userMessage);
+  if (isSpamInput(safeMessage)) {
+    console.log('🛡️ Spam input blocked');
+    return 'Kripya apna sawaal clearly likhein, hum madad karenge! 🙏';
+  }
+
   // 1. Check for predefined quick reply (fastest, no API cost)
-  const quick = detectQuickReply(userMessage);
+  const quick = detectQuickReply(safeMessage);
   if (quick) return quick;
 
   // 2. Check cache
-  const cacheKey = `${userMessage}_${context.leadScore || ''}`;
+  const cacheKey = `${safeMessage}_${context.leadScore || ''}`;
   const cached = responseCache.get(cacheKey);
   if (cached && Date.now() - cached.time < CACHE_TTL) {
     return cached.reply;
@@ -116,13 +131,13 @@ export async function generateReply(userMessage, context = {}) {
   // Use model from Control Panel config
   const cfg = getConfig();
   const prompt = context.leadName
-    ? `Customer: ${context.leadName}\nMessage: ${userMessage}`
-    : userMessage;
+    ? `Customer: ${context.leadName}\nMessage: ${safeMessage}`
+    : safeMessage;
 
   let reply = '';
   increment('aiCalls');
 
-  // 3. Try OpenRouter
+  // 3. Try OpenRouter (Replit AI Integration)
   try {
     reply = await tryOpenRouter(prompt);
     console.log('🤖 AI via OpenRouter');
@@ -142,6 +157,16 @@ export async function generateReply(userMessage, context = {}) {
       // 5. Static fallback
       reply = FALLBACK_MESSAGES[Math.floor(Math.random() * FALLBACK_MESSAGES.length)];
     }
+  }
+
+  // 6. SAFETY: Validate AI response before sending
+  if (reply) {
+    const validation = validateAIResponse(reply, context);
+    if (validation.issueCount > 0) {
+      increment('aiFiltered');
+      logError('AIValidator', `${validation.issueCount} issues fixed`, validation.issues.join('; '));
+    }
+    reply = validation.response || FALLBACK_MESSAGES[0];
   }
 
   // Cache successful reply

@@ -94,7 +94,7 @@ router.get('/api/admin/stats', adminAuth, async (req, res) => {
     env: {
       whatsapp: !!process.env.WHATSAPP_ACCESS_TOKEN,
       fcm: !!process.env.FCM_SERVER_KEY,
-      openrouter: !!process.env.OPENROUTER_API_KEY,
+      openrouter: !!(process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY),
       gemini: !!process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
       adminToken: !!process.env.ADMIN_API_TOKEN,
     },
@@ -133,7 +133,7 @@ router.get('/api/admin/health', adminAuth, async (req, res) => {
   checks.push({ id: 'fcm', label: 'Push Notifications', status: fcmOk ? 'ok' : 'warn', detail: fcmOk ? 'FCM key configured' : 'FCM_SERVER_KEY missing — no push alerts' });
 
   // 5. OpenRouter (backup AI)
-  const orOk = !!process.env.OPENROUTER_API_KEY;
+  const orOk = !!(process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY);
   checks.push({ id: 'openrouter', label: 'OpenRouter AI (backup)', status: orOk ? 'ok' : 'warn', detail: orOk ? 'Key configured' : 'Not configured' });
 
   // 6. Admin Token
