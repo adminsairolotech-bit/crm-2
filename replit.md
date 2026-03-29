@@ -31,14 +31,18 @@ Full-featured CRM web application for SAI RoloTech - an industrial automation co
 - **Email**: Gmail API integration via Google Mail connector
 - **Security**: helmet (CSP enabled), express-rate-limit, CORS allowlist, AI output validation, input length validation
 
-## Security Hardening (Codex 5.3 Audited — Score: 2.8 → 8.4/10)
+## Security Hardening (Codex 5.3 Audited — Score: 2.8 → 8.4 → ~9.1/10)
 - **CORS**: Strict origin allowlist (no more origin:true)
 - **CSP**: Helmet contentSecurityPolicy enabled with proper directives
 - **AI Safety**: All 11 AI endpoints have validateInputLengths() + validateAIResponse() + safeJsonParse()
-- **Error Handling**: All catch blocks return generic messages (no err.message leak)
+- **AI Confidence Gate**: Low-quality/uncertain/harmful AI responses blocked with safe fallback (SAFE_AI_FALLBACK)
+- **AI Retry+Fallback**: Gemini helper retries 2x, returns safe fallback on failure (never crashes)
+- **Error Handling**: All catch blocks return generic messages (no err.message leak — server + vite dev)
 - **Auth Protection**: /api/beta/*, /api/integration-status, /api/gmail-leads require admin auth
-- **WhatsApp Filter**: sendCustom() has content safety filter (blocks phishing, external URLs, OTP)
+- **WhatsApp Filter**: sendCustom() content filter + 4h per-user cooldown (prevents spam/flooding)
 - **Gmail Sanitization**: All user input sanitized via sanitizeInput() before HTML email
+- **Activity Logging**: All AI calls, WhatsApp sends, security events logged to data/logs/
+- **Global Error Handler**: Express catches all unhandled errors, returns generic 500
 - **Audit Report**: `data/CODEX-AUDIT-REPORT.md`
 
 ## CRM Backend System (Production)

@@ -3,6 +3,22 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+const SAFE_AI_FALLBACK_DEV = 'Maaf kijiye, abhi main is sawal ka reliable jawab confirm nahi kar pa raha. Hamare expert team se baat karein — SAI RoloTech helpline pe call karein.';
+const UNCERTAINTY_REGEX_DEV = /\b(maybe|i\s*think|not\s*sure|i\s*don'?t\s*know|possibly|i\s*am\s*not\s*certain|mujhe\s*pata\s*nahi|shayad)\b/i;
+const HARMFUL_REGEX_DEV = /\b(kill\s*yourself|suicide|self[-\s]*harm|make\s*a\s*bomb|terrorist|sexual\s*assault|child\s*porn|genocide|hate\s*speech)\b/i;
+
+function devValidateAI(text) {
+  if (!text || typeof text !== 'string' || text.trim().length < 20) return SAFE_AI_FALLBACK_DEV;
+  if (HARMFUL_REGEX_DEV.test(text)) return '';
+  if (UNCERTAINTY_REGEX_DEV.test(text)) return SAFE_AI_FALLBACK_DEV;
+  return text.trim().slice(0, 3000);
+}
+
+function devValidateInput(str, maxLen = 2000) {
+  if (!str || typeof str !== 'string') return '';
+  return str.replace(/<[^>]*>/g, '').replace(/javascript:/gi, '').slice(0, maxLen).trim();
+}
+
 export default defineConfig({
   plugins: [
     react(),
@@ -17,6 +33,12 @@ export default defineConfig({
             let body = '';
             for await (const chunk of req) body += chunk;
             const { message, history } = JSON.parse(body);
+            const safeMessage = devValidateInput(message, 1000);
+            if (!safeMessage) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'Invalid input' }));
+              return;
+            }
             const { GoogleGenAI } = await import('@google/genai');
             const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY });
             const systemPrompt = `You are "Buddy" — SAI RoloTech CRM ka AI Assistant. You help with:
@@ -38,23 +60,33 @@ Rules:
             const contents = [];
             if (history && history.length > 0) {
               for (const h of history.slice(-10)) {
-                contents.push({ role: h.from === 'user' ? 'user' : 'model', parts: [{ text: h.text }] });
+                contents.push({ role: h.from === 'user' ? 'user' : 'model', parts: [{ text: devValidateInput(h.text, 500) }] });
               }
             }
-            contents.push({ role: 'user', parts: [{ text: message }] });
+            contents.push({ role: 'user', parts: [{ text: safeMessage }] });
 
-            const response = await ai.models.generateContent({
-              model: 'gemini-2.5-flash',
-              contents,
-              config: { systemInstruction: systemPrompt, maxOutputTokens: 1024, temperature: 0.7 }
-            });
-            const reply = response.text || 'Sorry, main samajh nahi paaya. Dobara try karein.';
+            let rawReply = '';
+            for (let attempt = 1; attempt <= 2; attempt++) {
+              try {
+                const response = await ai.models.generateContent({
+                  model: 'gemini-2.5-flash',
+                  contents,
+                  config: { systemInstruction: systemPrompt, maxOutputTokens: 1024, temperature: 0.7 }
+                });
+                rawReply = response.text || '';
+                if (rawReply.trim()) break;
+              } catch (retryErr) {
+                console.error(`[Buddy] attempt ${attempt} failed:`, retryErr.message);
+                if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+              }
+            }
+            const reply = devValidateAI(rawReply) || SAFE_AI_FALLBACK_DEV;
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: true, reply }));
           } catch (err) {
             console.error('Buddy chat error:', err.message);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'AI service temporarily unavailable' }));
           }
         });
 
@@ -141,7 +173,7 @@ Return ONLY valid JSON, no other text. Match products to client requirements int
           } catch (err) {
             console.error('AI Quotation error:', err.message);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -255,7 +287,7 @@ REPLY RULES:
           } catch (err) {
             console.error('Machine guide error:', err.message);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -351,7 +383,7 @@ Be thorough, professional and bank-ready. Include realistic numbers. Keep total 
           } catch (err) {
             console.error('Project report error:', err.message);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -399,7 +431,7 @@ Keep it concise, practical and professional.`;
             res.end(JSON.stringify({ success: true, spec }));
           } catch (err) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -463,7 +495,7 @@ Be honest, specific, and helpful. If the text is not a quotation, still analyze 
           } catch (err) {
             console.error('Analyze Quotation error:', err.message);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -503,7 +535,7 @@ Return ONLY the JSON array, no other text.`;
           } catch (err) {
             console.error('Question gen error:', err.message);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -564,7 +596,7 @@ Return ONLY the JSON array, no other text.`;
             res.end(JSON.stringify({ success: true, message: 'Inquiry sent successfully' }));
           } catch (err) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -589,7 +621,7 @@ Return ONLY the JSON array, no other text.`;
             }
           } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -618,7 +650,7 @@ Return ONLY the JSON array, no other text.`;
             }
           } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -640,7 +672,7 @@ Return ONLY the JSON array, no other text.`;
             }
           } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -742,7 +774,7 @@ Return ONLY the JSON array, no other text.`;
             }));
           } catch (err) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message, leads: [], labels: [] }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable', leads: [], labels: [] }));
           }
         });
 
@@ -904,7 +936,7 @@ Score based on: clarity, urgency, personalization, call-to-action, length, Hingl
             res.end(JSON.stringify({ success: true, ...result }));
           } catch (err) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -935,7 +967,7 @@ Source: ${source || 'indiamart'}`;
             res.end(JSON.stringify({ success: true, ...result }));
           } catch (err) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 
@@ -1052,7 +1084,7 @@ Replies Given: ${repliesCount}`;
             res.end(JSON.stringify({ success: true, ...result }));
           } catch (err) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
+            res.end(JSON.stringify({ success: false, error: 'Service temporarily unavailable' }));
           }
         });
 

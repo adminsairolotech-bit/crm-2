@@ -9,34 +9,55 @@ const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
 const WA_API = `https://graph.facebook.com/v18.0/${PHONE_ID}/messages`;
 const APP_LINK = process.env.APP_DOWNLOAD_LINK || 'https://sairolotech.app';
 
-// DND check import
 import { getLead, markDND } from '../models/leadModel.js';
 import { isEnabled, increment, logError, isWithinDailyLimit, retryOperation } from './configService.js';
+import { logWhatsApp, logSecurity } from './activityLogger.js';
+
+const PHONE_COOLDOWN_MS = 4 * 60 * 60 * 1000;
+const phoneLastSentMap = new Map();
+
+setInterval(() => {
+  const cutoff = Date.now() - PHONE_COOLDOWN_MS * 2;
+  for (const [phone, ts] of phoneLastSentMap) {
+    if (ts < cutoff) phoneLastSentMap.delete(phone);
+  }
+}, 30 * 60 * 1000);
 
 function isConfigured() {
   return !!(WA_TOKEN && PHONE_ID);
 }
 
-async function sendRaw(to, body) {
-  // ── Control Panel checks ─────────────────────────────────────────────────
+async function sendRaw(to, body, options = {}) {
+  const normalizedPhone = to.replace(/\D/g, '');
+  const isAdminAlert = options?.isAdminAlert === true;
+
   if (!isEnabled('whatsappEnabled')) {
-    console.log(`📵 [WA BLOCKED] WhatsApp disabled via Control Panel. To: ${to}`);
+    logWhatsApp({ to: normalizedPhone, status: 'blocked', reason: 'whatsapp_disabled' });
     return { blocked: true, reason: 'whatsapp_disabled' };
   }
 
+  if (!isAdminAlert) {
+    const lastSent = phoneLastSentMap.get(normalizedPhone);
+    if (lastSent && Date.now() - lastSent < PHONE_COOLDOWN_MS) {
+      logWhatsApp({ to: normalizedPhone, status: 'blocked', reason: 'cooldown_4h' });
+      return { blocked: true, reason: 'cooldown_active', nextAllowedAt: lastSent + PHONE_COOLDOWN_MS };
+    }
+  }
+
   if (!isWithinDailyLimit()) {
-    console.warn(`⛔ [WA LIMIT] Daily limit reached. Message to ${to} dropped.`);
+    logWhatsApp({ to: normalizedPhone, status: 'blocked', reason: 'daily_limit' });
     logError('WhatsApp', 'Daily message limit reached', `Attempted to send to ${to}`);
     return { blocked: true, reason: 'daily_limit_reached' };
   }
 
   if (!isConfigured()) {
-    console.log(`📱 [WA MOCK] To: ${to}\n${body}`);
+    console.log(`[WA MOCK] To: ${to}`);
     increment('whatsappSent');
+    phoneLastSentMap.set(normalizedPhone, Date.now());
+    logWhatsApp({ to: normalizedPhone, status: 'mock_sent' });
     return { mock: true };
   }
 
-  // ── Send with auto-retry ─────────────────────────────────────────────────
   try {
     const result = await retryOperation(async () => {
       const res = await fetch(WA_API, {
@@ -47,7 +68,7 @@ async function sendRaw(to, body) {
         },
         body: JSON.stringify({
           messaging_product: 'whatsapp',
-          to: to.replace(/\D/g, ''),
+          to: normalizedPhone,
           type: 'text',
           text: { body },
         }),
@@ -59,12 +80,15 @@ async function sendRaw(to, body) {
         throw new Error(`WA API ${res.status}: ${err}`);
       }
       return res.json();
-    }, 3, 1000); // 3 retries, 1s → 2s → 4s backoff
+    }, 3, 1000);
 
     increment('whatsappSent');
+    phoneLastSentMap.set(normalizedPhone, Date.now());
+    logWhatsApp({ to: normalizedPhone, status: 'sent' });
     return result;
   } catch (e) {
     increment('whatsappFailed');
+    logWhatsApp({ to: normalizedPhone, status: 'failed', error: e.message });
     logError('WhatsApp', e.message, `To: ${to} | Message: ${body.slice(0, 80)}`);
     throw e;
   }
@@ -179,7 +203,7 @@ Event:    ${event}
 Time:     ${new Date().toLocaleString('en-IN')}
 ${action}`;
 
-  return sendRaw(ADMIN_PHONE, msg);
+  return sendRaw(ADMIN_PHONE, msg, { isAdminAlert: true });
 }
 
 /** Send quotation-triggered message */

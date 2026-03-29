@@ -1,10 +1,19 @@
 /**
  * AI Response Validator — Production Safety Layer
- * AI → Validation → Safe Response
+ * AI → Validation → Confidence Gate → Safe Response
  * 
  * Prevents: fake promises, wrong prices, competitor mentions,
- * inappropriate content, over-commitments
+ * inappropriate content, over-commitments, hallucinations, harmful content
  */
+
+export const SAFE_AI_FALLBACK =
+  'Maaf kijiye, abhi main is sawal ka reliable jawab confirm nahi kar pa raha. Hamare expert team se baat karein — SAI RoloTech helpline pe call karein.';
+
+const UNCERTAINTY_REGEX =
+  /\b(maybe|i\s*think|not\s*sure|i\s*don'?t\s*know|possibly|i\s*am\s*not\s*certain|mujhe\s*pata\s*nahi|shayad)\b/i;
+
+const HARMFUL_REGEX =
+  /\b(kill\s*yourself|suicide|self[-\s]*harm|make\s*a\s*bomb|terrorist|sexual\s*assault|child\s*porn|genocide|hate\s*speech)\b/i;
 
 const BLOCKED_PHRASES = [
   'guaranteed', 'guarantee', '100%', 'promise',
@@ -49,19 +58,24 @@ const INAPPROPRIATE_WORDS = [
 
 export function validateAIResponse(response, context = {}) {
   if (!response || typeof response !== 'string') {
-    return { valid: false, response: '', issues: ['Empty response'] };
+    return { valid: false, response: SAFE_AI_FALLBACK, issues: ['Empty response'], blocked: false, fallback: true };
   }
 
   const issues = [];
   let cleaned = response.trim();
 
-  if (cleaned.length > 500) {
-    cleaned = cleaned.slice(0, 500);
-    issues.push('Response truncated (too long)');
+  if (HARMFUL_REGEX.test(cleaned)) {
+    console.error('[AI Validator] HARMFUL content blocked');
+    return { valid: false, response: '', issues: ['Harmful content blocked'], blocked: true, fallback: false };
   }
 
-  if (cleaned.length < 5) {
-    return { valid: false, response: '', issues: ['Response too short'] };
+  if (cleaned.length < 20 || UNCERTAINTY_REGEX.test(cleaned)) {
+    return { valid: false, response: SAFE_AI_FALLBACK, issues: ['Low confidence response'], blocked: false, fallback: true };
+  }
+
+  if (cleaned.length > 3000) {
+    cleaned = cleaned.slice(0, 3000);
+    issues.push('Response truncated (too long)');
   }
 
   for (const word of INAPPROPRIATE_WORDS) {
@@ -87,7 +101,7 @@ export function validateAIResponse(response, context = {}) {
     }
   }
 
-  if (PRICE_PATTERN.test(cleaned)) {
+  if (PRICE_PATTERN.test(cleaned) && !context.allowPrice) {
     issues.push('Exact price removed — replaced with quote offer');
     cleaned = cleaned.replace(PRICE_PATTERN, '[price available on quote request]');
   }
@@ -108,13 +122,15 @@ export function validateAIResponse(response, context = {}) {
   const valid = issues.length === 0;
 
   if (issues.length > 0) {
-    console.log(`🛡️ [AI Validator] ${issues.length} issue(s) fixed:`, issues.join(', '));
+    console.log(`[AI Validator] ${issues.length} issue(s) fixed:`, issues.join(', '));
   }
 
   return {
     valid,
     response: cleaned,
     issues,
+    blocked: false,
+    fallback: false,
     originalLength: response.length,
     cleanedLength: cleaned.length,
     issueCount: issues.length,

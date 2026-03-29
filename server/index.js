@@ -16,7 +16,7 @@ import { generateReply } from './services/aiManager.js';
 import { resumeFollowups } from './services/followupService.js';
 import { startDailyReporter } from './services/reportService.js';
 import { logAI, logWhatsApp, logSecurity, logSystem, getLogs, getLogStats, clearLogs } from './services/activityLogger.js';
-import { validateAIResponse, sanitizeInput } from './services/aiValidator.js';
+import { validateAIResponse, sanitizeInput, SAFE_AI_FALLBACK } from './services/aiValidator.js';
 import leadsRouter from './routes/leads.js';
 import productsRouter from './routes/products.js';
 
@@ -152,20 +152,37 @@ function safeJsonParse(text) {
   }
 }
 
-/* ── Gemini helper ──────────────────────── */
+/* ── Gemini helper (with retry + fallback) ── */
+const GEMINI_FALLBACK = 'Abhi AI service available nahi hai. Hamare expert team se baat karein — SAI RoloTech helpline pe call karein.';
+
 function getAI() {
   if (!GEMINI_KEY) throw new Error('Gemini API key not configured');
   return new GoogleGenAI({ apiKey: GEMINI_KEY });
 }
 
 async function gemini(contents, systemInstruction, opts = {}) {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: opts.model || 'gemini-2.5-flash',
-    contents,
-    config: { systemInstruction, maxOutputTokens: opts.maxTokens || 1024, temperature: opts.temp ?? 0.7 }
-  });
-  return response.text || '';
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const ai = getAI();
+      const response = await ai.models.generateContent({
+        model: opts.model || 'gemini-2.5-flash',
+        contents,
+        config: { systemInstruction, maxOutputTokens: opts.maxTokens || 1024, temperature: opts.temp ?? 0.7 }
+      });
+      const text = response.text || '';
+      if (text.trim()) {
+        logAI({ input: JSON.stringify(contents).slice(0, 200), output: text.slice(0, 300), model: opts.model || 'gemini-2.5-flash', source: 'gemini' });
+        return text;
+      }
+    } catch (err) {
+      console.error(`[Gemini] attempt ${attempt} failed:`, err.message);
+      logSecurity({ type: 'ai_failure', detail: `Gemini attempt ${attempt}: ${err.message}`, severity: 'high' });
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  console.error('[Gemini] All attempts failed, returning fallback');
+  logAI({ input: 'FALLBACK', output: GEMINI_FALLBACK, model: 'fallback', source: 'fallback' });
+  return GEMINI_FALLBACK;
 }
 
 /* ── Body reader for streaming ──────────── */
@@ -206,7 +223,11 @@ Rules: Reply in Hinglish (Hindi + English mix). Concise but helpful. Use bullet 
 
     const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1024, temp: 0.7 });
     const validated = validateAIResponse(rawReply);
-    res.json({ success: true, reply: validated.response || rawReply });
+    if (validated.blocked) {
+      logSecurity({ type: 'ai_blocked', endpoint: '/api/buddy-chat', detail: 'harmful content', severity: 'critical' });
+      return res.json({ success: false, error: 'Request blocked for safety reasons.' });
+    }
+    res.json({ success: true, reply: validated.response || SAFE_AI_FALLBACK });
   } catch (err) {
     console.error('[buddy-chat]', err);
     res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
@@ -334,7 +355,11 @@ REPLY RULES: Hinglish mein jawab do. Step-by-step numbered list. Practical & act
 
     const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1500, temp: 0.5 });
     const validated = validateAIResponse(rawReply);
-    res.json({ success: true, reply: validated.response || rawReply });
+    if (validated.blocked) {
+      logSecurity({ type: 'ai_blocked', endpoint: '/api/machine-guide', detail: 'harmful content', severity: 'critical' });
+      return res.json({ success: false, error: 'Request blocked for safety reasons.' });
+    }
+    res.json({ success: true, reply: validated.response || SAFE_AI_FALLBACK });
   } catch (err) {
     console.error('[machine-guide]', err);
     res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
@@ -376,7 +401,11 @@ REPLY RULES: Hinglish mein jawab do. Numbered steps use karein. Emojis use karei
 
     const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1500, temp: 0.4 });
     const validated = validateAIResponse(rawReply);
-    res.json({ success: true, reply: validated.response || rawReply });
+    if (validated.blocked) {
+      logSecurity({ type: 'ai_blocked', endpoint: '/api/ai-photo-solution', detail: 'harmful content', severity: 'critical' });
+      return res.json({ success: false, error: 'Request blocked for safety reasons.' });
+    }
+    res.json({ success: true, reply: validated.response || SAFE_AI_FALLBACK });
   } catch (err) {
     console.error('[ai-photo-solution]', err);
     res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
@@ -413,7 +442,11 @@ REPLY RULES: Hinglish mein jawab do. Numbered steps. Emojis (⚡ 🔧 ⚠️ ✅
     const contents = [{ role: 'user', parts: [{ text: userText }] }];
     const rawReply = await gemini(contents, systemPrompt, { maxTokens: 1200, temp: 0.4 });
     const validated = validateAIResponse(rawReply);
-    res.json({ success: true, reply: validated.response || rawReply });
+    if (validated.blocked) {
+      logSecurity({ type: 'ai_blocked', endpoint: '/api/plc-error-lookup', detail: 'harmful content', severity: 'critical' });
+      return res.json({ success: false, error: 'Request blocked for safety reasons.' });
+    }
+    res.json({ success: true, reply: validated.response || SAFE_AI_FALLBACK });
   } catch (err) {
     console.error('[plc-error-lookup]', err);
     res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
@@ -514,7 +547,11 @@ Control: ${form.controlSystem||'N/A'}, Special: ${form.specialRequirements||'Non
 
     const rawSpec = await gemini([{ role: 'user', parts: [{ text: prompt }] }], null, { maxTokens: 512, temp: 0.3 });
     const validated = validateAIResponse(rawSpec);
-    res.json({ success: true, spec: validated.response || rawSpec });
+    if (validated.blocked) {
+      logSecurity({ type: 'ai_blocked', endpoint: '/api/ai-machine-spec', detail: 'harmful content', severity: 'critical' });
+      return res.json({ success: false, error: 'Request blocked for safety reasons.' });
+    }
+    res.json({ success: true, spec: validated.response || SAFE_AI_FALLBACK });
   } catch (err) {
     console.error('[ai-machine-spec]', err);
     res.status(500).json({ success: false, error: 'AI service temporarily unavailable' });
@@ -933,7 +970,18 @@ app.delete('/api/beta/clear-log', inlineAdminAuth, (req, res) => {
 
 /* ── Health check ───────────────────────── */
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', version: '5.6.0', timestamp: new Date().toISOString(), ai: !!GEMINI_KEY });
+  res.json({ status: 'ok', version: '5.7.0-secure', timestamp: new Date().toISOString(), ai: !!GEMINI_KEY });
+});
+
+/* ── Global Error Handler (Codex Fix #5) ── */
+app.use((err, req, res, next) => {
+  if (err.message === 'CORS blocked') {
+    logSecurity({ type: 'cors_blocked', ip: req.ip, endpoint: req.originalUrl, severity: 'medium' });
+    return res.status(403).json({ success: false, error: 'Access denied' });
+  }
+  console.error('[GLOBAL ERROR]', err);
+  logSecurity({ type: 'unhandled_error', ip: req.ip, endpoint: req.originalUrl, detail: err.message, severity: 'high' });
+  res.status(500).json({ success: false, error: 'Something went wrong' });
 });
 
 /* ── Serve React SPA ─────────────────────── */
