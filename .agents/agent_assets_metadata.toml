@@ -42,3 +42,9 @@ id = "NlXjmkU4i_Erqm0LMxSoa"
 uri = "file://public/android-v1.0.44-API35.zip"
 type = "unspecified"
 title = "SAI RoloTech AAB — API 35 (Play Console mein upload karo)"
+
+[[outputs]]
+id = "19YErykiu3QMKVbaDylQQ"
+uri = "file://public/android-v1.0.47-API35-SIGNED.zip"
+type = "unspecified"
+title = "SAI RoloTech AAB — API 35 + EAS Keystore Signed (Play Console mein upload karo)"
