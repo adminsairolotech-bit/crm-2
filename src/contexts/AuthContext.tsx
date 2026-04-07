@@ -39,6 +39,7 @@ const SESSION_KEY    = "sai_crm_session";
 const USERS_KEY      = "sai_crm_users_v2";
 const LOCK_KEY       = "sai_crm_locks";
 const ACTIVITY_KEY   = "sai_crm_activity";
+const AUTH_USER_KEY  = "sai_crm_auth_user";
 const MAX_ATTEMPTS   = 5;
 const LOCK_DURATION  = 15 * 60 * 1000;
 const IDLE_TIMEOUT   = 30 * 60 * 1000; // 30 min idle auto-logout
@@ -123,16 +124,81 @@ function clearFailedAttempts(email: string): void {
 interface Session {
   user: AuthUser;
   token: string;
+  authToken?: string | null;
   expiresAt: number;
   lastLoginAt: string;
   lastActiveAt: number;
 }
 
-function saveSession(user: AuthUser, prevLastLogin?: string): void {
+function persistAuthUser(user: AuthUser, authToken?: string | null): void {
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify({ ...user, token: authToken || "" }));
+}
+
+function normalizeUserType(raw?: string | null): UserType {
+  switch ((raw || "").toLowerCase()) {
+    case "admin":
+      return "admin";
+    case "supplier":
+      return "supplier";
+    case "operator":
+      return "operator";
+    case "machine_user":
+    case "machine-user":
+    case "sales":
+    case "support":
+    case "viewer":
+      return "machine_user";
+    case "new_user":
+      return "new_user";
+    default:
+      return "machine_user";
+  }
+}
+
+function mapBackendUser(user: any): AuthUser {
+  return {
+    id: String(user?.id ?? ""),
+    name: String(user?.name || user?.username || "User"),
+    email: String(user?.email || user?.username || ""),
+    userType: normalizeUserType(user?.role),
+    company: user?.company || undefined,
+  };
+}
+
+async function tryBackendLogin(identifier: string, password: string): Promise<{ token: string; user: AuthUser } | null> {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier, email: identifier, username: identifier, password }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data?.success || !data?.token || !data?.user) return null;
+  return { token: data.token, user: mapBackendUser(data.user) };
+}
+
+async function tryBackendRegister(name: string, email: string, password: string): Promise<{ token?: string; user: AuthUser } | null> {
+  const username = email.split("@")[0]?.trim().toLowerCase() || `user_${Date.now()}`;
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, username, password, role: "machine_user" }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data?.success || !data?.user) return null;
+  return {
+    token: data.token,
+    user: { ...mapBackendUser(data.user), userType: "new_user" },
+  };
+}
+
+function saveSession(user: AuthUser, prevLastLogin?: string, authToken?: string | null): void {
   const now = Date.now();
   const session: Session = {
     user,
     token: generateToken(),
+    authToken: authToken || null,
     expiresAt: now + SESSION_TTL,
     lastLoginAt: new Date().toISOString(),
     lastActiveAt: now,
@@ -140,6 +206,7 @@ function saveSession(user: AuthUser, prevLastLogin?: string): void {
   if (prevLastLogin) (session as any)._prevLastLogin = prevLastLogin;
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  persistAuthUser(user, authToken);
 }
 
 function loadSession(): { user: AuthUser; lastLoginAt: string; expiresAt: number } | null {
@@ -179,6 +246,7 @@ function getLastActive(): number {
 function clearSession(): void {
   sessionStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
 }
 
 /* ── Stored user type ───────────────────────────────────────── */
@@ -267,6 +335,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: true };
       }
 
+      try {
+        const backend = await tryBackendLogin(email.trim(), password);
+        if (backend) {
+          saveSession(backend.user, undefined, backend.token);
+          setUser(backend.user);
+          const s = loadSession();
+          setLastLoginAt(s?.lastLoginAt || null);
+          setSessionExpiresAt(s?.expiresAt || null);
+          clearFailedAttempts(email);
+          logActivity("login", `Backend login: ${email}`);
+          setIsLoading(false);
+          return { success: true };
+        }
+      } catch {
+        // fall back to local auth so existing installs continue to work
+      }
+
       const raw = localStorage.getItem(USERS_KEY);
       const users: StoredUser[] = raw ? JSON.parse(raw) : [];
       const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
@@ -319,6 +404,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (email.toLowerCase() === ADMIN_EMAIL || users.find((u) => u.email.toLowerCase() === email.toLowerCase())) {
         setIsLoading(false); return { success: false, error: "Yeh email already registered hai." };
       }
+
+      try {
+        const backend = await tryBackendRegister(name.trim(), email.trim(), password);
+        if (backend) {
+          saveSession(backend.user, undefined, backend.token);
+          setUser(backend.user);
+          const s = loadSession();
+          setLastLoginAt(s?.lastLoginAt || null);
+          setSessionExpiresAt(s?.expiresAt || null);
+          logActivity("register", `Backend user: ${email}`);
+          setIsLoading(false);
+          return { success: true };
+        }
+      } catch {
+        // fall back to local auth
+      }
+
       const salt = generateSalt();
       const passwordHash = await hashPassword(password, salt);
       const newUser: StoredUser = { id: `user-${Date.now()}`, name, email, userType: "new_user", passwordHash, salt };
@@ -357,6 +459,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (newPw.length < 8) return { success: false, error: "Naya password kam se kam 8 characters ka hona chahiye." };
       if (newPw === currentPw) return { success: false, error: "Naya password purane se alag hona chahiye." };
 
+      try {
+        const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+        const session: Session | null = raw ? JSON.parse(raw) : null;
+        if (session?.authToken) {
+          const res = await fetch("/api/auth/change-password", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.authToken}`,
+            },
+            body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+          });
+          if (res.ok) {
+            logActivity("password_changed", `Backend password changed: ${user.email}`);
+            return { success: true };
+          }
+          const data = await res.json().catch(() => ({}));
+          return { success: false, error: data?.error || "Password change mein problem aayi." };
+        }
+      } catch {
+        // continue to local fallback for legacy users
+      }
+
       // Admin password change
       if (user.email.toLowerCase() === ADMIN_EMAIL) {
         if (currentPw !== ADMIN_PASS) return { success: false, error: "Current password galat hai." };
@@ -388,7 +513,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setUserType = (userType: UserType) => {
     if (!user) return;
     const updated = { ...user, userType };
-    saveSession(updated);
+    let authToken: string | null = null;
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+      authToken = raw ? (JSON.parse(raw).authToken || null) : null;
+    } catch {
+      authToken = null;
+    }
+    saveSession(updated, undefined, authToken);
     setUser(updated);
     const raw = localStorage.getItem(USERS_KEY);
     if (raw) {

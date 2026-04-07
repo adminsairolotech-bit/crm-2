@@ -11,9 +11,10 @@ const RoleContext = createContext<RoleContextValue | null>(null);
 
 function resolveRoleFromAuth(): UserRole {
   try {
-    const stored = localStorage.getItem("sai_crm_auth_user");
-    if (stored) {
-      const user = JSON.parse(stored);
+    const sessionRaw = sessionStorage.getItem("sai_crm_session") || localStorage.getItem("sai_crm_session");
+    const legacyRaw = localStorage.getItem("sai_crm_auth_user");
+    const user = sessionRaw ? JSON.parse(sessionRaw)?.user : legacyRaw ? JSON.parse(legacyRaw) : null;
+    if (user) {
       if (user.userType === "admin") return "admin";
       if (user.userType === "supplier") return "supplier";
       if (user.userType === "machine_user" || user.userType === "operator") return "machine_user";
@@ -21,7 +22,7 @@ function resolveRoleFromAuth(): UserRole {
   } catch {
     // ignore
   }
-  return "admin";
+  return "machine_user";
 }
 
 export function RoleProvider({ children }: { children: ReactNode }) {

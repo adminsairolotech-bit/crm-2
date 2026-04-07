@@ -19,19 +19,25 @@ const BLOCKED_PHRASES = [
   'guaranteed', 'guarantee', '100%', 'promise',
   'best price in india', 'cheapest', 'lowest price',
   'free delivery', 'free installation',
+  'free visit',
   'next day delivery', 'same day delivery',
   'competitor', 'others are bad',
   'unlimited warranty', 'lifetime free',
+  '45-60 din', '5 saal ka warranty',
 ];
 
 const OVERPROMISE_PATTERNS = [
   /deliver(?:y|ed)?\s+(?:in|within)\s+(?:1|2|one|two)\s+days?/i,
   /(?:free|no)\s+(?:cost|charge|payment)/i,
+  /free\s+visit/i,
   /(?:best|cheapest|lowest)\s+(?:price|rate|cost)\s+in\s+(?:india|market|world)/i,
   /(?:guarantee|guaranteed)\s+(?:delivery|quality|result|return)/i,
   /100%\s+(?:guarantee|satisfaction|refund|money\s*back)/i,
   /(?:unlimited|lifetime)\s+(?:warranty|support|service)\s+free/i,
   /we\s+(?:are|will)\s+(?:beat|match)\s+any\s+(?:price|quote|rate)/i,
+  /\b(?:today|tomorrow|aaj|kal|parso)\b/i,
+  /\b\d+\s*-\s*\d+\s*din\b/i,
+  /\b\d+\s+saal\s+ka\s+warranty\b/i,
 ];
 
 const PRICE_PATTERN = /(?:₹|rs\.?|inr|price\s*(?:is|=|:))\s*[\d,]+(?:\.\d+)?/i;
@@ -43,11 +49,15 @@ const SAFE_REPLACEMENTS = {
   'cheapest': 'cost-effective',
   'lowest price': 'competitive rate',
   'free delivery': 'delivery charges apply as per location',
+  'free installation support': 'installation support available',
   'free installation': 'installation support available',
+  'free visit': 'site visit can be arranged',
   'next day delivery': 'fast delivery options available',
   'same day delivery': 'quick dispatch possible',
   '100% satisfaction': 'customer satisfaction is our priority',
   'unlimited warranty': 'comprehensive warranty available',
+  '45-60 din': 'estimated timeline depends on order scope',
+  '5 saal ka warranty': 'warranty options available as per machine model',
 };
 
 const INAPPROPRIATE_WORDS = [

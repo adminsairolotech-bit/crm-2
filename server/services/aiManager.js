@@ -118,7 +118,15 @@ const QUICK_REPLIES = {
   },
 };
 
-function detectQuickReply(message, leadScore = 'COLD') {
+function getSafeQuickReply(reply, context = {}) {
+  const validation = validateAIResponse(reply, context);
+  if (validation.blocked || validation.issueCount > 0 || validation.fallback) {
+    return FALLBACK_MESSAGES[0];
+  }
+  return validation.response || FALLBACK_MESSAGES[0];
+}
+
+function detectQuickReply(message, leadScore = 'COLD', context = {}) {
   const lower = message.toLowerCase();
   let category = null;
   if (lower.includes('price') || lower.includes('rate') || lower.includes('kitna')) category = 'price';
@@ -128,7 +136,7 @@ function detectQuickReply(message, leadScore = 'COLD') {
   else if (lower.includes('meeting') || lower.includes('milna') || lower.includes('call')) category = 'meeting';
   if (!category) return null;
   const replies = QUICK_REPLIES[category];
-  return replies[leadScore] || replies.default || replies.COLD || replies.WARM;
+  return getSafeQuickReply(replies[leadScore] || replies.default || replies.COLD || replies.WARM, context);
 }
 
 async function tryGemini(prompt, model = 'gemini-2.5-flash') {
@@ -163,7 +171,7 @@ export async function generateReply(userMessage, context = {}) {
 
   const leadScore = context.leadScore || 'COLD';
 
-  const quick = detectQuickReply(safeMessage, leadScore);
+  const quick = detectQuickReply(safeMessage, leadScore, context);
   if (quick) {
     addToHistory(context.leadPhone, 'user', safeMessage);
     addToHistory(context.leadPhone, 'assistant', quick);

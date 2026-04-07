@@ -46,7 +46,7 @@ function getDepartment(role: CRMRole) {
   return "Operations";
 }
 
-export default function UserManagementPage() {
+export default function UserManagementLivePage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | CRMRole>("all");
   const [users, setUsers] = useState<User[]>([]);
@@ -98,7 +98,7 @@ export default function UserManagementPage() {
       <PageHeader
         title="User Management"
         subtitle="Live CRM users aur access roles"
-        action={(
+        actions={(
           <button
             onClick={() => loadUsers(true)}
             disabled={refreshing}

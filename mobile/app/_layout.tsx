@@ -33,6 +33,9 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="support" />
+          <Stack.Screen name="privacy" />
+          <Stack.Screen name="delete-account" />
           <Stack.Screen name="(tabs)" />
         </Stack>
       </AuthProvider>

@@ -7,6 +7,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/AuthContext';
+import { SUPPORT_EMAIL } from '@/lib/app-info';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -104,17 +105,16 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push('/forgot-password')}
+              onPress={() => router.push('/support')}
               style={styles.forgotBtn}
             >
-              <Text style={styles.forgotText}>Password bhul gaye?</Text>
+              <Text style={styles.forgotText}>Password help chahiye?</Text>
             </TouchableOpacity>
 
             <View style={styles.demoBox}>
-              <Text style={styles.demoTitle}>Demo Login:</Text>
+              <Text style={styles.demoTitle}>Production-safe sign in</Text>
               <Text style={styles.demoText}>
-                ID: <Text style={styles.demoCode}>admin001</Text>  Pass:{' '}
-                <Text style={styles.demoCode}>admin@123</Text>
+                Demo credentials hata diye gaye hain. Live CRM access ke liye active backend account zaroori hai. Help ke liye {SUPPORT_EMAIL}.
               </Text>
             </View>
           </View>
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#c7d2fe', borderStyle: 'dashed',
     borderRadius: 12, padding: 14, alignItems: 'center',
   },
-  demoTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#374151', marginBottom: 4 },
-  demoText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4b5563' },
-  demoCode: { fontFamily: 'Inter_600SemiBold', color: '#4f46e5', backgroundColor: '#e0e7ff' },
+  demoTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#374151', marginBottom: 4, textAlign: 'center' },
+  demoText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4b5563', textAlign: 'center', lineHeight: 18 },
+  demoCode: { fontFamily: 'Inter_600SemiBold', color: '#4f46e5' },
 });

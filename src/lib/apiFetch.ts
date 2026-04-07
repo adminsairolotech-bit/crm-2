@@ -7,7 +7,12 @@ const MAX_RETRIES = 3;
 const INITIAL_DELAY_MS = 500;
 
 function getAdminKey(): string {
-  return localStorage.getItem("admin_api_key") || import.meta.env.VITE_ADMIN_KEY || "";
+  return (
+    sessionStorage.getItem("sai_admin_token") ||
+    localStorage.getItem("admin_api_key") ||
+    import.meta.env.VITE_ADMIN_KEY ||
+    ""
+  );
 }
 
 function delay(ms: number): Promise<void> {
@@ -39,7 +44,8 @@ export async function apiFetch<T = unknown>(
           ...fetchOpts,
           signal: controller.signal,
           headers: {
-            "x-admin-key": getAdminKey(),
+            "x-admin-token": getAdminKey(),
+            ...(getAdminKey() ? { Authorization: `Bearer ${getAdminKey()}` } : {}),
             "Content-Type": "application/json",
             ...(fetchOpts?.headers || {}),
           },

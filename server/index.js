@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { google } from 'googleapis';
@@ -21,11 +22,30 @@ import { logAI, logWhatsApp, logSecurity, logSystem, getLogs, getLogStats, clear
 import { validateAIResponse, sanitizeInput, SAFE_AI_FALLBACK } from './services/aiValidator.js';
 import leadsRouter from './routes/leads.js';
 import productsRouter from './routes/products.js';
+import authRouter from './routes/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dataDir = path.join(__dirname, '..', 'data');
+const accountDeletionFile = path.join(dataDir, 'account-deletion-requests.json');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+
+function loadAccountDeletionRequests() {
+  try {
+    if (!fs.existsSync(accountDeletionFile)) return [];
+    return JSON.parse(fs.readFileSync(accountDeletionFile, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function saveAccountDeletionRequests(requests) {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  fs.writeFileSync(accountDeletionFile, JSON.stringify(requests, null, 2));
+}
 
 /* ── Security Middleware ──────────────────── */
 app.use(helmet({
@@ -74,6 +94,7 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api/', apiLimiter);
+app.use('/api/auth', authRouter);
 
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -1277,6 +1298,38 @@ app.delete('/api/beta/clear-log', inlineAdminAuth, (req, res) => {
 });
 
 /* ── Health check ───────────────────────── */
+app.post('/api/account-deletion-request', (req, res) => {
+  const userId = String(req.body?.userId || '').trim();
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const name = String(req.body?.name || '').trim();
+  const reason = String(req.body?.reason || '').trim().slice(0, 500);
+  const source = String(req.body?.source || 'unknown').trim().slice(0, 50);
+
+  if (!userId && !email) {
+    return res.status(400).json({ success: false, error: 'User ID or email required' });
+  }
+
+  const requests = loadAccountDeletionRequests();
+  const requestId = `del_${Date.now()}`;
+  requests.unshift({
+    requestId,
+    userId: userId || null,
+    email: email || null,
+    name: name || null,
+    reason: reason || null,
+    source,
+    createdAt: new Date().toISOString(),
+  });
+  saveAccountDeletionRequests(requests);
+  logSecurity({ type: 'account_deletion_requested', userId: userId || undefined, detail: email || name || source, severity: 'medium' });
+
+  res.json({ success: true, requestId });
+});
+
+app.get('/api/admin/account-deletion-requests', inlineAdminAuth, (req, res) => {
+  res.json({ success: true, requests: loadAccountDeletionRequests() });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version: '5.7.0-secure', timestamp: new Date().toISOString(), ai: !!GEMINI_KEY });
 });

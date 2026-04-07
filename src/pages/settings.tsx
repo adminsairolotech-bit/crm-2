@@ -108,6 +108,7 @@ export default function SettingsPage() {
   const [showCur, setShowCur]       = useState(false);
   const [showNew, setShowNew]       = useState(false);
   const [changingPw, setChangingPw] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const strength = pwScore(newPw);
   const pwReqs = [
@@ -137,6 +138,39 @@ export default function SettingsPage() {
       setActLog(getActivityLog());
     } else {
       toast({ title: "Error", description: result.error, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteAccountRequest = async () => {
+    if (!user?.id && !user?.email) {
+      toast({ title: "Account info missing", description: "Delete request bhejne ke liye login session chahiye.", variant: "destructive" });
+      return;
+    }
+    setDeletingAccount(true);
+    try {
+      const res = await fetch("/api/account-deletion-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?.id || "",
+          email: user?.email || "",
+          name: user?.name || "",
+          source: "web_settings",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "Delete request submit nahi ho saki");
+      }
+      toast({
+        title: "Deletion request recorded",
+        description: "Aapki request system me save ho gayi hai. Support/admin team isko process karegi.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Delete request fail ho gayi";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -410,18 +444,15 @@ export default function SettingsPage() {
                 size="sm"
                 className="gap-2"
                 onClick={() => {
-                  if (window.confirm("Kya aap sure hain? Aapka saara data permanently delete ho jayega. Ye undo nahi hoga.")) {
-                    toast({
-                      title: "Account Deletion Request",
-                      description: "Aapki request receive ho gayi hai. Hum 48 ghante ke andar aapko confirm karenge. Email: sairolotech@gmail.com",
-                    });
+                  if (window.confirm("Kya aap sure hain? Aapka deletion request admin queue me chala jayega.")) {
+                    void handleDeleteAccountRequest();
                   }
                 }}
               >
-                <Trash2 className="w-3.5 h-3.5" /> Account Delete Karein
+                <Trash2 className="w-3.5 h-3.5" /> {deletingAccount ? "Request bhej rahe hain..." : "Account Delete Karein"}
               </Button>
               <p className="text-[10px] text-red-400 mt-2">
-                Aapko sairolotech@gmail.com par confirmation email bheji jayegi. Request 48 hours mein process hogi.
+                Request ab direct system me log hoti hai. Admin/support team isko manually verify karke process karegi.
               </p>
             </div>
           </div>

@@ -1,68 +1,120 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { apiJson } from '@/lib/api';
 
 interface User {
   id: string;
   name: string;
   role: string;
+  email?: string;
+}
+
+interface Session {
+  token: string;
+  user: User;
 }
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   loading: boolean;
-  login: (userId: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  recoverPassword: (userId: string) => { success: boolean; message?: string; error?: string };
+  recoverPassword: (identifier: string) => { success: boolean; message?: string; error?: string };
+}
+
+interface LoginResponse {
+  success: boolean;
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email?: string | null;
+    role: string;
+  };
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+const SESSION_KEY = 'crm_mobile_session_v1';
 
-const DEMO_USERS = [
-  { id: 'admin001', password: 'admin@123', name: 'Admin User', role: 'Admin' },
-  { id: 'user001', password: 'user@123', name: 'Sales User', role: 'Sales' },
-];
+function normalizeUser(user: LoginResponse['user']): User {
+  return {
+    id: String(user.id),
+    name: String(user.name || 'User'),
+    role: String(user.role || 'machine_user'),
+    email: user.email ? String(user.email) : undefined,
+  };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUser = async () => {
+    const loadSession = async () => {
       try {
-        const saved = await SecureStore.getItemAsync('crm_user');
-        if (saved) setUser(JSON.parse(saved));
-      } catch {}
-      setLoading(false);
+        const saved = await SecureStore.getItemAsync(SESSION_KEY);
+        if (saved) {
+          const session = JSON.parse(saved) as Session;
+          setUser(session.user);
+          setToken(session.token);
+        }
+      } catch {
+        await SecureStore.deleteItemAsync(SESSION_KEY);
+      } finally {
+        setLoading(false);
+      }
     };
-    loadUser();
+
+    void loadSession();
   }, []);
 
-  const login = async (userId: string, password: string) => {
-    const found = DEMO_USERS.find((u) => u.id === userId && u.password === password);
-    if (found) {
-      const userData = { id: found.id, name: found.name, role: found.role };
-      setUser(userData);
-      await SecureStore.setItemAsync('crm_user', JSON.stringify(userData));
+  const login = async (identifier: string, password: string) => {
+    try {
+      const data = await apiJson<LoginResponse>('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ identifier, password }),
+      });
+
+      if (!data?.success || !data?.token || !data?.user) {
+        return { success: false, error: 'Login response incomplete tha. Dobara try karein.' };
+      }
+
+      const nextUser = normalizeUser(data.user);
+      const session: Session = { token: data.token, user: nextUser };
+
+      setUser(nextUser);
+      setToken(data.token);
+      await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
+
       return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login fail ho gaya.';
+      return { success: false, error: message };
     }
-    return { success: false, error: 'Galat User ID ya Password hai.' };
   };
 
   const logout = async () => {
     setUser(null);
-    await SecureStore.deleteItemAsync('crm_user');
+    setToken(null);
+    await SecureStore.deleteItemAsync(SESSION_KEY);
   };
 
-  const recoverPassword = (userId: string) => {
-    const found = DEMO_USERS.find((u) => u.id === userId);
-    if (found) {
-      return { success: true, message: 'Password recovery link aapke registered email par bhej diya gaya hai.' };
+  const recoverPassword = (identifier: string) => {
+    if (!identifier.trim()) {
+      return { success: false, error: 'User ID ya email likhna zaroori hai.' };
     }
-    return { success: false, error: 'Yeh User ID register nahi hai.' };
+
+    return {
+      success: true,
+      message:
+        'Password reset ke liye support team se contact karein. In-app self-reset abhi rollout me nahi hai.',
+    };
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, recoverPassword }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, recoverPassword }}>
       {children}
     </AuthContext.Provider>
   );

@@ -21,19 +21,15 @@
       "compileSdkVersion": 35,
       "targetSdkVersion": 35,
       "minSdkVersion": 24,
-
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-
-        "android.permission.READ_MEDIA_IMAGES",
-
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-
-        "android.permission.WAKE_LOCK"
+        "android.permission.ACCESS_NETWORK_STATE"
       ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.sairolotech.crm",
+      "buildNumber": "1.0.2",
+      "supportsTablet": true
     },
 
     "plugins": [
@@ -55,6 +51,12 @@
     "scheme": "sairolotech",
 
     "extra": {
+      "apiBaseUrl": "https://api.sairolotech.com",
+      "supportEmail": "sairolotech@gmail.com",
+      "supportPhone": "+919899925274",
+      "supportWhatsApp": "https://wa.me/919899925274",
+      "privacyUrl": "https://www.sairolotech.com/privacy-policy",
+      "accountDeleteUrl": "https://www.sairolotech.com/support",
       "eas": {
         "projectId": "2873f4f3-f488-46ef-9d0f-199ee9e9a26c"
       }

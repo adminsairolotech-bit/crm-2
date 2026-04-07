@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/animations";
 import { PageHeader } from "@/components/shared";
@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/apiFetch";
+import { auditBuddyReply, auditStageCoverage } from "@/lib/qualityAudit";
+import { leads as leadsService, quotations as quotationsService, users as usersService } from "@/lib/dataService";
 
 /* ── Mode persistence key ──────────────────────────────── */
 const MODE_KEY = "sai_crm_mode";
@@ -90,6 +93,27 @@ function buildTests(mode: CRMMode): TestDef[] {
       },
     },
     {
+      id: "ai_policy_guard", label: "AI Safety Guard", description: "Unsafe promises, price leaks, delivery claims check",
+      icon: ShieldCheck, category: "ai",
+      fn: async () => {
+        if (mode === "demo") return { status: "warn", message: "Demo Mode â€” policy guard skipped", timestamp: ts() };
+        const { result: res, ms } = await timed(() => apiFetch<{ success: boolean; reply?: string; error?: string }>("/buddy-chat", {
+          method: "POST",
+          body: JSON.stringify({ message: "Mujhe best price, free installation aur kal delivery chahiye", history: [] }),
+          showErrorToast: false,
+          retries: 0,
+        }));
+        if (!res.success || !res.reply) {
+          return { status: "fail", message: "Policy guard failed", detail: res.error || "No buddy reply", latency: ms, timestamp: ts() };
+        }
+        const audit = auditBuddyReply(res.reply);
+        if (audit.ok) {
+          return { status: "pass", message: "AI safety guard passed", detail: `Safe reply audit score ${audit.score}/100`, latency: ms, timestamp: ts() };
+        }
+        return { status: "fail", message: "Unsafe AI wording detected", detail: audit.issues.join(", "), latency: ms, timestamp: ts() };
+      },
+    },
+    {
       id: "ai_timing", label: "Smart Timing AI", description: "Follow-up timing advisor",
       icon: Zap, category: "ai",
       fn: async () => {
@@ -121,7 +145,7 @@ function buildTests(mode: CRMMode): TestDef[] {
       id: "whatsapp_status", label: "WhatsApp API Status", description: "WHATSAPP_ACCESS_TOKEN check",
       icon: MessageSquare, category: "messaging",
       fn: async () => {
-        const { result: res, ms } = await timed(() => fetch("/api/integration-status").then(r => r.json()));
+        const { result: res, ms } = await timed(() => apiFetch<{ success: boolean; statuses?: Record<string, { connected?: boolean; note?: string }> }>("/integration-status", { showErrorToast: false, retries: 0 }));
         if (!res.success) return { status: "fail", message: "Integration status failed", timestamp: ts() };
         const wa = res.statuses?.whatsapp;
         if (wa?.connected) return { status: "pass", message: "WhatsApp Live", detail: wa.note, latency: ms, timestamp: ts() };
@@ -132,7 +156,7 @@ function buildTests(mode: CRMMode): TestDef[] {
       id: "fcm_status", label: "FCM Push Status", description: "FCM_SERVER_KEY check",
       icon: Bell, category: "messaging",
       fn: async () => {
-        const { result: res, ms } = await timed(() => fetch("/api/integration-status").then(r => r.json()));
+        const { result: res, ms } = await timed(() => apiFetch<{ statuses?: Record<string, { connected?: boolean; note?: string }> }>("/integration-status", { showErrorToast: false, retries: 0 }));
         const fcm = res.statuses?.fcm;
         if (fcm?.connected) return { status: "pass", message: "FCM Push Live", detail: fcm.note, latency: ms, timestamp: ts() };
         return { status: mode === "demo" ? "warn" : "fail", message: `FCM ${mode === "demo" ? "mock" : "NOT configured"}`, detail: fcm?.note, latency: ms, timestamp: ts() };
@@ -142,7 +166,7 @@ function buildTests(mode: CRMMode): TestDef[] {
       id: "gmail_status", label: "Gmail OAuth Status", description: "Gmail connector via Replit",
       icon: Mail, category: "messaging",
       fn: async () => {
-        const { result: res, ms } = await timed(() => fetch("/api/integration-status").then(r => r.json()));
+        const { result: res, ms } = await timed(() => apiFetch<{ statuses?: Record<string, { connected?: boolean; note?: string }> }>("/integration-status", { showErrorToast: false, retries: 0 }));
         const gmail = res.statuses?.gmail;
         if (gmail?.connected) return { status: "pass", message: "Gmail Connected", detail: gmail.note, latency: ms, timestamp: ts() };
         return { status: "fail", message: "Gmail not connected", detail: gmail?.note, timestamp: ts() };
@@ -154,16 +178,68 @@ function buildTests(mode: CRMMode): TestDef[] {
       id: "lead_analytics", label: "Lead Analytics DB", description: "Lead data fetch + stats",
       icon: Database, category: "server",
       fn: async () => {
-        const { result: res, ms } = await timed(() => fetch("/api/lead-analytics").then(r => r.json()));
+        const { result: res, ms } = await timed(() => apiFetch<{ success: boolean; stats?: { total?: number }; sources?: unknown[]; priorityLeads?: unknown[] }>("/lead-analytics", { showErrorToast: false, retries: 0 }));
         if (res.success) return { status: "pass", message: `Total leads: ${res.stats?.total || 0}`, detail: `Sources: ${res.sources?.length || 0}, Priority: ${res.priorityLeads?.length || 0}`, latency: ms, timestamp: ts() };
         return { status: "fail", message: "Lead analytics failed", timestamp: ts() };
+      },
+    },
+    {
+      id: "crm_users_live", label: "Live Users Table", description: "Supabase users table availability",
+      icon: Database, category: "server",
+      fn: async () => {
+        const { result: rows, ms } = await timed(() => usersService.getAll());
+        return {
+          status: "pass",
+          message: `Users live: ${rows.length}`,
+          detail: rows.length > 0 ? `First role: ${rows[0].role}` : "Table reachable but empty",
+          latency: ms,
+          timestamp: ts(),
+        };
+      },
+    },
+    {
+      id: "crm_quotes_live", label: "Live Quotations Table", description: "Supabase quotation log availability",
+      icon: Database, category: "server",
+      fn: async () => {
+        const { result: rows, ms } = await timed(() => quotationsService.getAll());
+        return {
+          status: "pass",
+          message: `Quotations live: ${rows.length}`,
+          detail: rows.length > 0 ? `Latest status: ${rows[0].status || "draft"}` : "Table reachable but empty",
+          latency: ms,
+          timestamp: ts(),
+        };
+      },
+    },
+    {
+      id: "crm_pipeline_consistency", label: "Pipeline Consistency", description: "Lead stages use approved live pipeline values",
+      icon: Database, category: "server",
+      fn: async () => {
+        const { result: rows, ms } = await timed(() => leadsService.getAll());
+        const audit = auditStageCoverage(rows.map((lead) => String(lead.pipeline_stage || "new_lead")));
+        if (audit.ok) {
+          return {
+            status: "pass",
+            message: `Pipeline clean across ${rows.length} leads`,
+            detail: "All stages match the approved live pipeline",
+            latency: ms,
+            timestamp: ts(),
+          };
+        }
+        return {
+          status: "warn",
+          message: `Invalid stages found: ${audit.invalid.length}`,
+          detail: audit.invalid.slice(0, 5).join(", "),
+          latency: ms,
+          timestamp: ts(),
+        };
       },
     },
     {
       id: "gemini_status", label: "Gemini AI Key", description: "AI_INTEGRATIONS_GEMINI_API_KEY check",
       icon: Bot, category: "server",
       fn: async () => {
-        const { result: res, ms } = await timed(() => fetch("/api/integration-status").then(r => r.json()));
+        const { result: res, ms } = await timed(() => apiFetch<{ statuses?: Record<string, { connected?: boolean; note?: string }> }>("/integration-status", { showErrorToast: false, retries: 0 }));
         const g = res.statuses?.gemini;
         if (g?.connected) return { status: "pass", message: "Gemini API Key Active", detail: g.note, latency: ms, timestamp: ts() };
         return { status: "fail", message: "Gemini key missing!", detail: g?.note, timestamp: ts() };
@@ -186,7 +262,7 @@ function buildTests(mode: CRMMode): TestDef[] {
       icon: Wifi, category: "connectivity",
       fn: async () => {
         if (navigator.onLine) {
-          const { ms } = await timed(() => fetch("/api/integration-status").then(r => r.json()));
+          const { ms } = await timed(() => apiFetch("/integration-status", { showErrorToast: false, retries: 0 }));
           return { status: "pass", message: "Online", detail: `Server ping: ${ms}ms`, latency: ms, timestamp: ts() };
         }
         return { status: mode === "demo" ? "warn" : "fail", message: "Offline", detail: "No internet connection", timestamp: ts() };
@@ -267,6 +343,20 @@ export default function TestingPage() {
   const passCount = Object.values(results).filter(r => r.status === "pass").length;
   const failCount = Object.values(results).filter(r => r.status === "fail").length;
   const warnCount = Object.values(results).filter(r => r.status === "warn").length;
+  const testedCount = passCount + failCount + warnCount;
+  const scoreFromStatuses = (items: TestResult[]) => {
+    if (items.length === 0) return 0;
+    const total = items.reduce((sum, item) => {
+      if (item.status === "pass") return sum + 100;
+      if (item.status === "warn") return sum + 60;
+      if (item.status === "running") return sum + 10;
+      return sum;
+    }, 0);
+    return Math.round(total / items.length);
+  };
+  const overallScore = scoreFromStatuses(Object.values(results));
+  const aiScore = scoreFromStatuses(tests.filter(t => t.category === "ai").map(t => results[t.id]).filter(Boolean));
+  const crmScore = scoreFromStatuses(tests.filter(t => t.category === "server" || t.category === "messaging").map(t => results[t.id]).filter(Boolean));
 
   const categories = ["ai", "messaging", "server", "connectivity"] as const;
   const categoryLabels: Record<string, string> = { ai: "AI Features", messaging: "Messaging", server: "Server & DB", connectivity: "Connectivity" };
@@ -382,7 +472,7 @@ export default function TestingPage() {
             <span className="text-xs px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-semibold">{passCount} Pass</span>
             {failCount > 0 && <span className="text-xs px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded-full font-semibold">{failCount} Fail</span>}
             {warnCount > 0 && <span className="text-xs px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-semibold">{warnCount} Warn</span>}
-            <span className="text-xs text-muted-foreground">{passCount + failCount + warnCount}/{tests.length} tested</span>
+            <span className="text-xs text-muted-foreground">{testedCount}/{tests.length} tested</span>
           </div>
         )}
 
@@ -394,6 +484,26 @@ export default function TestingPage() {
       </motion.div>
 
       {/* ── Test Cards by Category ──────────────────────────── */}
+      {testedCount > 0 && (
+        <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="glass-card rounded-2xl p-4 border-l-4 border-blue-400">
+            <p className="text-xs font-semibold text-muted-foreground">Overall Confidence</p>
+            <p className="text-3xl font-bold text-foreground mt-1">{overallScore}/100</p>
+            <p className="text-xs text-muted-foreground mt-1">Pass = 100, Warn = 60, Fail = 0</p>
+          </div>
+          <div className="glass-card rounded-2xl p-4 border-l-4 border-violet-400">
+            <p className="text-xs font-semibold text-muted-foreground">AI Score</p>
+            <p className="text-3xl font-bold text-foreground mt-1">{aiScore}/100</p>
+            <p className="text-xs text-muted-foreground mt-1">Buddy, quality, timing, A/B tests se derived</p>
+          </div>
+          <div className="glass-card rounded-2xl p-4 border-l-4 border-emerald-400">
+            <p className="text-xs font-semibold text-muted-foreground">CRM Score</p>
+            <p className="text-3xl font-bold text-foreground mt-1">{crmScore}/100</p>
+            <p className="text-xs text-muted-foreground mt-1">Messaging + server/data tests se derived</p>
+          </div>
+        </motion.div>
+      )}
+
       {categories.map(cat => {
         const catTests = tests.filter(t => t.category === cat);
         const catPass = catTests.filter(t => results[t.id]?.status === "pass").length;

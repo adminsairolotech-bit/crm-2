@@ -22,7 +22,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="dashboard-live"
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
@@ -31,7 +31,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="customers"
+        name="customers-live"
         options={{
           title: 'Customers',
           tabBarIcon: ({ color, size }) => (
@@ -40,7 +40,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="leads"
+        name="leads-live"
         options={{
           title: 'Leads',
           tabBarIcon: ({ color, size }) => (
@@ -49,7 +49,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="profile-live"
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
