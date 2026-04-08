@@ -23,6 +23,7 @@ import { validateAIResponse, sanitizeInput, SAFE_AI_FALLBACK } from './services/
 import leadsRouter from './routes/leads.js';
 import productsRouter from './routes/products.js';
 import authRouter from './routes/auth.js';
+import { isSupabaseConfigured } from './supabase.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '..', 'data');
@@ -71,6 +72,10 @@ const ALLOWED_ORIGINS = [
   process.env.PRODUCTION_URL,
   'https://sairolotech.com',
   'https://www.sairolotech.com',
+  'http://127.0.0.1:5000',
+  'http://localhost:5000',
+  'http://127.0.0.1:4173',
+  'http://localhost:4173',
 ].filter(Boolean);
 
 app.use(cors({
@@ -163,6 +168,62 @@ function inlineAdminAuth(req, res, next) {
   if (!ADMIN_TOKEN) return res.status(503).json({ success: false, error: 'Auth not configured' });
   if (token !== ADMIN_TOKEN) return res.status(401).json({ success: false, error: 'Unauthorized' });
   next();
+}
+
+function checkOptionalAdminAccess(req, res) {
+  const token = req.headers['x-admin-token'] || req.headers['authorization']?.replace('Bearer ', '');
+  const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN;
+  if (!ADMIN_TOKEN) {
+    return { allowed: true, authConfigured: false, usingFallbackAccess: true };
+  }
+  if (token !== ADMIN_TOKEN) {
+    res.status(401).json({ success: false, error: 'Unauthorized' });
+    return { allowed: false, authConfigured: true, usingFallbackAccess: false };
+  }
+  return { allowed: true, authConfigured: true, usingFallbackAccess: false };
+}
+
+function getIntegrationStatuses() {
+  const hasWhatsapp = !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_ID);
+  const hasFcm = !!process.env.FCM_SERVER_KEY;
+  const hasGemini = !!GEMINI_KEY;
+  const hasOpenRouter = !!(process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY);
+  const hasGmailConnector = !!(
+    process.env.REPLIT_CONNECTORS_HOSTNAME &&
+    (process.env.REPL_IDENTITY || process.env.WEB_REPL_RENEWAL)
+  );
+  const hasAdminToken = !!process.env.ADMIN_API_TOKEN;
+
+  return {
+    whatsapp: {
+      connected: hasWhatsapp,
+      note: hasWhatsapp ? 'WhatsApp token and phone ID configured' : 'WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_ID missing',
+    },
+    fcm: {
+      connected: hasFcm,
+      note: hasFcm ? 'FCM key configured' : 'FCM_SERVER_KEY missing',
+    },
+    gmail: {
+      connected: hasGmailConnector,
+      note: hasGmailConnector ? 'Replit Gmail connector configured' : 'Gmail connector env missing',
+    },
+    gemini: {
+      connected: hasGemini,
+      note: hasGemini ? 'Gemini API key configured' : 'GEMINI_API_KEY missing',
+    },
+    openrouter: {
+      connected: hasOpenRouter,
+      note: hasOpenRouter ? 'OpenRouter API key configured' : 'OPENROUTER_API_KEY missing',
+    },
+    adminToken: {
+      connected: hasAdminToken,
+      note: hasAdminToken ? 'Admin token configured' : 'ADMIN_API_TOKEN missing',
+    },
+    db: {
+      connected: isSupabaseConfigured,
+      note: isSupabaseConfigured ? 'Supabase server client configured' : 'SUPABASE_URL or SUPABASE_ANON_KEY missing',
+    },
+  };
 }
 
 /* ── Codex Fix: Safe JSON parser ── */
@@ -674,11 +735,16 @@ app.get('/api/lead-analytics', async (req, res) => {
   }
 });
 
-/* ── Integration Status Check (Admin Only) ── */
-app.get('/api/integration-status', inlineAdminAuth, (req, res) => {
+/* ── Integration Status Check ─────────────── */
+app.get('/api/integration-status', (req, res) => {
+  const access = checkOptionalAdminAccess(req, res);
+  if (!access.allowed) return;
   res.json({
     success: true,
     configured: true,
+    authConfigured: access.authConfigured,
+    usingFallbackAccess: access.usingFallbackAccess,
+    statuses: getIntegrationStatuses(),
   });
 });
 

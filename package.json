@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5000",
     "build": "vite build",
+    "typecheck": "npx tsc --noEmit -p mobile/tsconfig.json",
+    "test": "node --test tests/integration-status.smoke.test.mjs",
     "preview": "vite preview",
-    "server": "node server/index.js",
-    "start": "npm run build && node server/index.js",
+    "server": "node --env-file=.env server/index.js",
+    "start": "npm run build && node --env-file=.env server/index.js",
     "cap:sync": "npm run build && npx cap sync",
     "cap:android": "npm run build && npx cap sync android && npx cap open android",
     "cap:ios": "npm run build && npx cap sync ios && npx cap open ios",
